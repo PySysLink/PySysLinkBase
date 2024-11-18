@@ -1,0 +1,61 @@
+{
+    "Blocks": [
+        {
+            "Id": "sum1",
+            "Name": "Main sumator",
+            "BlockType": "BasicCpp",
+            "BlockId": "Basic/Sumator",
+            "InputPorts": 2,
+            "OutputPorts": 1
+        },
+        {
+            "Id": "const1",
+            "Name": "Operand 1",
+            "BlockType": "BasicCpp",
+            "BlockId": "Basic/Constant",
+            "Value": 5,
+            "InputPorts": 0,
+            "OutputPorts": 1
+        },
+        {
+            "Id": "const2",
+            "Name": "Operand 2",
+            "BlockType": "BasicCpp",
+            "BlockId": "Basic/Constant",
+            "Value": 3,
+            "InputPorts": 0,
+            "OutputPorts": 1
+        },
+        {
+            "Id": "display1",
+            "Name": "Result",
+            "BlockType": "BasicCpp",
+            "BlockId": "Basic/Display",
+            "InputPorts": 1,
+            "OutputPorts": 0
+        }
+    ],
+    "Links": [
+        {
+            "Id": "link1",
+            "SourceBlock": "const1",
+            "SourcePortIdx": 0,
+            "DestinationBlock": "sum1",
+            "DestinationPortIdx": 0
+        },
+        {
+            "Id": "link2",
+            "SourceBlock": "const2",
+            "SourcePortIdx": 0,
+            "DestinationBlock": "sum1",
+            "DestinationPortIdx": 1
+        },
+        {
+            "Id": "link3",
+            "SourceBlock": "sum1",
+            "SourcePortIdx": 0,
+            "DestinationBlock": "display1",
+            "DestinationPortIdx": 0
+        }
+    ]
+}
