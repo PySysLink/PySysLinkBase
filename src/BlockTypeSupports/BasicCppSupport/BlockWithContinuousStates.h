@@ -1,9 +1,9 @@
-#ifndef BLOCK_TYPE_SUPPORTS_BASIC_CPP_BLOCK_WITH_CONTINUOUS_STATES
-#define BLOCK_TYPE_SUPPORTS_BASIC_CPP_BLOCK_WITH_CONTINUOUS_STATES
+#ifndef SRC_BLOCK_TYPE_SUPPORTS_BASIC_CPP_SUPPORT_BLOCK_WITH_CONTINUOUS_STATES
+#define SRC_BLOCK_TYPE_SUPPORTS_BASIC_CPP_SUPPORT_BLOCK_WITH_CONTINUOUS_STATES
 
 #include <PySysLinkBase/ISimulationBlockWithContinuousStates.h>
 
-namespace BlockTypeSupports::BasicCpp
+namespace BlockTypeSupports::BasicCppSupport
 {
     class SimulationBlockWithContinuousStates : public PySysLinkBase::ISimulationBlockWithContinuousStates
     {
@@ -17,4 +17,4 @@ namespace BlockTypeSupports::BasicCpp
     };
 }
 
-#endif /* BLOCK_TYPE_SUPPORTS_BASIC_CPP_BLOCK_WITH_CONTINUOUS_STATES */
+#endif /* SRC_BLOCK_TYPE_SUPPORTS_BASIC_CPP_SUPPORT_BLOCK_WITH_CONTINUOUS_STATES */

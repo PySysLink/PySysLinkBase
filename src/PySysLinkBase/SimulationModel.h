@@ -13,7 +13,7 @@ namespace PySysLinkBase
         std::vector<std::unique_ptr<ISimulationBlock>> simulationBlocks;
         std::vector<std::unique_ptr<PortLink>> portLinks;
         
-        SimulationModel(std::vector<std::unique_ptr<ISimulationBlock>> simulationBlocks, std::vector<std::unique_ptr<PortLink>> portLinks) ;
+        SimulationModel(std::vector<std::unique_ptr<ISimulationBlock>> simulationBlocks, std::vector<std::unique_ptr<PortLink>> portLinks);
 
         
     };

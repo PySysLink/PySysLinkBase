@@ -1,7 +1,7 @@
 #include "BlockWithContinuousStates.h"
 #include <stdexcept>
 
-namespace BlockTypeSupports::BasicCpp
+namespace BlockTypeSupports::BasicCppSupport
 {
     const std::vector<PySysLinkBase::ContinuousState>& SimulationBlockWithContinuousStates::GetContinuousStates() const
     {
