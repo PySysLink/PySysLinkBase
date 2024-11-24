@@ -3,6 +3,8 @@ add_library(PySysLinkBase STATIC
     ContinuousState.cpp
     SimulationModel.cpp
     ModelParser.cpp
+    ISimulationBlock.cpp
+    SampleTime.cpp
     PortsAndSignalValues/InputPort.cpp 
     PortsAndSignalValues/OutputPort.cpp 
     PortsAndSignalValues/Port.cpp 
@@ -17,8 +19,20 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(yaml-cpp)
 
+add_dependencies(PySysLinkBase yaml-cpp)
 target_link_libraries(PySysLinkBase PUBLIC yaml-cpp) # The library or executable that require yaml-cpp library
-target_include_directories(PySysLinkBase PRIVATE ${yaml-cpp_SOURCE_DIR}/include)
+# target_include_directories(PySysLinkBase PRIVATE ${yaml-cpp_SOURCE_DIR}/include)
+target_include_directories(PySysLinkBase PUBLIC
+    $<BUILD_INTERFACE:${yaml-cpp_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+message(yaml-cpp_SOURCE_DIR="${yaml-cpp_SOURCE_DIR}")
+message(STATUS "yaml-cpp_SOURCE_DIR: ${yaml-cpp_SOURCE_DIR}")
 
 # Include directories for header files
-target_include_directories(PySysLinkBase PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(PySysLinkBase
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>  # Include path for the build tree
+        $<INSTALL_INTERFACE:include>                   # Include path for the installed tree
+)

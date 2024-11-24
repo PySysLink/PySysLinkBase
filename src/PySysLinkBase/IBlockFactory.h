@@ -5,13 +5,15 @@
 #include <vector>
 #include "ConfigurationValue.h"
 #include <map>
+#include <memory>
 #include <string>
 
 namespace PySysLinkBase
 {
    class IBlockFactory {
       public:
-         virtual ISimulationBlock CreateBlock(std::vector<std::map<std::string, ConfigurationValue>> blockConfiguration) = 0;
+         virtual ~IBlockFactory() = default;
+         virtual std::unique_ptr<ISimulationBlock> CreateBlock(std::map<std::string, ConfigurationValue> blockConfiguration) = 0;
    };
 }
 

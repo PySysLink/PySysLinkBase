@@ -1,39 +1,42 @@
----
 Blocks:
-- Id: sum1
-  Name: Main sumator
-  BlockType: BasicCpp
-  BlockId: BasicBlocks/Sumator
-  Gains: 
-    - 1
-    - 1
-- Id: const1
-  Name: Operand 1
-  BlockType: BasicCpp
-  BlockId: BasicBlocks/Constant
-  Value: 5
-- Id: const2
-  Name: Operand 2
-  BlockType: BasicCpp
-  BlockId: BasicBlocks/Constant
-  Value: 3
-- Id: display1
-  Name: Result
-  BlockType: BasicCpp
-  BlockId: BasicBlocks/Display
+  - Id: sum1
+    Name: Main sumator
+    BlockType: BasicCpp
+    BlockTypeId: BasicBlocks/Sumator
+    Gains:
+      - 1.0
+      - 1.0
+  - Id: const1
+    Name: Operand 1
+    BlockType: BasicCpp
+    BlockTypeId: BasicBlocks/Constant
+    Value: 5.0
+  - Id: const2
+    Name: Operand 2
+    BlockType: BasicCpp
+    BlockTypeId: BasicBlocks/Constant
+    Value: 3.0
+  - Id: display1
+    Name: Result
+    BlockType: BasicCpp
+    BlockTypeId: BasicBlocks/Display
+
 Links:
-- Id: link1
-  SourceBlock: const1
-  SourcePortIdx: 0
-  DestinationBlock: sum1
-  DestinationPortIdx: 0
-- Id: link2
-  SourceBlock: const2
-  SourcePortIdx: 0
-  DestinationBlock: sum1
-  DestinationPortIdx: 1
-- Id: link3
-  SourceBlock: sum1
-  SourcePortIdx: 0
-  DestinationBlock: display1
-  DestinationPortIdx: 0
+  - Id: link1
+    Name: link1
+    SourceBlockId: const1
+    SourcePortIdx: 0
+    DestinationBlockId: sum1
+    DestinationPortIdx: 0
+  - Id: link2
+    Name: link2
+    SourceBlockId: const2
+    SourcePortIdx: 0
+    DestinationBlockId: sum1
+    DestinationPortIdx: 1
+  - Id: link3
+    Name: link3
+    SourceBlockId: sum1
+    SourcePortIdx: 0
+    DestinationBlockId: display1
+    DestinationPortIdx: 0

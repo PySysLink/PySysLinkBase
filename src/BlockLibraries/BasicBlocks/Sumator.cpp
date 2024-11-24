@@ -4,7 +4,7 @@ namespace BlockLibraries::BasicBlocks
 {
     Sumator::Sumator(std::map<std::string, BlockTypes::BasicCpp::ConfigurationValue> configurationValues)
     {
-        this->gains = this->TryGetConfigurationValue<std::vector<double>>("Gains", configurationValues);
+        this->gains = BlockTypes::BasicCpp::ConfigurationValueManager::TryGetConfigurationValue<std::vector<double>>("Gains", configurationValues);
 
         this->sampleTimes.push_back(BlockTypes::BasicCpp::SampleTime(BlockTypes::BasicCpp::SampleTimeType::inherited, 
                                                                      std::vector<BlockTypes::BasicCpp::SampleTimeType>{BlockTypes::BasicCpp::SampleTimeType::constant,
@@ -28,7 +28,7 @@ namespace BlockLibraries::BasicBlocks
     const std::vector<bool> Sumator::InputsHasDirectFeedthrough() const 
     {
         std::vector<bool> result = {};
-        for (int i; i < this->gains.size(); i++)
+        for (int i = 0; i < this->gains.size(); i++)
         {
             result.push_back(true);
         }

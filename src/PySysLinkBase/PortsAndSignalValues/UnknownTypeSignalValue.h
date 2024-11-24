@@ -15,7 +15,7 @@ namespace PySysLinkBase
         public:
 
 
-            virtual const std::string GetTypeId() const;
+            virtual const std::string GetTypeId() const = 0;
 
             template <typename T>
             std::unique_ptr<SignalValue<T>> TryCastToTyped()

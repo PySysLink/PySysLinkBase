@@ -1,9 +1,10 @@
-# Define a library
-add_library(BasicCppSupport STATIC
-    SampleTimeConversion.cpp
-    SimulationBlockCpp.cpp
-    BlockFactoryCpp.cpp
-)
+cmake_minimum_required(VERSION 3.10)
+
+# Plugin project name
+project(BasicCppSupport)
+
+# Define the shared library
+add_library(BasicCppSupport SHARED RegisterBlockFactories.cpp)
 
 target_include_directories(BasicCppSupport PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(BasicCppSupport PRIVATE PySysLinkBase)

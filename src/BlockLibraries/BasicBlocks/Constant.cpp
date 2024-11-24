@@ -1,6 +1,4 @@
 #include "Constant.h"
-#include <PySysLinkBase/PortsAndSignalValues/SignalValue.h>
-#include <PySysLinkBase/PortsAndSignalValues/UnknownTypeSignalValue.h>
 #include <vector>
 #include <stdexcept>
 
@@ -8,7 +6,7 @@ namespace BlockLibraries::BasicBlocks
 {
     Constant::Constant(std::map<std::string, BlockTypes::BasicCpp::ConfigurationValue> configurationValues)
     {
-        this->value = this->TryGetConfigurationValue<double>("Value", configurationValues);
+        this->value = BlockTypes::BasicCpp::ConfigurationValueManager::TryGetConfigurationValue<double>("Value", configurationValues);
 
         this->sampleTimes.push_back(BlockTypes::BasicCpp::SampleTime(BlockTypes::BasicCpp::SampleTimeType::constant));
     }
