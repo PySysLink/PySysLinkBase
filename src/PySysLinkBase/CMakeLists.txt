@@ -5,6 +5,7 @@ add_library(PySysLinkBase STATIC
     ModelParser.cpp
     ISimulationBlock.cpp
     SampleTime.cpp
+    BlockTypeSupportPlugingLoader.cpp
     PortsAndSignalValues/InputPort.cpp 
     PortsAndSignalValues/OutputPort.cpp 
     PortsAndSignalValues/Port.cpp 
@@ -25,7 +26,8 @@ target_link_libraries(PySysLinkBase PUBLIC yaml-cpp) # The library or executable
 target_include_directories(PySysLinkBase PUBLIC
     $<BUILD_INTERFACE:${yaml-cpp_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
-    ${CMAKE_CURRENT_SOURCE_DIR}
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>  # Include path for the build tree
+    $<INSTALL_INTERFACE:include>
 )
 message(yaml-cpp_SOURCE_DIR="${yaml-cpp_SOURCE_DIR}")
 message(STATUS "yaml-cpp_SOURCE_DIR: ${yaml-cpp_SOURCE_DIR}")

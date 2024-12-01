@@ -1,6 +1,9 @@
 @PACKAGE_INIT@
 
-include(CMakeFindDependencyMacro)
+# Specify the include directories and libraries
+set_and_check(PY_SYS_LINK_BASE_INCLUDE_DIRS "@PACKAGE_INCLUDE_DIRS@")
+set_and_check(PY_SYS_LINK_BASE_LIBRARIES "@PACKAGE_LIBRARIES@")
 
-# Add the targets exported by PySysLinkBase
-include("${CMAKE_CURRENT_LIST_DIR}/PySysLinkBaseTargets.cmake")
+# Set include directories for PySysLinkBase
+set(PySysLinkBase_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
+set(PySysLinkBase_LIBRARIES "@PACKAGE_LIBRARIES@")

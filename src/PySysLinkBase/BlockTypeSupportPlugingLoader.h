@@ -11,7 +11,7 @@
 
 namespace PySysLinkBase {
 
-class PluginLoader {
+class BlockTypeSupportPlugingLoader {
 public:
     void LoadPlugins(const std::string& pluginDirectory) {
         // Example: Iterate through files in the pluginDirectory (you'll need to implement this)
@@ -52,7 +52,7 @@ private:
     // Example stub for finding shared libraries in a directory
     std::vector<std::string> FindSharedLibraries(const std::string& pluginDirectory) {
         // Use directory traversal to return paths of `.so`, `.dll`, or `.dylib` files
-        return {"path/to/plugin1.so", "path/to/plugin2.so"}; // Replace with real implementation
+        return {"/home/pello/PySysLink/BlockTypeSupportPlugins/BasicCppSupport/build/libBasicCppSupport.so"}; // Replace with real implementation
     }
 };
 
