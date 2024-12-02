@@ -28,7 +28,7 @@ message(STATUS "Default install path: ${CMAKE_INSTALL_PREFIX}")
 
 # Add subdirectories
 add_subdirectory(src)
-# add_subdirectory(Tests)
+add_subdirectory(Tests)
 
 
 set(PY_SYS_LINK_BASE_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
@@ -79,3 +79,8 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/PySysLinkBaseConfig.cmake
 install(TARGETS PySysLinkBase
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib)
+
+
+if(UNIX AND NOT APPLE) # Linux-specific
+    install(CODE "execute_process(COMMAND ldconfig)")
+endif()

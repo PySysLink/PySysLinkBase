@@ -8,7 +8,6 @@ target_include_directories(PySysLinkTests PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
 # Link the main project (if necessary)
 target_link_libraries(PySysLinkTests PRIVATE PySysLinkBase)
-target_link_libraries(PySysLinkTests PRIVATE BasicCppSupport)
 
 # Add test framework (if using one, like GoogleTest)
 # Example: Linking with GoogleTest

@@ -1,7 +1,6 @@
 #ifndef SRC_PY_SYS_LINK_BASE_BLOCK_TYPE_SUPPORT_PLUGING_LOADER
 #define SRC_PY_SYS_LINK_BASE_BLOCK_TYPE_SUPPORT_PLUGING_LOADER
 
-#include <iostream>
 #include <map>
 #include <memory>
 #include <string>
@@ -13,47 +12,11 @@ namespace PySysLinkBase {
 
 class BlockTypeSupportPlugingLoader {
 public:
-    void LoadPlugins(const std::string& pluginDirectory) {
-        // Example: Iterate through files in the pluginDirectory (you'll need to implement this)
-        for (const auto& pluginPath : FindSharedLibraries(pluginDirectory)) {
-            void* handle = dlopen(pluginPath.c_str(), RTLD_LAZY);
-            if (!handle) {
-                std::cerr << "Failed to load plugin: " << pluginPath << "\n";
-                std::cerr << dlerror() << "\n";
-                continue;
-            }
-
-            // Get the entry point function
-            auto registerFunc = reinterpret_cast<void(*)(std::map<std::string, std::unique_ptr<IBlockFactory>>&)>(dlsym(handle, "RegisterBlockFactories"));
-
-            if (!registerFunc) {
-                std::cerr << "Failed to find entry point in: " << pluginPath << "\n";
-                std::cerr << dlerror() << "\n";
-                dlclose(handle);
-                continue;
-            }
-
-            // Call the function to register block factories
-            registerFunc(factoryRegistry);
-        }
-    }
-
-    std::unique_ptr<IBlockFactory> GetFactory(const std::string& factoryName) {
-        auto it = factoryRegistry.find(factoryName);
-        if (it != factoryRegistry.end()) {
-            return std::move(it->second);
-        }
-        throw std::runtime_error("Factory not found: " + factoryName);
-    }
+    std::map<std::string, std::unique_ptr<IBlockFactory>> LoadPlugins(const std::string& pluginDirectory);
 
 private:
-    std::map<std::string, std::unique_ptr<IBlockFactory>> factoryRegistry;
-
-    // Example stub for finding shared libraries in a directory
-    std::vector<std::string> FindSharedLibraries(const std::string& pluginDirectory) {
-        // Use directory traversal to return paths of `.so`, `.dll`, or `.dylib` files
-        return {"/home/pello/PySysLink/BlockTypeSupportPlugins/BasicCppSupport/build/libBasicCppSupport.so"}; // Replace with real implementation
-    }
+    std::vector<std::string> FindSharedLibraries(const std::string& pluginDirectory);
+    bool StringEndsWith(const std::string& str, const std::string& suffix);
 };
 
 } // namespace PySysLinkBase

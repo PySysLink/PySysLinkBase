@@ -59,7 +59,10 @@
         "hash_map": "cpp",
         "hash_set": "cpp",
         "cinttypes": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "chrono": "cpp",
+        "codecvt": "cpp",
+        "ratio": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }
