@@ -32,8 +32,18 @@ int main() {
     for (int i = 0; i < orderedBlocks.size(); i++)
     {
         std::cout << orderedBlocks[i]->GetId() << std::endl;
+        std::cout << orderedBlocks[i]->GetSampleTimes().size() << std::endl;
+        std::cout << orderedBlocks[i]->GetSampleTimes()[0].GetSampleTimeType() << std::endl;
     }
 
+    simulationModel->PropagateSampleTimes();
+    std::cout << "Ordered blocks: " << std::endl;
+    for (int i = 0; i < orderedBlocks.size(); i++)
+    {
+        std::cout << orderedBlocks[i]->GetId() << std::endl;
+        std::cout << orderedBlocks[i]->GetSampleTimes().size() << std::endl;
+        std::cout << orderedBlocks[i]->GetSampleTimes()[0].GetSampleTimeType() << std::endl;
+    }
 
     return 0;
 }

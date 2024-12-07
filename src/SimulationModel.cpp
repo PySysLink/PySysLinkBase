@@ -165,6 +165,133 @@ namespace PySysLinkBase
         return nullptr; // No connection found
     }
 
+    void SimulationModel::PropagateSampleTimes() {
+        // Helper lambdas
+        auto hasKnownSampleTime = [](const SampleTime& sampleTime) -> bool {
+            return sampleTime.GetSampleTimeType() != SampleTimeType::inherited;
+        };
+
+        auto canInheritSampleTime = [](const SampleTime& sampleTime, const SampleTimeType& targetType) -> bool {
+            const auto& supportedTypes = sampleTime.GetSupportedSampleTimeTypesForInheritance();
+            return std::find(supportedTypes.begin(), supportedTypes.end(), targetType) != supportedTypes.end();
+        };
+
+        std::unordered_set<std::shared_ptr<ISimulationBlock>> resolvedBlocks;
+        std::unordered_set<std::shared_ptr<ISimulationBlock>> unresolvedBlocks;
+
+        // Initialize the block processing state
+        for (const auto& block : simulationBlocks) {
+            bool isResolved = true;
+            for (const auto& sampleTime : block->GetSampleTimes()) {
+                if (!hasKnownSampleTime(sampleTime)) {
+                    unresolvedBlocks.insert(block);
+                    isResolved = false;
+                    break;
+                }
+            }
+            if (isResolved) {
+                resolvedBlocks.insert(block);
+            }
+        }
+
+        // Propagation loop
+        bool progressMade = true;
+        while (progressMade) {
+            progressMade = false;
+
+            // Forward propagation
+            for (const auto& block : resolvedBlocks) {
+                for (const auto& outputPort : block->GetOutputPorts()) {
+                    const auto connectedPorts = GetConnectedPorts(outputPort);
+                    for (const auto& inputPort : connectedPorts) {
+                        std::shared_ptr<ISimulationBlock> targetBlock = ISimulationBlock::FindBlockById(inputPort->GetOwnerBlock().GetId(), this->simulationBlocks);
+
+                        if (resolvedBlocks.find(targetBlock) != resolvedBlocks.end()) {
+                            const auto& outputSampleTimes = block->GetSampleTimes();
+                            auto& inputSampleTimes = targetBlock->GetSampleTimes();
+
+                            for (int i = 0; i < inputSampleTimes.size(); ++i) {
+                                if (!hasKnownSampleTime(inputSampleTimes[i])) {
+                                    for (const auto& outputSampleTime : outputSampleTimes) {
+                                        if (canInheritSampleTime(inputSampleTimes[i], outputSampleTime.GetSampleTimeType())) {
+                                            inputSampleTimes[i] = outputSampleTime;
+                                            progressMade = true;
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Check if the target block is now resolved
+                            bool isNowResolved = true;
+                            for (const auto& sampleTime : inputSampleTimes) {
+                                if (!hasKnownSampleTime(sampleTime)) {
+                                    isNowResolved = false;
+                                    break;
+                                }
+                            }
+                            if (isNowResolved) {
+                                resolvedBlocks.insert(targetBlock);
+                                unresolvedBlocks.erase(targetBlock);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Backward propagation
+            for (const auto& block : unresolvedBlocks) {
+                const auto& inputPorts = block->GetInputPorts();
+                for (const auto& inputPort : inputPorts) {
+                    const auto originBlock = GetOriginBlock(inputPort);
+                    if (originBlock && resolvedBlocks.find(originBlock) != resolvedBlocks.end()) {
+                        auto& blockSampleTimes = block->GetSampleTimes();
+                        const auto& originSampleTimes = originBlock->GetSampleTimes();
+
+                        for (size_t i = 0; i < blockSampleTimes.size(); ++i) {
+                            if (!hasKnownSampleTime(blockSampleTimes[i])) {
+                                for (const auto& originSampleTime : originSampleTimes) {
+                                    if (canInheritSampleTime(blockSampleTimes[i], originSampleTime.GetSampleTimeType())) {
+                                        blockSampleTimes[i] = originSampleTime;
+                                        progressMade = true;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Re-check if the block is now resolved
+                        bool isNowResolved = true;
+                        for (const auto& sampleTime : blockSampleTimes) {
+                            if (!hasKnownSampleTime(sampleTime)) {
+                                isNowResolved = false;
+                                break;
+                            }
+                        }
+                        if (isNowResolved) {
+                            resolvedBlocks.insert(block);
+                            unresolvedBlocks.erase(block);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Final validation
+        if (!unresolvedBlocks.empty()) {
+            throw std::runtime_error("Sample time propagation failed: Unresolved sample times remain.");
+        }
+
+        // Optional: Validate compatibility across links
+        for (const auto& link : portLinks) {
+            const auto& originSampleTimes = link->origin->GetOwnerBlock().GetSampleTimes();
+            const auto& sinkSampleTimes = link->sink->GetOwnerBlock().GetSampleTimes();
+
+            for (size_t i = 0; i < originSampleTimes.size(); ++i) {
+                if (originSampleTimes[i].GetSampleTimeType() != sinkSampleTimes[i].GetSampleTimeType()) {
+                    throw std::runtime_error("Sample time mismatch detected between connected blocks.");
+                }
+            }
+        }
+    }
 
 
 } // namespace PySysLinkBase

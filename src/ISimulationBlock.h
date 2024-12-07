@@ -25,7 +25,7 @@ namespace PySysLinkBase
         ISimulationBlock(std::map<std::string, ConfigurationValue> blockConfiguration);
         virtual ~ISimulationBlock() = default;
 
-        virtual const std::vector<SampleTime>& GetSampleTimes() const = 0;
+        virtual std::vector<SampleTime>& GetSampleTimes() = 0;
 
         virtual std::vector<std::shared_ptr<PySysLinkBase::InputPort>> GetInputPorts() const = 0;
         virtual const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>> GetOutputPorts() const = 0;

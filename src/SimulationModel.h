@@ -24,6 +24,8 @@ namespace PySysLinkBase
         const std::vector<std::vector<std::shared_ptr<ISimulationBlock>>> GetDirectBlockChains();
 
         const std::vector<std::shared_ptr<ISimulationBlock>> OrderBlockChainsOntoFreeOrder(const std::vector<std::vector<std::shared_ptr<ISimulationBlock>>> directBlockChains);
+        
+        void PropagateSampleTimes();
 
     private:
         const std::vector<std::shared_ptr<ISimulationBlock>> GetFreeSourceBlocks();
