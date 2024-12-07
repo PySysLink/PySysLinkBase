@@ -2,24 +2,24 @@ Blocks:
   - Id: sum1
     Name: Main sumator
     BlockType: BasicCpp
-    BlockTypeId: BasicBlocks/Sumator
+    BlockClass: BasicBlocks/Sumator
     Gains:
       - 1.0
       - 1.0
   - Id: const1
     Name: Operand 1
     BlockType: BasicCpp
-    BlockTypeId: BasicBlocks/Constant
+    BlockClass: BasicBlocks/Constant
     Value: 5.0
   - Id: const2
     Name: Operand 2
     BlockType: BasicCpp
-    BlockTypeId: BasicBlocks/Constant
+    BlockClass: BasicBlocks/Constant
     Value: 3.0
   - Id: display1
     Name: Result
     BlockType: BasicCpp
-    BlockTypeId: BasicBlocks/Display
+    BlockClass: BasicBlocks/Display
 
 Links:
   - Id: link1

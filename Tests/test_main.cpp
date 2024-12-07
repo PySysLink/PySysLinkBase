@@ -13,9 +13,28 @@ int main() {
     std::map<std::string, std::unique_ptr<PySysLinkBase::IBlockFactory>> blockFactories = plugingLoader->LoadPlugins("/usr/local/lib");
     
 
-    PySysLinkBase::SimulationModel simulationModel = PySysLinkBase::ModelParser::ParseFromYaml("/home/pello/PySysLink/Tests/system1.yaml", blockFactories);
+    std::unique_ptr<PySysLinkBase::SimulationModel> simulationModel = std::make_unique<PySysLinkBase::SimulationModel>(PySysLinkBase::ModelParser::ParseFromYaml("/home/pello/PySysLink/Tests/system1.yaml", blockFactories));
 
+    std::vector<std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>>> blockChains = simulationModel->GetDirectBlockChains();
     
+    std::cout << "Block chains: " << std::endl;
+    for (int i = 0; i < blockChains.size(); i++)
+    {
+        std::cout << "Block chain " << i << ":" << std::endl;
+        for (int j = 0; j < blockChains[i].size(); j++)
+        {
+            std::cout << blockChains[i][j]->GetId() << std::endl;
+        }
+    }
+
+    std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>> orderedBlocks = simulationModel->OrderBlockChainsOntoFreeOrder(blockChains);
+    std::cout << "Ordered blocks: " << std::endl;
+    for (int i = 0; i < orderedBlocks.size(); i++)
+    {
+        std::cout << orderedBlocks[i]->GetId() << std::endl;
+    }
+
+
     return 0;
 }
 

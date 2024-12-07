@@ -1,9 +1,9 @@
 #ifndef SRC_PY_SYS_LINK_BASE_PORT_LINK
 #define SRC_PY_SYS_LINK_BASE_PORT_LINK
 
+#include "ISimulationBlock.h"
 #include "PortsAndSignalValues/InputPort.h"
 #include "PortsAndSignalValues/OutputPort.h"
-#include "ISimulationBlock.h"
 #include <algorithm>
 #include <map>
 #include "ConfigurationValue.h"
@@ -13,10 +13,10 @@ namespace PySysLinkBase
     class PortLink
     {
     public:
-        PortLink(const OutputPort& origin, const InputPort& sink) : origin(origin), sink(sink) {}
+        PortLink(std::shared_ptr<OutputPort> origin, std::shared_ptr<InputPort> sink) : origin(origin), sink(sink) {}
 
-        const OutputPort& origin;
-        const InputPort& sink;
+        std::shared_ptr<OutputPort> origin;
+        std::shared_ptr<InputPort> sink;
 
         static PortLink ParseFromConfig(std::map<std::string, ConfigurationValue> linkConfiguration, const std::vector<std::unique_ptr<ISimulationBlock>>& blocks)
         {
@@ -28,7 +28,7 @@ namespace PySysLinkBase
             ISimulationBlock& sourceBlock = ISimulationBlock::FindBlockById(sourceBlockId, blocks);
             ISimulationBlock& destinationBlock = ISimulationBlock::FindBlockById(destinationBlockId, blocks);
 
-            return PortLink(*(sourceBlock.GetOutputPorts()[sourcePortIdx]), *(destinationBlock.GetInputPorts()[destinationPortIdx]));
+            return PortLink(sourceBlock.GetOutputPorts()[sourcePortIdx], destinationBlock.GetInputPorts()[destinationPortIdx]);
         }
     };
 }

@@ -8,7 +8,7 @@ namespace PySysLinkBase
 {
     class OutputPort : public Port {
         public:
-            OutputPort(std::unique_ptr<UnknownTypeSignalValue> value);
+            OutputPort(std::unique_ptr<UnknownTypeSignalValue> value, ISimulationBlock& ownerBlock);
     };
 }
 
