@@ -194,19 +194,24 @@ namespace PySysLinkBase
             }
         }
 
+        std::cout << "Start propagation loop" << std::endl;
         // Propagation loop
         bool progressMade = true;
         while (progressMade) {
+            std::cout << "Start loop..." << std::endl;
+
             progressMade = false;
 
             // Forward propagation
             for (const auto& block : resolvedBlocks) {
+                std::cout << "Resolved block: " << block->GetId() << std::endl;
                 for (const auto& outputPort : block->GetOutputPorts()) {
                     const auto connectedPorts = GetConnectedPorts(outputPort);
                     for (const auto& inputPort : connectedPorts) {
                         std::shared_ptr<ISimulationBlock> targetBlock = ISimulationBlock::FindBlockById(inputPort->GetOwnerBlock().GetId(), this->simulationBlocks);
 
-                        if (resolvedBlocks.find(targetBlock) != resolvedBlocks.end()) {
+                        if (resolvedBlocks.find(targetBlock) == resolvedBlocks.end()) {
+                            std::cout << "Block seems not resolved: " << targetBlock->GetId() << std::endl;
                             const auto& outputSampleTimes = block->GetSampleTimes();
                             auto& inputSampleTimes = targetBlock->GetSampleTimes();
 
@@ -237,13 +242,18 @@ namespace PySysLinkBase
                     }
                 }
             }
+            std::cout << "Start backward..." << std::endl;
 
             // Backward propagation
             for (const auto& block : unresolvedBlocks) {
+                std::cout << "Some block..." << block->GetId() << std::endl;
                 const auto& inputPorts = block->GetInputPorts();
                 for (const auto& inputPort : inputPorts) {
                     const auto originBlock = GetOriginBlock(inputPort);
-                    if (originBlock && resolvedBlocks.find(originBlock) != resolvedBlocks.end()) {
+                    std::cout << "Some input port..." << std::endl;
+                    if (originBlock && resolvedBlocks.find(originBlock) == resolvedBlocks.end()) {
+                        std::cout << "Seems like unresolved..." << std::endl;
+
                         auto& blockSampleTimes = block->GetSampleTimes();
                         const auto& originSampleTimes = originBlock->GetSampleTimes();
 
@@ -257,7 +267,7 @@ namespace PySysLinkBase
                                 }
                             }
                         }
-
+                        std::cout << "Is block resolved?" << std::endl;
                         // Re-check if the block is now resolved
                         bool isNowResolved = true;
                         for (const auto& sampleTime : blockSampleTimes) {
@@ -273,10 +283,20 @@ namespace PySysLinkBase
                     }
                 }
             }
+            std::cout << "Backward end..." << std::endl;
+
         }
 
         // Final validation
         if (!unresolvedBlocks.empty()) {
+            for (const auto& block : resolvedBlocks)
+            {
+                std::cout << "Resolved block: " << block->GetId() << std::endl;
+            }
+            for (const auto& block : unresolvedBlocks)
+            {
+                std::cout << "Unresolved block: " << block->GetId() << std::endl;
+            }
             throw std::runtime_error("Sample time propagation failed: Unresolved sample times remain.");
         }
 
