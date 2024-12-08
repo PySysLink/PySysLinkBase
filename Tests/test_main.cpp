@@ -4,6 +4,7 @@
 #include <PySysLinkBase/PortLink.h>
 #include <PySysLinkBase/IBlockFactory.h>
 #include <PySysLinkBase/BlockTypeSupportPlugingLoader.h>
+#include <PySysLinkBase/SimulationManager.h>
 #include <iostream>
 #include <map>
 
@@ -13,7 +14,7 @@ int main() {
     std::map<std::string, std::unique_ptr<PySysLinkBase::IBlockFactory>> blockFactories = plugingLoader->LoadPlugins("/usr/local/lib");
     
 
-    std::unique_ptr<PySysLinkBase::SimulationModel> simulationModel = std::make_unique<PySysLinkBase::SimulationModel>(PySysLinkBase::ModelParser::ParseFromYaml("/home/pello/PySysLink/Tests/system1.yaml", blockFactories));
+    std::shared_ptr<PySysLinkBase::SimulationModel> simulationModel = std::make_unique<PySysLinkBase::SimulationModel>(PySysLinkBase::ModelParser::ParseFromYaml("/home/pello/PySysLink/Tests/system1.yaml", blockFactories));
 
     std::vector<std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>>> blockChains = simulationModel->GetDirectBlockChains();
     
@@ -44,6 +45,9 @@ int main() {
         std::cout << orderedBlocks[i]->GetSampleTimes().size() << std::endl;
         std::cout << orderedBlocks[i]->GetSampleTimes()[0].GetSampleTimeType() << std::endl;
     }
+
+    std::unique_ptr<PySysLinkBase::SimulationManager> simulationManager = std::make_unique<PySysLinkBase::SimulationManager>();
+    simulationManager->RunSimulation(simulationModel);
 
     return 0;
 }

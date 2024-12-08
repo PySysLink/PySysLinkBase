@@ -9,6 +9,14 @@
             "OutputPorts": 1
         },
         {
+            "Id": "sum2",
+            "Name": "Second sumator",
+            "BlockType": "BasicCpp",
+            "BlockId": "Basic/Sumator",
+            "InputPorts": 2,
+            "OutputPorts": 1
+        },
+        {
             "Id": "const1",
             "Name": "Operand 1",
             "BlockType": "BasicCpp",
@@ -51,8 +59,22 @@
             "DestinationPortIdx": 1
         },
         {
-            "Id": "link3",
+            "Id": "link4",
             "SourceBlock": "sum1",
+            "SourcePortIdx": 0,
+            "DestinationBlock": "sum2",
+            "DestinationPortIdx": 0
+        },
+        {
+            "Id": "link5",
+            "SourceBlock": "const1",
+            "SourcePortIdx": 0,
+            "DestinationBlock": "sum2",
+            "DestinationPortIdx": 1
+        },
+        {
+            "Id": "link3",
+            "SourceBlock": "sum2",
             "SourcePortIdx": 0,
             "DestinationBlock": "display1",
             "DestinationPortIdx": 0

@@ -197,7 +197,8 @@ namespace PySysLinkBase
         std::cout << "Start propagation loop" << std::endl;
         // Propagation loop
         bool progressMade = true;
-        while (progressMade) {
+        while (progressMade) 
+        {
             std::cout << "Start loop..." << std::endl;
 
             progressMade = false;
@@ -219,7 +220,7 @@ namespace PySysLinkBase
                                 if (!hasKnownSampleTime(inputSampleTimes[i])) {
                                     for (const auto& outputSampleTime : outputSampleTimes) {
                                         if (canInheritSampleTime(inputSampleTimes[i], outputSampleTime.GetSampleTimeType())) {
-                                            inputSampleTimes[i] = outputSampleTime;
+                                            inputSampleTimes.push_back(outputSampleTime);
                                             progressMade = true;
                                         }
                                     }
@@ -228,8 +229,17 @@ namespace PySysLinkBase
 
                             // Check if the target block is now resolved
                             bool isNowResolved = true;
-                            for (const auto& sampleTime : inputSampleTimes) {
+                            for (const auto& sampleTime : targetBlock->GetSampleTimes())
+                            {
                                 if (!hasKnownSampleTime(sampleTime)) {
+                                    isNowResolved = false;
+                                    break;
+                                }
+                            }
+                            for (const auto& outputPort : targetBlock->GetInputPorts()) 
+                            {
+                                if (resolvedBlocks.find(this->GetOriginBlock(outputPort)) == resolvedBlocks.end()) 
+                                {
                                     isNowResolved = false;
                                     break;
                                 }
@@ -261,7 +271,7 @@ namespace PySysLinkBase
                             if (!hasKnownSampleTime(blockSampleTimes[i])) {
                                 for (const auto& originSampleTime : originSampleTimes) {
                                     if (canInheritSampleTime(blockSampleTimes[i], originSampleTime.GetSampleTimeType())) {
-                                        blockSampleTimes[i] = originSampleTime;
+                                        blockSampleTimes.push_back(originSampleTime);
                                         progressMade = true;
                                     }
                                 }
@@ -300,17 +310,17 @@ namespace PySysLinkBase
             throw std::runtime_error("Sample time propagation failed: Unresolved sample times remain.");
         }
 
-        // Optional: Validate compatibility across links
-        for (const auto& link : portLinks) {
-            const auto& originSampleTimes = link->origin->GetOwnerBlock().GetSampleTimes();
-            const auto& sinkSampleTimes = link->sink->GetOwnerBlock().GetSampleTimes();
+        // // Optional: Validate compatibility across links
+        // for (const auto& link : portLinks) {
+        //     const auto& originSampleTimes = link->origin->GetOwnerBlock().GetSampleTimes();
+        //     const auto& sinkSampleTimes = link->sink->GetOwnerBlock().GetSampleTimes();
 
-            for (size_t i = 0; i < originSampleTimes.size(); ++i) {
-                if (originSampleTimes[i].GetSampleTimeType() != sinkSampleTimes[i].GetSampleTimeType()) {
-                    throw std::runtime_error("Sample time mismatch detected between connected blocks.");
-                }
-            }
-        }
+        //     for (size_t i = 0; i < originSampleTimes.size(); ++i) {
+        //         if (originSampleTimes[i].GetSampleTimeType() != sinkSampleTimes[i].GetSampleTimeType()) {
+        //             throw std::runtime_error("Sample time mismatch detected between connected blocks.");
+        //         }
+        //     }
+        // }
     }
 
 

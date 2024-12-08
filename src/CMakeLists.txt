@@ -6,6 +6,7 @@ add_library(PySysLinkBase SHARED
     ISimulationBlock.cpp
     SampleTime.cpp
     BlockTypeSupportPlugingLoader.cpp
+    SimulationManager.cpp
     PortsAndSignalValues/InputPort.cpp 
     PortsAndSignalValues/OutputPort.cpp 
     PortsAndSignalValues/Port.cpp 
