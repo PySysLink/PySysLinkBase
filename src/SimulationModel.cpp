@@ -2,26 +2,42 @@
 #include <stdexcept>
 #include <iostream>
 #include <unordered_set>
+#include <numeric>
 
 namespace PySysLinkBase
 {  
-    SimulationModel::SimulationModel(std::vector<std::unique_ptr<ISimulationBlock>> simulationBlocks, std::vector<std::unique_ptr<PortLink>> portLinks) 
+    SimulationModel::SimulationModel(std::vector<std::shared_ptr<ISimulationBlock>> simulationBlocks, std::vector<std::shared_ptr<PortLink>> portLinks) 
     {
         this->simulationBlocks.insert(this->simulationBlocks.end(), std::make_move_iterator(simulationBlocks.begin()), std::make_move_iterator(simulationBlocks.end()));
         this->portLinks.insert(this->portLinks.end(), std::make_move_iterator(portLinks.begin()), std::make_move_iterator(portLinks.end()));
     }
 
-    const std::vector<std::shared_ptr<InputPort>> SimulationModel::GetConnectedPorts(const std::shared_ptr<OutputPort> origin) const
+    const std::vector<std::shared_ptr<InputPort>> SimulationModel::GetConnectedPorts(const std::shared_ptr<ISimulationBlock> originBlock, int outputPortIndex) const
     {
         std::vector<std::shared_ptr<InputPort>> connectedPorts = {};
         for (int i=0; i < this->portLinks.size(); i++)
         {
-            if (this->portLinks[i]->origin == origin)
+            if (this->portLinks[i]->originBlock == originBlock && this->portLinks[i]->originBlockPortIndex == outputPortIndex)
             {
-                connectedPorts.push_back(this->portLinks[i]->sink);
+                connectedPorts.push_back(this->portLinks[i]->sinkBlock->GetInputPorts()[this->portLinks[i]->sinkBlockPortIndex]);
             }
         }
         return connectedPorts;
+    }
+    
+    const std::pair<std::vector<std::shared_ptr<ISimulationBlock>>, std::vector<int>> SimulationModel::GetConnectedBlocks(const std::shared_ptr<ISimulationBlock> originBlock, int outputPortIndex) const
+    {
+        std::vector<std::shared_ptr<ISimulationBlock>> connectedBlocks = {};
+        std::vector<int> connectedPortIndexes = {};
+        for (int i=0; i < this->portLinks.size(); i++)
+        {
+            if (this->portLinks[i]->originBlock == originBlock && this->portLinks[i]->originBlockPortIndex == outputPortIndex)
+            {
+                connectedBlocks.push_back(this->portLinks[i]->sinkBlock);
+                connectedPortIndexes.push_back(this->portLinks[i]->sinkBlockPortIndex);
+            }
+        }
+        return std::pair<std::vector<std::shared_ptr<ISimulationBlock>>, std::vector<int>>(connectedBlocks, connectedPortIndexes);
     }
 
     const std::vector<std::vector<std::shared_ptr<ISimulationBlock>>> SimulationModel::GetDirectBlockChains() 
@@ -74,11 +90,13 @@ namespace PySysLinkBase
         }
 
         // Iterate over all output ports
-        for (const auto& outputPort : outputPorts) 
+        for (int i = 0; i < outputPorts.size(); i++) 
         {
             // Get the input ports connected to this output
-            const std::vector<std::shared_ptr<PySysLinkBase::InputPort>> connectedPorts = this->GetConnectedPorts(outputPort);
-            if (connectedPorts.empty()) 
+            const std::pair<std::vector<std::shared_ptr<ISimulationBlock>>, std::vector<int>> connectedBlocksInfoPair = this->GetConnectedBlocks(currentBlock, i);
+            const std::vector<std::shared_ptr<ISimulationBlock>> connectedBlocks = connectedBlocksInfoPair.first;
+            const std::vector<int> connectedPortIndexes = connectedBlocksInfoPair.second;
+            if (connectedBlocks.empty()) 
             {
                 // End the chain if the output port has no connections
                 std::cout << "no connection" << std::endl;
@@ -88,19 +106,19 @@ namespace PySysLinkBase
             }
 
             // For each connected input port
-            for (const auto& inputPort : connectedPorts) 
+            for (int j = 0; j < connectedBlocks.size(); j++) 
             {
-                if (inputPort->IsInputDirectBlockChainEnd()) 
+                if (connectedBlocks[j]->IsInputDirectBlockChainEnd(connectedPortIndexes[j])) 
                 {
                     // End the chain if the connected input port stops direct feedthrough
-                    currentChain.push_back(ISimulationBlock::FindBlockById(inputPort->GetOwnerBlock().GetId(), this->simulationBlocks));
+                    currentChain.push_back(connectedBlocks[j]);
                     resultChains.push_back(currentChain);
                     std::cout << "Direct block chain end" << std::endl;
                     continue;
                 }
 
                 // Otherwise, continue the chain with the owner block of the connected input port
-                this->FindChains(ISimulationBlock::FindBlockById(inputPort->GetOwnerBlock().GetId(), this->simulationBlocks), currentChain, resultChains);
+                this->FindChains(connectedBlocks[j], currentChain, resultChains);
             }
         }
     }
@@ -112,9 +130,9 @@ namespace PySysLinkBase
 
         // A lambda to check if all feedthrough inputs of a block are processed
         auto areInputsResolved = [&](const std::shared_ptr<ISimulationBlock>& block) -> bool {
-            for (const auto& inputPort : block->GetInputPorts()) {
-                if (inputPort->HasDirectFeedtrough()) {
-                    auto originBlock = GetOriginBlock(inputPort);
+            for (int i = 0; i < block->GetInputPorts().size(); i++) {
+                if (block->GetInputPorts()[i]->HasDirectFeedtrough()) {
+                    auto originBlock = GetOriginBlock(block, i);
                     if (originBlock && processedBlocks.find(originBlock) == processedBlocks.end()) {
                         // If the origin block isn't processed, inputs are not resolved
                         return false;
@@ -155,11 +173,11 @@ namespace PySysLinkBase
         return orderedBlocks;
     }
 
-    const std::shared_ptr<ISimulationBlock> SimulationModel::GetOriginBlock(const std::shared_ptr<InputPort> sinkPort) const 
+    const std::shared_ptr<ISimulationBlock> SimulationModel::GetOriginBlock(const std::shared_ptr<ISimulationBlock> sinkBlock, int sinkBlockPortIndex) const 
     {
         for (const auto& link : portLinks) {
-            if (link->sink == sinkPort) {
-                return ISimulationBlock::FindBlockById(link->origin->GetOwnerBlock().GetId(), this->simulationBlocks); // Return the block owning the connected output port
+            if (link->sinkBlock == sinkBlock && link->sinkBlockPortIndex == sinkBlockPortIndex) {
+                return link->originBlock;
             }
         }
         return nullptr; // No connection found
@@ -171,157 +189,127 @@ namespace PySysLinkBase
             return sampleTime.GetSampleTimeType() != SampleTimeType::inherited;
         };
 
-        auto canInheritSampleTime = [](const SampleTime& sampleTime, const SampleTimeType& targetType) -> bool {
-            const auto& supportedTypes = sampleTime.GetSupportedSampleTimeTypesForInheritance();
-            return std::find(supportedTypes.begin(), supportedTypes.end(), targetType) != supportedTypes.end();
+        auto areSampleTimesCompatible = [](const SampleTime& st1, const SampleTime& st2) -> bool {
+            if (st1.GetSampleTimeType() == SampleTimeType::constant && st2.GetSampleTimeType() == SampleTimeType::constant) {
+                return true;
+            }
+            if (st1.GetSampleTimeType() == SampleTimeType::continuous && st2.GetSampleTimeType() == SampleTimeType::continuous) {
+                return true;
+            }
+            if (st1.GetSampleTimeType() == SampleTimeType::discrete && st2.GetSampleTimeType() == SampleTimeType::discrete) {
+                double gcdSampleTimeMs = std::gcd(static_cast<int>(st1.GetDiscreteSampleTime()*1000), static_cast<int>(st2.GetDiscreteSampleTime()*1000));
+                return gcdSampleTimeMs > 0;
+            }
+            return false;
         };
 
-        std::unordered_set<std::shared_ptr<ISimulationBlock>> resolvedBlocks;
-        std::unordered_set<std::shared_ptr<ISimulationBlock>> unresolvedBlocks;
-
-        // Initialize the block processing state
-        for (const auto& block : simulationBlocks) {
-            bool isResolved = true;
-            for (const auto& sampleTime : block->GetSampleTimes()) {
-                if (!hasKnownSampleTime(sampleTime)) {
-                    unresolvedBlocks.insert(block);
-                    isResolved = false;
-                    break;
+        auto resolveSampleTime = [](const SampleTime& st1, const SampleTime& st2) -> SampleTime {
+            if (st1.GetSampleTimeType() == SampleTimeType::constant && st2.GetSampleTimeType() == SampleTimeType::constant) {
+                return st1; // Constants resolve to constant
+            }
+            if (st1.GetSampleTimeType() == SampleTimeType::continuous && st2.GetSampleTimeType() == SampleTimeType::continuous) {
+                return st1; // Continuous resolves to continuous
+            }
+            if (st1.GetSampleTimeType() == SampleTimeType::discrete && st2.GetSampleTimeType() == SampleTimeType::discrete) {
+                double gcdSampleTimeMs = std::gcd(static_cast<int>(st1.GetDiscreteSampleTime()*1000), static_cast<int>(st2.GetDiscreteSampleTime()*1000));
+                if (gcdSampleTimeMs > 0) {
+                    return SampleTime(SampleTimeType::discrete, gcdSampleTimeMs/1000);
+                } else {
+                    throw std::runtime_error("Discrete sample times are incompatible: No common multiple found.");
                 }
             }
-            if (isResolved) {
-                resolvedBlocks.insert(block);
-            }
-        }
+            if (st1.GetSampleTimeType() == SampleTimeType::constant) return st2;
+            if (st2.GetSampleTimeType() == SampleTimeType::constant) return st1;
 
-        std::cout << "Start propagation loop" << std::endl;
-        // Propagation loop
+            throw std::runtime_error("Incompatible sample times: Continuous and discrete types cannot mix.");
+        };
+
+        std::cout << "Forward start" << std::endl;
+        // Forward propagation
         bool progressMade = true;
-        while (progressMade) 
-        {
-            std::cout << "Start loop..." << std::endl;
-
+        while (progressMade) {
             progressMade = false;
 
-            // Forward propagation
-            for (const auto& block : resolvedBlocks) {
-                std::cout << "Resolved block: " << block->GetId() << std::endl;
-                for (const auto& outputPort : block->GetOutputPorts()) {
-                    const auto connectedPorts = GetConnectedPorts(outputPort);
-                    for (const auto& inputPort : connectedPorts) {
-                        std::shared_ptr<ISimulationBlock> targetBlock = ISimulationBlock::FindBlockById(inputPort->GetOwnerBlock().GetId(), this->simulationBlocks);
+            for (const auto& block : simulationBlocks) {
+                bool allInputsResolved = true;
+                std::vector<SampleTime> inputSampleTimes;
 
-                        if (resolvedBlocks.find(targetBlock) == resolvedBlocks.end()) {
-                            std::cout << "Block seems not resolved: " << targetBlock->GetId() << std::endl;
-                            const auto& outputSampleTimes = block->GetSampleTimes();
-                            auto& inputSampleTimes = targetBlock->GetSampleTimes();
+                for (int i = 0; i < block->GetInputPorts().size(); i++) {
+                    const auto originBlock = GetOriginBlock(block, i);
+                    if (!originBlock || !hasKnownSampleTime(originBlock->GetSampleTimes().front())) {
+                        allInputsResolved = false;
+                        break;
+                    }
+                    inputSampleTimes.push_back(originBlock->GetSampleTimes().front());
+                }
 
-                            for (int i = 0; i < inputSampleTimes.size(); ++i) {
-                                if (!hasKnownSampleTime(inputSampleTimes[i])) {
-                                    for (const auto& outputSampleTime : outputSampleTimes) {
-                                        if (canInheritSampleTime(inputSampleTimes[i], outputSampleTime.GetSampleTimeType())) {
-                                            inputSampleTimes.push_back(outputSampleTime);
-                                            progressMade = true;
-                                        }
-                                    }
-                                }
-                            }
-
-                            // Check if the target block is now resolved
-                            bool isNowResolved = true;
-                            for (const auto& sampleTime : targetBlock->GetSampleTimes())
-                            {
-                                if (!hasKnownSampleTime(sampleTime)) {
-                                    isNowResolved = false;
-                                    break;
-                                }
-                            }
-                            for (const auto& outputPort : targetBlock->GetInputPorts()) 
-                            {
-                                if (resolvedBlocks.find(this->GetOriginBlock(outputPort)) == resolvedBlocks.end()) 
-                                {
-                                    isNowResolved = false;
-                                    break;
-                                }
-                            }
-                            if (isNowResolved) {
-                                resolvedBlocks.insert(targetBlock);
-                                unresolvedBlocks.erase(targetBlock);
-                            }
+                if (allInputsResolved) {
+                    const auto& blockSampleTimes = block->GetSampleTimes();
+                    if (blockSampleTimes.front().GetSampleTimeType() == SampleTimeType::inherited) {
+                        SampleTime resolvedSampleTime = inputSampleTimes.front();
+                        for (const auto& inputSampleTime : inputSampleTimes) {
+                            resolvedSampleTime = resolveSampleTime(resolvedSampleTime, inputSampleTime);
                         }
+                        block->GetSampleTimes().front() = resolvedSampleTime;
+                        progressMade = true;
                     }
                 }
             }
-            std::cout << "Start backward..." << std::endl;
-
-            // Backward propagation
-            for (const auto& block : unresolvedBlocks) {
-                std::cout << "Some block..." << block->GetId() << std::endl;
-                const auto& inputPorts = block->GetInputPorts();
-                for (const auto& inputPort : inputPorts) {
-                    const auto originBlock = GetOriginBlock(inputPort);
-                    std::cout << "Some input port..." << std::endl;
-                    if (originBlock && resolvedBlocks.find(originBlock) == resolvedBlocks.end()) {
-                        std::cout << "Seems like unresolved..." << std::endl;
-
-                        auto& blockSampleTimes = block->GetSampleTimes();
-                        const auto& originSampleTimes = originBlock->GetSampleTimes();
-
-                        for (size_t i = 0; i < blockSampleTimes.size(); ++i) {
-                            if (!hasKnownSampleTime(blockSampleTimes[i])) {
-                                for (const auto& originSampleTime : originSampleTimes) {
-                                    if (canInheritSampleTime(blockSampleTimes[i], originSampleTime.GetSampleTimeType())) {
-                                        blockSampleTimes.push_back(originSampleTime);
-                                        progressMade = true;
-                                    }
-                                }
-                            }
-                        }
-                        std::cout << "Is block resolved?" << std::endl;
-                        // Re-check if the block is now resolved
-                        bool isNowResolved = true;
-                        for (const auto& sampleTime : blockSampleTimes) {
-                            if (!hasKnownSampleTime(sampleTime)) {
-                                isNowResolved = false;
-                                break;
-                            }
-                        }
-                        if (isNowResolved) {
-                            resolvedBlocks.insert(block);
-                            unresolvedBlocks.erase(block);
-                        }
-                    }
-                }
-            }
-            std::cout << "Backward end..." << std::endl;
-
         }
+
+        std::cout << "Backward start" << std::endl;
+
+        // Backward propagation
+        progressMade = true;
+        while (progressMade) {
+            progressMade = false;
+
+            for (const auto& block : simulationBlocks) {
+                bool allOutputsResolved = true;
+                std::vector<SampleTime> outputSampleTimes;
+
+                std::cout << "Start working with block: " << block->GetId() << std::endl;
+                for (int i = 0; i < block->GetOutputPorts().size(); i++) {
+                    const std::pair<std::vector<std::shared_ptr<ISimulationBlock>>, std::vector<int>> connectedBlocksInfoPair = this->GetConnectedBlocks(block, i);
+                    const std::vector<std::shared_ptr<ISimulationBlock>> connectedBlocks = connectedBlocksInfoPair.first;
+                    const std::vector<int> connectedPortIndexes = connectedBlocksInfoPair.second;
+                    for (int j = 0; j < connectedBlocks.size(); j++) {
+                        if (!connectedBlocks[j] || !hasKnownSampleTime(connectedBlocks[j]->GetSampleTimes().front())) {
+                            allOutputsResolved = false;
+                            break;
+                        }
+                        outputSampleTimes.push_back(connectedBlocks[j]->GetSampleTimes().front());
+                    }
+                }
+
+                if (allOutputsResolved) {
+                    std::cout << "Start propagating with block: " << block->GetId() << std::endl;
+
+                    const auto& blockSampleTimes = block->GetSampleTimes();
+                    std::cout << "Sample times lenght" << blockSampleTimes.size() << std::endl;
+                    if (blockSampleTimes.front().GetSampleTimeType() == SampleTimeType::inherited) {
+                        SampleTime resolvedSampleTime = outputSampleTimes.front();
+                        for (const auto& outputSampleTime : outputSampleTimes) {
+                            resolvedSampleTime = resolveSampleTime(resolvedSampleTime, outputSampleTime);
+                        }
+                        block->GetSampleTimes().front() = resolvedSampleTime;
+                        progressMade = true;
+                    }
+                }
+            }
+        }
+        std::cout << "Validation start" << std::endl;
 
         // Final validation
-        if (!unresolvedBlocks.empty()) {
-            for (const auto& block : resolvedBlocks)
-            {
-                std::cout << "Resolved block: " << block->GetId() << std::endl;
+        for (const auto& block : simulationBlocks) {
+            for (const auto& sampleTime : block->GetSampleTimes()) {
+                if (!hasKnownSampleTime(sampleTime)) {
+                    throw std::runtime_error("Sample time propagation failed: Unresolved sample times remain.");
+                }
             }
-            for (const auto& block : unresolvedBlocks)
-            {
-                std::cout << "Unresolved block: " << block->GetId() << std::endl;
-            }
-            throw std::runtime_error("Sample time propagation failed: Unresolved sample times remain.");
         }
+}
 
-        // // Optional: Validate compatibility across links
-        // for (const auto& link : portLinks) {
-        //     const auto& originSampleTimes = link->origin->GetOwnerBlock().GetSampleTimes();
-        //     const auto& sinkSampleTimes = link->sink->GetOwnerBlock().GetSampleTimes();
-
-        //     for (size_t i = 0; i < originSampleTimes.size(); ++i) {
-        //         if (originSampleTimes[i].GetSampleTimeType() != sinkSampleTimes[i].GetSampleTimeType()) {
-        //             throw std::runtime_error("Sample time mismatch detected between connected blocks.");
-        //         }
-        //     }
-        // }
-    }
 
 
 } // namespace PySysLinkBase

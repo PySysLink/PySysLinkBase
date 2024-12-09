@@ -5,15 +5,10 @@
 
 namespace PySysLinkBase
 {
-    Port::Port(std::unique_ptr<UnknownTypeSignalValue> value, ISimulationBlock& ownerBlock) : 
-        value(std::move(value)), ownerBlock(ownerBlock)
+    Port::Port(std::unique_ptr<UnknownTypeSignalValue> value) : 
+        value(std::move(value))
     {
 
-    }
-
-    ISimulationBlock& Port::GetOwnerBlock() const
-    {
-        return this->ownerBlock;
     }
 
 

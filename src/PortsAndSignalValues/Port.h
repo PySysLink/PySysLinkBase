@@ -14,13 +14,10 @@ namespace PySysLinkBase
     class Port {
     protected:
         std::unique_ptr<UnknownTypeSignalValue> value;
-        ISimulationBlock& ownerBlock;
     public:
-        Port(std::unique_ptr<UnknownTypeSignalValue> value, ISimulationBlock& ownerBlock);
+        Port(std::unique_ptr<UnknownTypeSignalValue> value);
 
         void TryCopyValueToPort(Port& otherPort) const;
-
-        ISimulationBlock& GetOwnerBlock() const;
 
         void SetValue(std::unique_ptr<UnknownTypeSignalValue> value);
         std::unique_ptr<UnknownTypeSignalValue> GetValue() const;

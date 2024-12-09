@@ -38,9 +38,9 @@ namespace PySysLinkBase
 
             std::cout << "Configurations parsed" << std::endl;
 
-            std::vector<std::unique_ptr<ISimulationBlock>> blocks = ModelParser::ParseBlocks(blocksConfigurations, blockFactories);
+            std::vector<std::shared_ptr<ISimulationBlock>> blocks = ModelParser::ParseBlocks(blocksConfigurations, blockFactories);
             std::cout << "Blocks parsed" << std::endl;
-            std::vector<std::unique_ptr<PortLink>> links = ModelParser::ParseLinks(linksConfigurations, blocks);
+            std::vector<std::shared_ptr<PortLink>> links = ModelParser::ParseLinks(linksConfigurations, blocks);
             
             std::cout << "Blocks and links parsed" << std::endl;
 
@@ -163,9 +163,9 @@ namespace PySysLinkBase
     }
 
     
-    std::vector<std::unique_ptr<PortLink>> ModelParser::ParseLinks(std::vector<std::map<std::string, ConfigurationValue>> linksConfigurations, const std::vector<std::unique_ptr<ISimulationBlock>>& blocks)
+    std::vector<std::shared_ptr<PortLink>> ModelParser::ParseLinks(std::vector<std::map<std::string, ConfigurationValue>> linksConfigurations, const std::vector<std::shared_ptr<ISimulationBlock>>& blocks)
     {
-        std::vector<std::unique_ptr<PortLink>> links = {};
+        std::vector<std::shared_ptr<PortLink>> links = {};
         for (int i = 0; i < linksConfigurations.size(); i++)
         {
             links.push_back(std::make_unique<PortLink>(PortLink::ParseFromConfig(linksConfigurations[i], blocks)));
@@ -173,9 +173,9 @@ namespace PySysLinkBase
         return links;
     }
 
-    std::vector<std::unique_ptr<ISimulationBlock>> ModelParser::ParseBlocks(std::vector<std::map<std::string, ConfigurationValue>> blocksConfigurations, const std::map<std::string, std::unique_ptr<IBlockFactory>>& blockFactories)
+    std::vector<std::shared_ptr<ISimulationBlock>> ModelParser::ParseBlocks(std::vector<std::map<std::string, ConfigurationValue>> blocksConfigurations, const std::map<std::string, std::unique_ptr<IBlockFactory>>& blockFactories)
     {
-        std::vector<std::unique_ptr<ISimulationBlock>> blocks = {};
+        std::vector<std::shared_ptr<ISimulationBlock>> blocks = {};
         for (int i = 0; i < blocksConfigurations.size(); i++)
         {
             std::string blockType = ConfigurationValueManager::TryGetConfigurationValue<std::string>("BlockType", blocksConfigurations[i]);

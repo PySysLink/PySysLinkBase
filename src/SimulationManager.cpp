@@ -56,33 +56,31 @@ namespace PySysLinkBase
         {
             std::cout << "Processing block: " << block->GetId() << std::endl;
             block->ComputeOutputsOfBlock(*constantSampleTime);
-            for (auto& outputPort : block->GetOutputPorts())
+            for (int i = 0; i < block->GetOutputPorts().size(); i++)
             {
                 std::cout << "Output port processing..." << std::endl;
 
-                for (auto& connectedPort : simulationModel->GetConnectedPorts(outputPort))
+                for (auto& connectedPort : simulationModel->GetConnectedPorts(block, i))
                 {
-                    std::cout << "Try copy to port: " << connectedPort->GetOwnerBlock().GetId() << std::endl;
-                    outputPort->TryCopyValueToPort(*connectedPort);
+                    block->GetOutputPorts()[i]->TryCopyValueToPort(*connectedPort);
                 }
             }
         }
 
-        std::vector<double> timeHits = {0, 1, 2, 3, 4, 5, 6, 7};
+        std::vector<double> timeHits = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
         for (const auto& timeHit : timeHits)
         {
             for (auto& block : blocksForEachDiscreteSampleTime[currentSampleTime])
             {
                 std::cout << "Processing block: " << block->GetId() << std::endl;
                 block->ComputeOutputsOfBlock(*constantSampleTime);
-                for (auto& outputPort : block->GetOutputPorts())
+                for (int i = 0; i < block->GetOutputPorts().size(); i++)
                 {
                     std::cout << "Output port processing..." << std::endl;
 
-                    for (auto& connectedPort : simulationModel->GetConnectedPorts(outputPort))
+                    for (auto& connectedPort : simulationModel->GetConnectedPorts(block, i))
                     {
-                        std::cout << "Try copy to port: " << connectedPort->GetOwnerBlock().GetId() << std::endl;
-                        outputPort->TryCopyValueToPort(*connectedPort);
+                        block->GetOutputPorts()[i]->TryCopyValueToPort(*connectedPort);
                     }
                 }
             }

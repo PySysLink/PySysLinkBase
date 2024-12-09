@@ -71,4 +71,16 @@ namespace PySysLinkBase
         }
     }
 
+    bool ISimulationBlock::IsInputDirectBlockChainEnd(int inputIndex) const
+    {
+        if (this->GetOutputPorts().size() == 0 || !this->GetInputPorts()[inputIndex]->HasDirectFeedtrough())
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    } 
+
 } // namespace PySysLinkBase

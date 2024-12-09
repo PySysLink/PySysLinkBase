@@ -36,6 +36,8 @@ namespace PySysLinkBase
         static std::shared_ptr<ISimulationBlock> FindBlockById(std::string id, const std::vector<std::shared_ptr<ISimulationBlock>>& blocksToFind);
 
         bool IsBlockFreeSource() const;
+
+        bool IsInputDirectBlockChainEnd(int inputIndex) const;
     };
 }
 

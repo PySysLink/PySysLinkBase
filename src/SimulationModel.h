@@ -16,10 +16,11 @@ namespace PySysLinkBase
         std::vector<std::shared_ptr<ISimulationBlock>> simulationBlocks;
         std::vector<std::shared_ptr<PortLink>> portLinks;
         
-        SimulationModel(std::vector<std::unique_ptr<ISimulationBlock>> simulationBlocks, std::vector<std::unique_ptr<PortLink>> portLinks);
+        SimulationModel(std::vector<std::shared_ptr<ISimulationBlock>> simulationBlocks, std::vector<std::shared_ptr<PortLink>> portLinks);
 
-        const std::vector<std::shared_ptr<InputPort>> GetConnectedPorts(const std::shared_ptr<OutputPort> origin) const;
-        const std::shared_ptr<ISimulationBlock> GetOriginBlock(const std::shared_ptr<InputPort> sinkPort) const;
+        const std::vector<std::shared_ptr<InputPort>> GetConnectedPorts(const std::shared_ptr<ISimulationBlock> originBlock, int outputPortIndex) const;
+        const std::pair<std::vector<std::shared_ptr<ISimulationBlock>>, std::vector<int>> GetConnectedBlocks(const std::shared_ptr<ISimulationBlock> originBlock, int outputPortIndex) const;
+        const std::shared_ptr<ISimulationBlock> GetOriginBlock(const std::shared_ptr<ISimulationBlock> sinkBlock, int inputPortIndex) const;
 
         const std::vector<std::vector<std::shared_ptr<ISimulationBlock>>> GetDirectBlockChains();
 

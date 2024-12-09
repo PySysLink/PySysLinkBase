@@ -13,13 +13,13 @@ Blocks:
     Gains:
       - 1.0
       - 1.0
-      - -0.1
+      - 0.1
   - Id: sum3
     Name: Second sumator
     BlockType: BasicCpp
     BlockClass: BasicBlocks/Sumator
     Gains:
-      - 1.0
+      - -0.11
       - 1.0
   - Id: const1
     Name: Operand 1
@@ -73,6 +73,12 @@ Links:
     SourcePortIdx: 0
     DestinationBlockId: sum2
     DestinationPortIdx: 1
+  - Id: link5
+    Name: link3
+    SourceBlockId: sum3
+    SourcePortIdx: 0
+    DestinationBlockId: sum2
+    DestinationPortIdx: 2
   - Id: link6
     Name: link3
     SourceBlockId: sum3
@@ -88,7 +94,7 @@ Links:
 
   - Id: link8
     Name: link3
-    SourceBlockId: acumulator1
+    SourceBlockId: const1
     SourcePortIdx: 0
     DestinationBlockId: sum3
     DestinationPortIdx: 1

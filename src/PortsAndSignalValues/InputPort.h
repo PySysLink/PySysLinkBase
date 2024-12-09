@@ -1,5 +1,5 @@
-#ifndef PY_SYS_LINK_BASE_PORTS_AND_SIGNAL_VALUES_INPUT_PORT
-#define PY_SYS_LINK_BASE_PORTS_AND_SIGNAL_VALUES_INPUT_PORT
+#ifndef SRC_PORTS_AND_SIGNAL_VALUES_INPUT_PORT
+#define SRC_PORTS_AND_SIGNAL_VALUES_INPUT_PORT
 
 #include "Port.h"
 
@@ -9,11 +9,9 @@ namespace PySysLinkBase
     private:
         bool hasDirectFeedthrough;
     public:
-        InputPort(bool hasDirectFeedthrough, std::unique_ptr<UnknownTypeSignalValue> value, ISimulationBlock& ownerBlock);
+        InputPort(bool hasDirectFeedthrough, std::unique_ptr<UnknownTypeSignalValue> value);
         const bool HasDirectFeedtrough() const;    
-
-        bool IsInputDirectBlockChainEnd() const;    
     };
 }
 
-#endif /* PY_SYS_LINK_BASE_PORTS_AND_SIGNAL_VALUES_INPUT_PORT */
+#endif /* SRC_PORTS_AND_SIGNAL_VALUES_INPUT_PORT */
