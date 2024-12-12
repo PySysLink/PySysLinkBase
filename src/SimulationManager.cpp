@@ -10,7 +10,7 @@ namespace PySysLinkBase
 
         std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>> orderedBlocks = simulationModel->OrderBlockChainsOntoFreeOrder(blockChains);
         
-        std::unique_ptr<SampleTime> constantSampleTime = std::make_unique<SampleTime>(SampleTimeType::constant);
+        std::shared_ptr<SampleTime> constantSampleTime = std::make_unique<SampleTime>(SampleTimeType::constant);
 
         std::vector<std::shared_ptr<SampleTime>> discreteSampleTimes = {};
         std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>> blocksForEachDiscreteSampleTime = {};
@@ -19,35 +19,31 @@ namespace PySysLinkBase
         std::vector<std::shared_ptr<ISimulationBlock>> blocksWithConstantSampleTime = {};
         for (const auto& block : orderedBlocks)
         {
-            std::vector<SampleTime>& sampleTimesOnBlock = block->GetSampleTimes();
-            for (const auto& sampleTimeOnBlock : sampleTimesOnBlock)
+            if (block->GetSampleTime()->GetSampleTimeType() == SampleTimeType::discrete)
             {
-                if (sampleTimeOnBlock.GetSampleTimeType() == SampleTimeType::discrete)
+                bool isAlreadyOnDiscreteSampleTimes = false;
+                for (const auto& discreteSampleTime : discreteSampleTimes)
                 {
-                    bool isAlreadyOnDiscreteSampleTimes = false;
-                    for (const auto& discreteSampleTime : discreteSampleTimes)
+                    if (discreteSampleTime->GetDiscreteSampleTime() == block->GetSampleTime()->GetDiscreteSampleTime())
                     {
-                        if (discreteSampleTime->GetDiscreteSampleTime() == sampleTimeOnBlock.GetDiscreteSampleTime())
-                        {
-                            isAlreadyOnDiscreteSampleTimes = true;
-                        }
+                        isAlreadyOnDiscreteSampleTimes = true;
                     }
-                    // std::shared_ptr<SampleTime> currentSampleTime = std::make_unique<SampleTime>(SampleTimeType::discrete, sampleTimeOnBlock.GetDiscreteSampleTime());
+                }
+                // std::shared_ptr<SampleTime> currentSampleTime = std::make_unique<SampleTime>(SampleTimeType::discrete, sampleTimeOnBlock.GetDiscreteSampleTime());
 
-                    if (!isAlreadyOnDiscreteSampleTimes)
-                    {
-                        discreteSampleTimes.push_back(currentSampleTime);
-                        blocksForEachDiscreteSampleTime.insert({currentSampleTime, std::vector<std::shared_ptr<ISimulationBlock>>({block})});
-                    }
-                    else
-                    {
-                        blocksForEachDiscreteSampleTime[currentSampleTime].push_back(block);
-                    }
-                }
-                else if (sampleTimeOnBlock.GetSampleTimeType() == SampleTimeType::constant)
+                if (!isAlreadyOnDiscreteSampleTimes)
                 {
-                    blocksWithConstantSampleTime.push_back(block);
+                    discreteSampleTimes.push_back(currentSampleTime);
+                    blocksForEachDiscreteSampleTime.insert({currentSampleTime, std::vector<std::shared_ptr<ISimulationBlock>>({block})});
                 }
+                else
+                {
+                    blocksForEachDiscreteSampleTime[currentSampleTime].push_back(block);
+                }
+            }
+            else if (block->GetSampleTime()->GetSampleTimeType() == SampleTimeType::constant)
+            {
+                blocksWithConstantSampleTime.push_back(block);
             }
         }
 
@@ -55,7 +51,7 @@ namespace PySysLinkBase
         for (auto& block : blocksWithConstantSampleTime)
         {
             std::cout << "Processing block: " << block->GetId() << std::endl;
-            block->ComputeOutputsOfBlock(*constantSampleTime);
+            block->ComputeOutputsOfBlock(constantSampleTime);
             for (int i = 0; i < block->GetOutputPorts().size(); i++)
             {
                 std::cout << "Output port processing..." << std::endl;
@@ -73,7 +69,7 @@ namespace PySysLinkBase
             for (auto& block : blocksForEachDiscreteSampleTime[currentSampleTime])
             {
                 std::cout << "Processing block: " << block->GetId() << std::endl;
-                block->ComputeOutputsOfBlock(*constantSampleTime);
+                block->ComputeOutputsOfBlock(constantSampleTime);
                 for (int i = 0; i < block->GetOutputPorts().size(); i++)
                 {
                     std::cout << "Output port processing..." << std::endl;

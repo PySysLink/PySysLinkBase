@@ -185,8 +185,8 @@ namespace PySysLinkBase
 
     void SimulationModel::PropagateSampleTimes() {
         // Helper lambdas
-        auto hasKnownSampleTime = [](const SampleTime& sampleTime) -> bool {
-            return sampleTime.GetSampleTimeType() != SampleTimeType::inherited;
+        auto hasKnownSampleTime = [](const std::shared_ptr<SampleTime> sampleTime) -> bool {
+            return sampleTime->GetSampleTimeType() != SampleTimeType::inherited;
         };
 
         auto areSampleTimesCompatible = [](const SampleTime& st1, const SampleTime& st2) -> bool {
@@ -203,23 +203,23 @@ namespace PySysLinkBase
             return false;
         };
 
-        auto resolveSampleTime = [](const SampleTime& st1, const SampleTime& st2) -> SampleTime {
-            if (st1.GetSampleTimeType() == SampleTimeType::constant && st2.GetSampleTimeType() == SampleTimeType::constant) {
+        auto resolveSampleTime = [](const std::shared_ptr<SampleTime> st1, const std::shared_ptr<SampleTime> st2) -> std::shared_ptr<SampleTime> {
+            if (st1->GetSampleTimeType() == SampleTimeType::constant && st2->GetSampleTimeType() == SampleTimeType::constant) {
                 return st1; // Constants resolve to constant
             }
-            if (st1.GetSampleTimeType() == SampleTimeType::continuous && st2.GetSampleTimeType() == SampleTimeType::continuous) {
+            if (st1->GetSampleTimeType() == SampleTimeType::continuous && st2->GetSampleTimeType() == SampleTimeType::continuous) {
                 return st1; // Continuous resolves to continuous
             }
-            if (st1.GetSampleTimeType() == SampleTimeType::discrete && st2.GetSampleTimeType() == SampleTimeType::discrete) {
-                double gcdSampleTimeMs = std::gcd(static_cast<int>(st1.GetDiscreteSampleTime()*1000), static_cast<int>(st2.GetDiscreteSampleTime()*1000));
+            if (st1->GetSampleTimeType() == SampleTimeType::discrete && st2->GetSampleTimeType() == SampleTimeType::discrete) {
+                double gcdSampleTimeMs = std::gcd(static_cast<int>(st1->GetDiscreteSampleTime()*1000), static_cast<int>(st2->GetDiscreteSampleTime()*1000));
                 if (gcdSampleTimeMs > 0) {
-                    return SampleTime(SampleTimeType::discrete, gcdSampleTimeMs/1000);
+                    return std::make_shared<SampleTime>(SampleTimeType::discrete, gcdSampleTimeMs/1000);
                 } else {
                     throw std::runtime_error("Discrete sample times are incompatible: No common multiple found.");
                 }
             }
-            if (st1.GetSampleTimeType() == SampleTimeType::constant) return st2;
-            if (st2.GetSampleTimeType() == SampleTimeType::constant) return st1;
+            if (st1->GetSampleTimeType() == SampleTimeType::constant) return st2;
+            if (st2->GetSampleTimeType() == SampleTimeType::constant) return st1;
 
             throw std::runtime_error("Incompatible sample times: Continuous and discrete types cannot mix.");
         };
@@ -232,25 +232,27 @@ namespace PySysLinkBase
 
             for (const auto& block : simulationBlocks) {
                 bool allInputsResolved = true;
-                std::vector<SampleTime> inputSampleTimes;
+                std::vector<std::shared_ptr<SampleTime>> inputSampleTimes;
 
                 for (int i = 0; i < block->GetInputPorts().size(); i++) {
                     const auto originBlock = GetOriginBlock(block, i);
-                    if (!originBlock || !hasKnownSampleTime(originBlock->GetSampleTimes().front())) {
+                    if (!originBlock || !hasKnownSampleTime(originBlock->GetSampleTime())) {
                         allInputsResolved = false;
                         break;
                     }
-                    inputSampleTimes.push_back(originBlock->GetSampleTimes().front());
+                    inputSampleTimes.push_back(originBlock->GetSampleTime());
                 }
 
                 if (allInputsResolved) {
-                    const auto& blockSampleTimes = block->GetSampleTimes();
-                    if (blockSampleTimes.front().GetSampleTimeType() == SampleTimeType::inherited) {
-                        SampleTime resolvedSampleTime = inputSampleTimes.front();
+                    std::cout << "All inputs resolved for block: " << block->GetId() << std::endl;
+                    const std::shared_ptr<SampleTime> blockSampleTime = block->GetSampleTime();
+                    if (blockSampleTime->GetSampleTimeType() == SampleTimeType::inherited) {
+                        std::cout << "Inherited sample time" << std::endl;
+                        std::shared_ptr<SampleTime> resolvedSampleTime = inputSampleTimes.front();
                         for (const auto& inputSampleTime : inputSampleTimes) {
                             resolvedSampleTime = resolveSampleTime(resolvedSampleTime, inputSampleTime);
                         }
-                        block->GetSampleTimes().front() = resolvedSampleTime;
+                        block->SetSampleTime(resolvedSampleTime);
                         progressMade = true;
                     }
                 }
@@ -266,7 +268,7 @@ namespace PySysLinkBase
 
             for (const auto& block : simulationBlocks) {
                 bool allOutputsResolved = true;
-                std::vector<SampleTime> outputSampleTimes;
+                std::vector<std::shared_ptr<SampleTime>> outputSampleTimes;
 
                 std::cout << "Start working with block: " << block->GetId() << std::endl;
                 for (int i = 0; i < block->GetOutputPorts().size(); i++) {
@@ -274,25 +276,25 @@ namespace PySysLinkBase
                     const std::vector<std::shared_ptr<ISimulationBlock>> connectedBlocks = connectedBlocksInfoPair.first;
                     const std::vector<int> connectedPortIndexes = connectedBlocksInfoPair.second;
                     for (int j = 0; j < connectedBlocks.size(); j++) {
-                        if (!connectedBlocks[j] || !hasKnownSampleTime(connectedBlocks[j]->GetSampleTimes().front())) {
+                        if (!connectedBlocks[j] || !hasKnownSampleTime(connectedBlocks[j]->GetSampleTime())) {
                             allOutputsResolved = false;
                             break;
                         }
-                        outputSampleTimes.push_back(connectedBlocks[j]->GetSampleTimes().front());
+                        outputSampleTimes.push_back(connectedBlocks[j]->GetSampleTime());
                     }
                 }
 
                 if (allOutputsResolved) {
                     std::cout << "Start propagating with block: " << block->GetId() << std::endl;
 
-                    const auto& blockSampleTimes = block->GetSampleTimes();
-                    std::cout << "Sample times lenght" << blockSampleTimes.size() << std::endl;
-                    if (blockSampleTimes.front().GetSampleTimeType() == SampleTimeType::inherited) {
-                        SampleTime resolvedSampleTime = outputSampleTimes.front();
+                    const std::shared_ptr<SampleTime> blockSampleTime = block->GetSampleTime();
+                    std::cout << "Sample time type: " << blockSampleTime->GetSampleTimeType() << std::endl;
+                    if (blockSampleTime->GetSampleTimeType() == SampleTimeType::inherited) {
+                        std::shared_ptr<SampleTime> resolvedSampleTime = outputSampleTimes.front();
                         for (const auto& outputSampleTime : outputSampleTimes) {
                             resolvedSampleTime = resolveSampleTime(resolvedSampleTime, outputSampleTime);
                         }
-                        block->GetSampleTimes().front() = resolvedSampleTime;
+                        block->GetSampleTime() = resolvedSampleTime;
                         progressMade = true;
                     }
                 }
@@ -302,13 +304,11 @@ namespace PySysLinkBase
 
         // Final validation
         for (const auto& block : simulationBlocks) {
-            for (const auto& sampleTime : block->GetSampleTimes()) {
-                if (!hasKnownSampleTime(sampleTime)) {
-                    throw std::runtime_error("Sample time propagation failed: Unresolved sample times remain.");
-                }
+            if (!hasKnownSampleTime(block->GetSampleTime())) {
+                throw std::runtime_error("Sample time propagation failed: Unresolved sample times remain.");
             }
         }
-}
+    }
 
 
 

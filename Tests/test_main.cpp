@@ -33,8 +33,7 @@ int main() {
     for (int i = 0; i < orderedBlocks.size(); i++)
     {
         std::cout << orderedBlocks[i]->GetId() << std::endl;
-        std::cout << orderedBlocks[i]->GetSampleTimes().size() << std::endl;
-        std::cout << orderedBlocks[i]->GetSampleTimes()[0].GetSampleTimeType() << std::endl;
+        std::cout << orderedBlocks[i]->GetSampleTime()->GetSampleTimeType() << std::endl;
     }
 
     simulationModel->PropagateSampleTimes();
@@ -42,8 +41,7 @@ int main() {
     for (int i = 0; i < orderedBlocks.size(); i++)
     {
         std::cout << orderedBlocks[i]->GetId() << std::endl;
-        std::cout << orderedBlocks[i]->GetSampleTimes().size() << std::endl;
-        std::cout << orderedBlocks[i]->GetSampleTimes()[0].GetSampleTimeType() << std::endl;
+        std::cout << orderedBlocks[i]->GetSampleTime()->GetSampleTimeType() << std::endl;
     }
 
     std::unique_ptr<PySysLinkBase::SimulationManager> simulationManager = std::make_unique<PySysLinkBase::SimulationManager>();
