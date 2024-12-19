@@ -1,14 +1,19 @@
-#include <PySysLinkBase/SimulationModel.h>
-#include <PySysLinkBase/ModelParser.h>
-#include <PySysLinkBase/ISimulationBlock.h>
-#include <PySysLinkBase/PortLink.h>
-#include <PySysLinkBase/IBlockFactory.h>
-#include <PySysLinkBase/BlockTypeSupportPlugingLoader.h>
-#include <PySysLinkBase/SimulationManager.h>
+#include "PySysLinkBase/SimulationModel.h"
+#include "PySysLinkBase/ModelParser.h"
+#include "PySysLinkBase/ISimulationBlock.h"
+#include "PySysLinkBase/PortLink.h"
+#include "PySysLinkBase/IBlockFactory.h"
+#include "PySysLinkBase/BlockTypeSupportPlugingLoader.h"
+#include "PySysLinkBase/SimulationManager.h"
+#include "PySysLinkBase/SpdlogManager.h"
 #include <iostream>
 #include <map>
 
 int main() {
+
+    PySysLinkBase::SpdlogManager::ConfigureDefaultLogger();
+    PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::debug);
+    
     std::unique_ptr<PySysLinkBase::BlockTypeSupportPlugingLoader> plugingLoader = std::make_unique<PySysLinkBase::BlockTypeSupportPlugingLoader>();
 
     std::map<std::string, std::unique_ptr<PySysLinkBase::IBlockFactory>> blockFactories = plugingLoader->LoadPlugins("/usr/local/lib");

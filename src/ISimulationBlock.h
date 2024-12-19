@@ -11,10 +11,14 @@
 #include <stdexcept>
 #include <map>
 #include "ConfigurationValue.h"
+#include "BlockEvents/BlockEvent.h"
+#include "BlockEventsHandler.h"
 
 namespace PySysLinkBase
 {
     class ISimulationBlock {
+    private:
+        std::shared_ptr<BlockEventsHandler> blockEventsHandler;
     protected:
         std::string name;
         std::string id;
@@ -22,7 +26,7 @@ namespace PySysLinkBase
         const std::string GetId() const;
         const std::string GetName() const;
 
-        ISimulationBlock(std::map<std::string, ConfigurationValue> blockConfiguration);
+        ISimulationBlock(std::map<std::string, ConfigurationValue> blockConfiguration, std::shared_ptr<BlockEventsHandler> blockEventsHandler);
         virtual ~ISimulationBlock() = default;
 
         virtual std::shared_ptr<SampleTime> GetSampleTime() = 0;
@@ -39,6 +43,8 @@ namespace PySysLinkBase
         bool IsBlockFreeSource() const;
 
         bool IsInputDirectBlockChainEnd(int inputIndex) const;
+
+        void NotifyEvent(std::shared_ptr<PySysLinkBase::BlockEvent> blockEvent) const;
     };
 }
 

@@ -3,6 +3,8 @@
 
 #include <cmath>
 #include <vector>
+#include <limits>
+#include <string>
 
 namespace PySysLinkBase
 {
@@ -35,8 +37,9 @@ namespace PySysLinkBase
             const double GetDiscreteSampleTime() const;
             const int GetContinuousSampleTimeGroup() const;
             const std::vector<SampleTimeType> GetSupportedSampleTimeTypesForInheritance() const;
+
+            static std::string SampleTimeTypeString(SampleTimeType sampleTimeType);
     };
 }
-
 
 #endif /* PY_SYS_LINK_BASE_SAMPLE_TIME */

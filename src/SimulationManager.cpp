@@ -1,5 +1,5 @@
 #include "SimulationManager.h"
-#include <iostream>
+#include "spdlog/spdlog.h"
 
 namespace PySysLinkBase
 {
@@ -47,14 +47,14 @@ namespace PySysLinkBase
             }
         }
 
-        std::cout << "Simulation start" << std::endl;
+        spdlog::get("default_pysyslink")->debug("Simulation start");
         for (auto& block : blocksWithConstantSampleTime)
         {
-            std::cout << "Processing block: " << block->GetId() << std::endl;
+            spdlog::get("default_pysyslink")->debug("Processing block: {}", block->GetId());
             block->ComputeOutputsOfBlock(constantSampleTime);
             for (int i = 0; i < block->GetOutputPorts().size(); i++)
             {
-                std::cout << "Output port processing..." << std::endl;
+                spdlog::get("default_pysyslink")->debug("Output port processing...");
 
                 for (auto& connectedPort : simulationModel->GetConnectedPorts(block, i))
                 {
@@ -68,11 +68,11 @@ namespace PySysLinkBase
         {
             for (auto& block : blocksForEachDiscreteSampleTime[currentSampleTime])
             {
-                std::cout << "Processing block: " << block->GetId() << std::endl;
+                spdlog::get("default_pysyslink")->debug("Processing block: ", block->GetId());
                 block->ComputeOutputsOfBlock(constantSampleTime);
                 for (int i = 0; i < block->GetOutputPorts().size(); i++)
                 {
-                    std::cout << "Output port processing..." << std::endl;
+                    spdlog::get("default_pysyslink")->debug("Output port processing...");
 
                     for (auto& connectedPort : simulationModel->GetConnectedPorts(block, i))
                     {

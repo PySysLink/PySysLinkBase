@@ -3,8 +3,10 @@ add_executable(PySysLinkTests test_main.cpp)
 
 
 # Include directories
-target_include_directories(PySysLinkTests PRIVATE ${CMAKE_SOURCE_DIR}/Tests)
-target_include_directories(PySysLinkTests PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_include_directories(PySysLinkTests PRIVATE 
+    ${CMAKE_SOURCE_DIR}/src # Source headers
+    ${CMAKE_SOURCE_DIR}/Tests # Test-specific headers
+)
 
 # Link the main project (if necessary)
 target_link_libraries(PySysLinkTests PRIVATE PySysLinkBase)
@@ -13,6 +15,11 @@ target_link_libraries(PySysLinkTests PRIVATE PySysLinkBase)
 # Example: Linking with GoogleTest
 # find_package(GTest REQUIRED)
 # target_link_libraries(MyCppTests PRIVATE GTest::GTest GTest::Main)
+
+set_target_properties(PySysLinkTests PROPERTIES
+    BUILD_RPATH "$ORIGIN/../src" # Ensure runtime lookup prioritizes local build
+    INSTALL_RPATH "$ORIGIN/../src"
+)
 
 # Add a test for CTest
 enable_testing()

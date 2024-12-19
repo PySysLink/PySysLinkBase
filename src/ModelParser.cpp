@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <variant>
 #include "ConfigurationValue.h"
-#include <iostream>
+#include "spdlog/spdlog.h"
 
 namespace PySysLinkBase
 {
@@ -12,7 +12,7 @@ namespace PySysLinkBase
     {
         YAML::Node config = YAML::LoadFile(filename);
        
-        std::cout << "File readed" << std::endl;
+        spdlog::get("default_pysyslink")->debug("File readed: {}", filename);
 
         if (config["Blocks"] && config["Links"]) {
             std::vector<std::map<std::string, ConfigurationValue>> blocksConfigurations = {};
@@ -36,13 +36,13 @@ namespace PySysLinkBase
                 linksConfigurations.push_back(linkConfiguration);
             }
 
-            std::cout << "Configurations parsed" << std::endl;
+            spdlog::get("default_pysyslink")->debug("Configurations parsed");
 
             std::vector<std::shared_ptr<ISimulationBlock>> blocks = ModelParser::ParseBlocks(blocksConfigurations, blockFactories);
-            std::cout << "Blocks parsed" << std::endl;
+            spdlog::get("default_pysyslink")->debug("Blocks parsed");
             std::vector<std::shared_ptr<PortLink>> links = ModelParser::ParseLinks(linksConfigurations, blocks);
             
-            std::cout << "Blocks and links parsed" << std::endl;
+            spdlog::get("default_pysyslink")->debug("Blocks and links parsed");
 
             return SimulationModel(std::move(blocks), std::move(links));
         } 
@@ -179,7 +179,7 @@ namespace PySysLinkBase
         for (int i = 0; i < blocksConfigurations.size(); i++)
         {
             std::string blockType = ConfigurationValueManager::TryGetConfigurationValue<std::string>("BlockType", blocksConfigurations[i]);
-            std::cout << blockType << " being configured..." << std::endl;   
+            spdlog::get("default_pysyslink")->debug("{} being configured...", blockType);   
             auto it = blockFactories.find(blockType);
             if (it == blockFactories.end()) {
                 throw std::invalid_argument("There is no IBlockFactory for block type: " + blockType + ". Is it supported?");

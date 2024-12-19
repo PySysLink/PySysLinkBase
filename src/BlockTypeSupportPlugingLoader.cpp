@@ -1,6 +1,6 @@
 #include "BlockTypeSupportPlugingLoader.h"
 #include <filesystem>
-#include <iostream>
+#include "spdlog/spdlog.h"
 
 namespace PySysLinkBase
 {
@@ -10,21 +10,32 @@ namespace PySysLinkBase
         for (const auto& pluginPath : this->FindSharedLibraries(pluginDirectory)) {
             void* handle = dlopen(pluginPath.c_str(), RTLD_LAZY);
             if (!handle) {
-                std::cerr << "Failed to load plugin: " << pluginPath << std::endl;
-                std::cerr << dlerror() << std::endl;
+                spdlog::get("default_pysyslink")->error("Failed to load plugin: {}", pluginPath);
+                spdlog::get("default_pysyslink")->error(dlerror());
                 continue;
             }
 
-            auto registerFunc = reinterpret_cast<void(*)(std::map<std::string, std::unique_ptr<IBlockFactory>>&)>(dlsym(handle, "RegisterBlockFactories"));
+            auto registerFuncFactory = reinterpret_cast<void(*)(std::map<std::string, std::unique_ptr<IBlockFactory>>&)>(dlsym(handle, "RegisterBlockFactories"));
 
-            if (!registerFunc) {
-                std::cerr << "Failed to find entry point in: " << pluginPath << std::endl;
-                std::cerr << dlerror() << std::endl;
+            if (!registerFuncFactory) {
+                spdlog::get("default_pysyslink")->error("Failed to find RegisterBlockFactories entry point in: ", pluginPath);
+                spdlog::get("default_pysyslink")->error(dlerror());
                 dlclose(handle);
                 continue;
             }
-            std::cout << "Pluging loaded: " << pluginPath << std::endl;
-            registerFunc(factoryRegistry);
+            registerFuncFactory(factoryRegistry);
+
+            auto registerFuncLogger = reinterpret_cast<void(*)(std::shared_ptr<spdlog::logger>)>(dlsym(handle, "RegisterSpdlogLogger"));
+
+            if (!registerFuncLogger) {
+                spdlog::get("default_pysyslink")->error("Failed to find RegisterSpdlogLogger entry point in: ", pluginPath);
+                spdlog::get("default_pysyslink")->error(dlerror());
+                dlclose(handle);
+                continue;
+            }
+            registerFuncLogger(spdlog::get("default_pysyslink"));
+            
+            spdlog::get("default_pysyslink")->debug("Pluging loaded: ", pluginPath);
         }
         return factoryRegistry;
     }
@@ -46,7 +57,7 @@ namespace PySysLinkBase
                 }
             }
         } catch (const std::filesystem::filesystem_error& e) {
-            std::cerr << "Error accessing directory: " << e.what() << "\n";
+            spdlog::get("default_pysyslink")->error("Error accessing directory: ", e.what());
         }
 
         return sharedLibraries;

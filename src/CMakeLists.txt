@@ -8,6 +8,8 @@ add_library(PySysLinkBase SHARED
     BlockTypeSupportPlugingLoader.cpp
     SimulationManager.cpp
     PortLink.cpp
+    SpdlogManager.cpp
+    BlockEventsHandler.cpp
     PortsAndSignalValues/InputPort.cpp 
     PortsAndSignalValues/OutputPort.cpp 
     PortsAndSignalValues/Port.cpp 
@@ -26,6 +28,20 @@ FetchContent_MakeAvailable(yaml-cpp)
 
 add_dependencies(PySysLinkBase yaml-cpp)
 target_link_libraries(PySysLinkBase PUBLIC yaml-cpp) # The library or executable that require yaml-cpp library
+
+
+FetchContent_Declare(
+        spdlog
+        GIT_REPOSITORY https://github.com/gabime/spdlog.git
+        GIT_TAG        v1.15.0
+)
+
+FetchContent_MakeAvailable(spdlog)
+
+add_dependencies(PySysLinkBase spdlog::spdlog)
+target_link_libraries(PySysLinkBase PRIVATE spdlog::spdlog)
+
+
 # target_include_directories(PySysLinkBase PRIVATE ${yaml-cpp_SOURCE_DIR}/include)
 target_include_directories(PySysLinkBase PUBLIC
     $<BUILD_INTERFACE:${yaml-cpp_SOURCE_DIR}/include>

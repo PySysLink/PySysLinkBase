@@ -2,6 +2,8 @@
 #include <stdexcept>
 #include <algorithm>
 #include <iostream>
+#include "spdlog/fmt/fmt.h"
+#include "spdlog/fmt/bundled/format.h"
 
 namespace PySysLinkBase
 {
@@ -88,4 +90,18 @@ namespace PySysLinkBase
             return this->supportedSampleTimeTypesForInheritance;
         }
     }
+
+    std::string SampleTime::SampleTimeTypeString(SampleTimeType sampleTimeType)
+    {
+        switch (sampleTimeType) 
+        {
+            case PySysLinkBase::continuous: return "Continuous";
+            case PySysLinkBase::discrete:   return "Discrete";
+            case PySysLinkBase::constant:   return "Constant";
+            case PySysLinkBase::inherited:  return "Inherited";
+            case PySysLinkBase::multirate:  return "Multirate";
+            default: return "Unknown";
+        }
+    }
 } // namespace PySysLinkBase
+

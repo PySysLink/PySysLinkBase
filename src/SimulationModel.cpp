@@ -1,8 +1,8 @@
 #include "SimulationModel.h"
 #include <stdexcept>
-#include <iostream>
 #include <unordered_set>
 #include <numeric>
+#include "spdlog/spdlog.h"
 
 namespace PySysLinkBase
 {  
@@ -84,7 +84,7 @@ namespace PySysLinkBase
         if (outputPorts.empty()) 
         {
             // End the chain if the block has no outputs
-            std::cout << "empty end" << std::endl;
+            spdlog::get("default_pysyslink")->debug("Empty end reached");
             resultChains.push_back(currentChain);
             return;
         }
@@ -99,7 +99,7 @@ namespace PySysLinkBase
             if (connectedBlocks.empty()) 
             {
                 // End the chain if the output port has no connections
-                std::cout << "no connection" << std::endl;
+                spdlog::get("default_pysyslink")->debug("No connection found, chain end");
 
                 resultChains.push_back(currentChain);
                 continue;
@@ -113,7 +113,7 @@ namespace PySysLinkBase
                     // End the chain if the connected input port stops direct feedthrough
                     currentChain.push_back(connectedBlocks[j]);
                     resultChains.push_back(currentChain);
-                    std::cout << "Direct block chain end" << std::endl;
+                    spdlog::get("default_pysyslink")->debug("Direct block chain end reached");
                     continue;
                 }
 
@@ -224,7 +224,7 @@ namespace PySysLinkBase
             throw std::runtime_error("Incompatible sample times: Continuous and discrete types cannot mix.");
         };
 
-        std::cout << "Forward start" << std::endl;
+        spdlog::get("default_pysyslink")->debug("Forward sample time propagation start");
         // Forward propagation
         bool progressMade = true;
         while (progressMade) {
@@ -244,10 +244,10 @@ namespace PySysLinkBase
                 }
 
                 if (allInputsResolved) {
-                    std::cout << "All inputs resolved for block: " << block->GetId() << std::endl;
+                    spdlog::get("default_pysyslink")->debug("All inputs resolved for block: {}", block->GetId());
                     const std::shared_ptr<SampleTime> blockSampleTime = block->GetSampleTime();
                     if (blockSampleTime->GetSampleTimeType() == SampleTimeType::inherited) {
-                        std::cout << "Inherited sample time" << std::endl;
+                        spdlog::get("default_pysyslink")->debug("Inherited sample time");
                         std::shared_ptr<SampleTime> resolvedSampleTime = inputSampleTimes.front();
                         for (const auto& inputSampleTime : inputSampleTimes) {
                             resolvedSampleTime = resolveSampleTime(resolvedSampleTime, inputSampleTime);
@@ -259,7 +259,7 @@ namespace PySysLinkBase
             }
         }
 
-        std::cout << "Backward start" << std::endl;
+        spdlog::get("default_pysyslink")->debug("Start backward propagation of sample time");
 
         // Backward propagation
         progressMade = true;
@@ -270,7 +270,7 @@ namespace PySysLinkBase
                 bool allOutputsResolved = true;
                 std::vector<std::shared_ptr<SampleTime>> outputSampleTimes;
 
-                std::cout << "Start working with block: " << block->GetId() << std::endl;
+                spdlog::get("default_pysyslink")->debug("Start working with block: {}", block->GetId());
                 for (int i = 0; i < block->GetOutputPorts().size(); i++) {
                     const std::pair<std::vector<std::shared_ptr<ISimulationBlock>>, std::vector<int>> connectedBlocksInfoPair = this->GetConnectedBlocks(block, i);
                     const std::vector<std::shared_ptr<ISimulationBlock>> connectedBlocks = connectedBlocksInfoPair.first;
@@ -285,10 +285,10 @@ namespace PySysLinkBase
                 }
 
                 if (allOutputsResolved) {
-                    std::cout << "Start propagating with block: " << block->GetId() << std::endl;
+                    spdlog::get("default_pysyslink")->debug("Start propagating with block: {}", block->GetId());
 
                     const std::shared_ptr<SampleTime> blockSampleTime = block->GetSampleTime();
-                    std::cout << "Sample time type: " << blockSampleTime->GetSampleTimeType() << std::endl;
+                    spdlog::get("default_pysyslink")->debug("Sample time type: {}", SampleTime::SampleTimeTypeString(blockSampleTime->GetSampleTimeType()));
                     if (blockSampleTime->GetSampleTimeType() == SampleTimeType::inherited) {
                         std::shared_ptr<SampleTime> resolvedSampleTime = outputSampleTimes.front();
                         for (const auto& outputSampleTime : outputSampleTimes) {
@@ -300,7 +300,7 @@ namespace PySysLinkBase
                 }
             }
         }
-        std::cout << "Validation start" << std::endl;
+        spdlog::get("default_pysyslink")->debug("Validation start");
 
         // Final validation
         for (const auto& block : simulationBlocks) {
