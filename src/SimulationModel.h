@@ -1,5 +1,5 @@
-#ifndef SRC_PY_SYS_LINK_BASE_SIMULATION_MODEL
-#define SRC_PY_SYS_LINK_BASE_SIMULATION_MODEL
+#ifndef SRC_SIMULATION_MODEL
+#define SRC_SIMULATION_MODEL
 
 #include <vector>
 #include "ISimulationBlock.h"
@@ -7,6 +7,7 @@
 #include "PortsAndSignalValues/InputPort.h"
 #include "PortsAndSignalValues/OutputPort.h"
 #include <optional>
+#include "IBlockEventsHandler.h"
 
 namespace PySysLinkBase
 {
@@ -15,8 +16,9 @@ namespace PySysLinkBase
     public:
         std::vector<std::shared_ptr<ISimulationBlock>> simulationBlocks;
         std::vector<std::shared_ptr<PortLink>> portLinks;
+        std::shared_ptr<IBlockEventsHandler> blockEventsHandler;
         
-        SimulationModel(std::vector<std::shared_ptr<ISimulationBlock>> simulationBlocks, std::vector<std::shared_ptr<PortLink>> portLinks);
+        SimulationModel(std::vector<std::shared_ptr<ISimulationBlock>> simulationBlocks, std::vector<std::shared_ptr<PortLink>> portLinks, std::shared_ptr<IBlockEventsHandler> blockEventsHandler);
 
         const std::vector<std::shared_ptr<InputPort>> GetConnectedPorts(const std::shared_ptr<ISimulationBlock> originBlock, int outputPortIndex) const;
         const std::pair<std::vector<std::shared_ptr<ISimulationBlock>>, std::vector<int>> GetConnectedBlocks(const std::shared_ptr<ISimulationBlock> originBlock, int outputPortIndex) const;
@@ -37,4 +39,4 @@ namespace PySysLinkBase
     };
 }
 
-#endif /* SRC_PY_SYS_LINK_BASE_SIMULATION_MODEL */
+#endif /* SRC_SIMULATION_MODEL */

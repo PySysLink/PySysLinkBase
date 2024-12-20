@@ -8,7 +8,7 @@
 
 namespace PySysLinkBase
 {
-    SimulationModel ModelParser::ParseFromYaml(std::string filename, const std::map<std::string, std::unique_ptr<IBlockFactory>>& blockFactories)
+    SimulationModel ModelParser::ParseFromYaml(std::string filename, const std::map<std::string, std::unique_ptr<IBlockFactory>>& blockFactories, std::shared_ptr<IBlockEventsHandler> blockEventsHandler)
     {
         YAML::Node config = YAML::LoadFile(filename);
        
@@ -38,13 +38,13 @@ namespace PySysLinkBase
 
             spdlog::get("default_pysyslink")->debug("Configurations parsed");
 
-            std::vector<std::shared_ptr<ISimulationBlock>> blocks = ModelParser::ParseBlocks(blocksConfigurations, blockFactories);
+            std::vector<std::shared_ptr<ISimulationBlock>> blocks = ModelParser::ParseBlocks(blocksConfigurations, blockFactories, blockEventsHandler);
             spdlog::get("default_pysyslink")->debug("Blocks parsed");
             std::vector<std::shared_ptr<PortLink>> links = ModelParser::ParseLinks(linksConfigurations, blocks);
             
             spdlog::get("default_pysyslink")->debug("Blocks and links parsed");
 
-            return SimulationModel(std::move(blocks), std::move(links));
+            return SimulationModel(std::move(blocks), std::move(links), blockEventsHandler);
         } 
         else
         {
@@ -173,7 +173,7 @@ namespace PySysLinkBase
         return links;
     }
 
-    std::vector<std::shared_ptr<ISimulationBlock>> ModelParser::ParseBlocks(std::vector<std::map<std::string, ConfigurationValue>> blocksConfigurations, const std::map<std::string, std::unique_ptr<IBlockFactory>>& blockFactories)
+    std::vector<std::shared_ptr<ISimulationBlock>> ModelParser::ParseBlocks(std::vector<std::map<std::string, ConfigurationValue>> blocksConfigurations, const std::map<std::string, std::unique_ptr<IBlockFactory>>& blockFactories, std::shared_ptr<IBlockEventsHandler> blockEventsHandler)
     {
         std::vector<std::shared_ptr<ISimulationBlock>> blocks = {};
         for (int i = 0; i < blocksConfigurations.size(); i++)
@@ -184,7 +184,7 @@ namespace PySysLinkBase
             if (it == blockFactories.end()) {
                 throw std::invalid_argument("There is no IBlockFactory for block type: " + blockType + ". Is it supported?");
             } else {
-                blocks.push_back(std::move(it->second->CreateBlock(blocksConfigurations[i])));
+                blocks.push_back(std::move(it->second->CreateBlock(blocksConfigurations[i], blockEventsHandler)));
             }
         }
         return blocks;

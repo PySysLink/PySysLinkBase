@@ -12,21 +12,21 @@
 #include <map>
 #include "ConfigurationValue.h"
 #include "BlockEvents/BlockEvent.h"
-#include "BlockEventsHandler.h"
+#include "IBlockEventsHandler.h"
 
 namespace PySysLinkBase
 {
-    class ISimulationBlock {
-    private:
-        std::shared_ptr<BlockEventsHandler> blockEventsHandler;
+    class ISimulationBlock {        
     protected:
+        std::shared_ptr<IBlockEventsHandler> blockEventsHandler;
+        
         std::string name;
         std::string id;
     public:
         const std::string GetId() const;
         const std::string GetName() const;
 
-        ISimulationBlock(std::map<std::string, ConfigurationValue> blockConfiguration, std::shared_ptr<BlockEventsHandler> blockEventsHandler);
+        ISimulationBlock(std::map<std::string, ConfigurationValue> blockConfiguration, std::shared_ptr<IBlockEventsHandler> blockEventsHandler);
         virtual ~ISimulationBlock() = default;
 
         virtual std::shared_ptr<SampleTime> GetSampleTime() = 0;

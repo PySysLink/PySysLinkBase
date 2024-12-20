@@ -3,7 +3,7 @@
 
 namespace PySysLinkBase
 {
-    ISimulationBlock::ISimulationBlock(std::map<std::string, ConfigurationValue> blockConfiguration, std::shared_ptr<BlockEventsHandler> blockEventsHandler)
+    ISimulationBlock::ISimulationBlock(std::map<std::string, ConfigurationValue> blockConfiguration, std::shared_ptr<IBlockEventsHandler> blockEventsHandler)
     {
         this->name = ConfigurationValueManager::TryGetConfigurationValue<std::string>("Name", blockConfiguration);
         this->id = ConfigurationValueManager::TryGetConfigurationValue<std::string>("Id", blockConfiguration);

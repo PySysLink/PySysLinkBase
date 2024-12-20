@@ -35,7 +35,7 @@ namespace PySysLinkBase
             }
             registerFuncLogger(spdlog::get("default_pysyslink"));
             
-            spdlog::get("default_pysyslink")->debug("Pluging loaded: ", pluginPath);
+            spdlog::get("default_pysyslink")->debug("Pluging loaded: {}", pluginPath);
         }
         return factoryRegistry;
     }

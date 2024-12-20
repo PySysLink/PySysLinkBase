@@ -7,13 +7,14 @@
 #include <map>
 #include <memory>
 #include <string>
+#include "IBlockEventsHandler.h"
 
 namespace PySysLinkBase
 {
    class IBlockFactory {
       public:
          virtual ~IBlockFactory() = default;
-         virtual std::unique_ptr<ISimulationBlock> CreateBlock(std::map<std::string, ConfigurationValue> blockConfiguration) = 0;
+         virtual std::unique_ptr<ISimulationBlock> CreateBlock(std::map<std::string, ConfigurationValue> blockConfiguration, std::shared_ptr<IBlockEventsHandler> blockEventsHandler) = 0;
    };
 }
 

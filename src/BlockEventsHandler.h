@@ -2,11 +2,12 @@
 #define SRC_BLOCK_EVENTS_HANDLER
 
 #include "BlockEvents/BlockEvent.h"
+#include "IBlockEventsHandler.h"
 #include <memory>
 
 namespace PySysLinkBase
 {
-    class BlockEventsHandler
+    class BlockEventsHandler : public IBlockEventsHandler
     {
         public:
 
