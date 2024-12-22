@@ -1,40 +1,32 @@
 #include "SimulationManager.h"
 #include "spdlog/spdlog.h"
+#include <thread>
+#include <chrono>
 
 namespace PySysLinkBase
 {
-
-    void SimulationManager::RunSimulation(std::shared_ptr<SimulationModel> simulationModel, std::shared_ptr<SimulationOptions> simulationOptions)
+    void SimulationManager::ClasificateBlocks(std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>> orderedBlocks, 
+                                            std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>& blocksForEachDiscreteSampleTime,
+                                            std::vector<std::shared_ptr<ISimulationBlock>>& blocksWithConstantSampleTime)
     {
-        std::vector<std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>>> blockChains = simulationModel->GetDirectBlockChains();
-
-        std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>> orderedBlocks = simulationModel->OrderBlockChainsOntoFreeOrder(blockChains);
-        
-        std::shared_ptr<SampleTime> constantSampleTime = std::make_unique<SampleTime>(SampleTimeType::constant);
-
-        std::vector<std::shared_ptr<SampleTime>> discreteSampleTimes = {};
-        std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>> blocksForEachDiscreteSampleTime = {};
-
-        std::vector<std::shared_ptr<ISimulationBlock>> blocksWithConstantSampleTime = {};
         for (const auto& block : orderedBlocks)
         {
             if (block->GetSampleTime()->GetSampleTimeType() == SampleTimeType::discrete)
             {
                 bool isAlreadyOnDiscreteSampleTimes = false;
                 std::shared_ptr<SampleTime> currentSampleTime;
-                for (const auto& discreteSampleTime : discreteSampleTimes)
+                for (std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>::iterator iter = blocksForEachDiscreteSampleTime.begin(); iter != blocksForEachDiscreteSampleTime.end(); ++iter)
                 {
-                    if (discreteSampleTime->GetDiscreteSampleTime() == block->GetSampleTime()->GetDiscreteSampleTime())
+                    if (iter->first->GetDiscreteSampleTime() == block->GetSampleTime()->GetDiscreteSampleTime())
                     {
                         isAlreadyOnDiscreteSampleTimes = true;
-                        currentSampleTime = discreteSampleTime;
+                        currentSampleTime = iter->first;
                         break;
                     }
                 }
 
                 if (!isAlreadyOnDiscreteSampleTimes)
                 {
-                    discreteSampleTimes.push_back(block->GetSampleTime());
                     blocksForEachDiscreteSampleTime.insert({block->GetSampleTime(), std::vector<std::shared_ptr<ISimulationBlock>>({block})});
                 }
                 else
@@ -47,75 +39,85 @@ namespace PySysLinkBase
                 blocksWithConstantSampleTime.push_back(block);
             }
         }
+    }
 
-        // Calculate time hits and associated sample times
-        std::vector<std::map<double, std::vector<std::shared_ptr<SampleTime>>>> timeHitsWithSampleTimes;
+    std::map<double, std::vector<std::shared_ptr<SampleTime>>> SimulationManager::GetTimeHitsToSampleTimes(std::shared_ptr<SimulationOptions> simulationOptions, std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>> blocksForEachDiscreteSampleTime)
+    {
+        std::map<double, std::vector<std::shared_ptr<SampleTime>>> timeHitsToSampleTimes;
 
-        // Step 1: Generate uniform time vectors for each discrete sample time
-        std::map<double, std::vector<std::shared_ptr<SampleTime>>> timeToSampleTimes;
-
-        for (const auto& sampleTime : discreteSampleTimes)
+        for (std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>::iterator iter = blocksForEachDiscreteSampleTime.begin(); iter != blocksForEachDiscreteSampleTime.end(); ++iter)
         {
-            double samplePeriod = sampleTime->GetDiscreteSampleTime();
+            double samplePeriod = iter->first->GetDiscreteSampleTime();
             for (double t = simulationOptions->startTime; t <= simulationOptions->stopTime; t += samplePeriod)
             {
-                // Associate the sample time with the time hit
-                timeToSampleTimes[t].push_back(sampleTime);
+                if (timeHitsToSampleTimes.find(t) == timeHitsToSampleTimes.end()) 
+                {
+                    timeHitsToSampleTimes.insert({t, std::vector<std::shared_ptr<SampleTime>>({iter->first})});
+                } else {
+                    timeHitsToSampleTimes[t].push_back(iter->first);
+                }
             }
         }
 
-        // Step 2: Populate timeHitsWithSampleTimes
-        for (const auto& [time, associatedSampleTimes] : timeToSampleTimes)
-        {
-            timeHitsWithSampleTimes.push_back({{time, associatedSampleTimes}});
-        }
+        return timeHitsToSampleTimes;
+    }
 
-        // Step 3: Sort time hits by time
-        std::sort(timeHitsWithSampleTimes.begin(), timeHitsWithSampleTimes.end(),
-                [](const std::map<double, std::vector<std::shared_ptr<SampleTime>>>& a,
-                    const std::map<double, std::vector<std::shared_ptr<SampleTime>>>& b) {
-                    return a.begin()->first < b.begin()->first;
-                });
+    void SimulationManager::RunSimulation(std::shared_ptr<SimulationModel> simulationModel, std::shared_ptr<SimulationOptions> simulationOptions)
+    {
+        std::vector<std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>>> blockChains = simulationModel->GetDirectBlockChains();
+        std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>> orderedBlocks = simulationModel->OrderBlockChainsOntoFreeOrder(blockChains);
+        
+        std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>> blocksForEachDiscreteSampleTime = {};
+        std::vector<std::shared_ptr<ISimulationBlock>> blocksWithConstantSampleTime = {};
+        
+        this->ClasificateBlocks(orderedBlocks, blocksForEachDiscreteSampleTime, blocksWithConstantSampleTime);
+        spdlog::get("default_pysyslink")->debug("Different discrete sample times: {}", blocksForEachDiscreteSampleTime.size());
+        spdlog::get("default_pysyslink")->debug("Blocks with constant sample time: {}", blocksWithConstantSampleTime.size());
 
+        
+        std::map<double, std::vector<std::shared_ptr<SampleTime>>> timeHitsToSampleTimes = this->GetTimeHitsToSampleTimes(simulationOptions, blocksForEachDiscreteSampleTime);
+
+
+        auto simulationStartTime = std::chrono::system_clock::now();
         double currentTime = simulationOptions->startTime;
         spdlog::get("default_pysyslink")->debug("Simulation start");
+
         for (auto& block : blocksWithConstantSampleTime)
         {
-            spdlog::get("default_pysyslink")->debug("Processing block: {}", block->GetId());
-            block->ComputeOutputsOfBlock(constantSampleTime, currentTime);
-            for (int i = 0; i < block->GetOutputPorts().size(); i++)
-            {
-                spdlog::get("default_pysyslink")->debug("Output port processing...");
+            this->ProcessBlock(simulationModel, block, block->GetSampleTime(), currentTime);
+        }
 
-                for (auto& connectedPort : simulationModel->GetConnectedPorts(block, i))
+        for (const auto& [time, sampleTimes] : timeHitsToSampleTimes)
+        {
+            currentTime = time;
+            auto targetTime = simulationStartTime + std::chrono::duration<double>(time/simulationOptions->naturalTimeSpeedMultiplier);
+            if (simulationOptions->runInNaturalTime)
+            {
+                std::this_thread::sleep_until(targetTime);
+                auto actualTime = std::chrono::system_clock::now();
+                auto elapsedRealTime = std::chrono::duration<double>(actualTime - simulationStartTime).count();
+                spdlog::get("default_pysyslink")->debug("Simulated Time: {}, Real Time Elapsed: {} seconds", currentTime, elapsedRealTime);            
+            }
+
+            for (const auto& sampleTime : sampleTimes)
+            {
+                for (auto& block : blocksForEachDiscreteSampleTime[sampleTime])
                 {
-                    block->GetOutputPorts()[i]->TryCopyValueToPort(*connectedPort);
+                    this->ProcessBlock(simulationModel, block, sampleTime, currentTime);
                 }
             }
         }
+    }
 
-        for (const auto& timeHit : timeHitsWithSampleTimes)
+    void SimulationManager::ProcessBlock(std::shared_ptr<SimulationModel> simulationModel, std::shared_ptr<ISimulationBlock> block, std::shared_ptr<SampleTime> sampleTime, double currentTime)
+    {
+        spdlog::get("default_pysyslink")->debug("Processing block: {} at time {}", block->GetId(), currentTime);
+        block->ComputeOutputsOfBlock(sampleTime, currentTime);
+        for (int i = 0; i < block->GetOutputPorts().size(); i++)
         {
-            for (const auto& [time, sampleTimes] : timeHit)
+            for (auto& connectedPort : simulationModel->GetConnectedPorts(block, i))
             {
-                currentTime = time;
-                for (const auto& sampleTime : sampleTimes)
-                {
-                    for (auto& block : blocksForEachDiscreteSampleTime[sampleTime])
-                    {
-                        spdlog::get("default_pysyslink")->debug("Processing block: {} at time {}", block->GetId(), time);
-                        block->ComputeOutputsOfBlock(sampleTime, currentTime);
-                        for (int i = 0; i < block->GetOutputPorts().size(); i++)
-                        {
-                            spdlog::get("default_pysyslink")->debug("Output port processing...");
-
-                            for (auto& connectedPort : simulationModel->GetConnectedPorts(block, i))
-                            {
-                                block->GetOutputPorts()[i]->TryCopyValueToPort(*connectedPort);
-                            }
-                        }
-                    }
-                }
+                block->GetOutputPorts()[i]->TryCopyValueToPort(*connectedPort);
             }
         }
     }

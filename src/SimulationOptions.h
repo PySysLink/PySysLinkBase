@@ -12,6 +12,7 @@ namespace PySysLinkBase
         double stopTime;
 
         bool runInNaturalTime = false;
+        double naturalTimeSpeedMultiplier = 1.0;
     };
 } // namespace PySysLinkBase
 

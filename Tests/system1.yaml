@@ -39,7 +39,7 @@ Blocks:
     Name: Main acumulator
     BlockType: BasicCpp
     BlockClass: BasicBlocks/Acumulator
-    SampleTime: 1.0
+    SampleTime: 0.2
     InitialValue: -1.0
 
 Links:

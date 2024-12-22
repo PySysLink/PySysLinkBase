@@ -40,6 +40,8 @@ int main() {
     std::shared_ptr<PySysLinkBase::SimulationOptions> simulationOptions = std::make_shared<PySysLinkBase::SimulationOptions>();
     simulationOptions->startTime = 0.0;
     simulationOptions->stopTime = 10.0;
+    simulationOptions->runInNaturalTime = true;
+    simulationOptions->naturalTimeSpeedMultiplier = 1;
 
     simulationManager->RunSimulation(simulationModel, simulationOptions);
 
