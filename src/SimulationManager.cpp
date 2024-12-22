@@ -4,7 +4,7 @@
 namespace PySysLinkBase
 {
 
-    void SimulationManager::RunSimulation(std::shared_ptr<SimulationModel> simulationModel, double startTime, double endTime)
+    void SimulationManager::RunSimulation(std::shared_ptr<SimulationModel> simulationModel, std::shared_ptr<SimulationOptions> simulationOptions)
     {
         std::vector<std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>>> blockChains = simulationModel->GetDirectBlockChains();
 
@@ -57,7 +57,7 @@ namespace PySysLinkBase
         for (const auto& sampleTime : discreteSampleTimes)
         {
             double samplePeriod = sampleTime->GetDiscreteSampleTime();
-            for (double t = startTime; t < endTime; t += samplePeriod)
+            for (double t = simulationOptions->startTime; t <= simulationOptions->stopTime; t += samplePeriod)
             {
                 // Associate the sample time with the time hit
                 timeToSampleTimes[t].push_back(sampleTime);
@@ -77,11 +77,12 @@ namespace PySysLinkBase
                     return a.begin()->first < b.begin()->first;
                 });
 
+        double currentTime = simulationOptions->startTime;
         spdlog::get("default_pysyslink")->debug("Simulation start");
         for (auto& block : blocksWithConstantSampleTime)
         {
             spdlog::get("default_pysyslink")->debug("Processing block: {}", block->GetId());
-            block->ComputeOutputsOfBlock(constantSampleTime);
+            block->ComputeOutputsOfBlock(constantSampleTime, currentTime);
             for (int i = 0; i < block->GetOutputPorts().size(); i++)
             {
                 spdlog::get("default_pysyslink")->debug("Output port processing...");
@@ -97,12 +98,13 @@ namespace PySysLinkBase
         {
             for (const auto& [time, sampleTimes] : timeHit)
             {
+                currentTime = time;
                 for (const auto& sampleTime : sampleTimes)
                 {
                     for (auto& block : blocksForEachDiscreteSampleTime[sampleTime])
                     {
                         spdlog::get("default_pysyslink")->debug("Processing block: {} at time {}", block->GetId(), time);
-                        block->ComputeOutputsOfBlock(sampleTime);
+                        block->ComputeOutputsOfBlock(sampleTime, currentTime);
                         for (int i = 0; i < block->GetOutputPorts().size(); i++)
                         {
                             spdlog::get("default_pysyslink")->debug("Output port processing...");

@@ -7,6 +7,7 @@
 #include "PySysLinkBase/SimulationManager.h"
 #include "PySysLinkBase/SpdlogManager.h"
 #include "PySysLinkBase/BlockEventsHandler.h"
+#include "PySysLinkBase/SimulationOptions.h"
 #include <map>
 
 int main() {
@@ -32,11 +33,15 @@ int main() {
   
 
     simulationModel->PropagateSampleTimes();
-    
+
     PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::debug);
 
     std::unique_ptr<PySysLinkBase::SimulationManager> simulationManager = std::make_unique<PySysLinkBase::SimulationManager>();
-    simulationManager->RunSimulation(simulationModel, 0.0, 10.0);
+    std::shared_ptr<PySysLinkBase::SimulationOptions> simulationOptions = std::make_shared<PySysLinkBase::SimulationOptions>();
+    simulationOptions->startTime = 0.0;
+    simulationOptions->stopTime = 10.0;
+
+    simulationManager->RunSimulation(simulationModel, simulationOptions);
 
     return 0;
 }
