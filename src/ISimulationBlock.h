@@ -37,14 +37,14 @@ namespace PySysLinkBase
 
         virtual const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>> ComputeOutputsOfBlock(const std::shared_ptr<PySysLinkBase::SampleTime> sampleTime) = 0;
 
-        static ISimulationBlock& FindBlockById(std::string id, const std::vector<std::unique_ptr<ISimulationBlock>>& blocksToFind);
-        static std::shared_ptr<ISimulationBlock> FindBlockById(std::string id, const std::vector<std::shared_ptr<ISimulationBlock>>& blocksToFind);
-
         bool IsBlockFreeSource() const;
-
         bool IsInputDirectBlockChainEnd(int inputIndex) const;
 
         void NotifyEvent(std::shared_ptr<PySysLinkBase::BlockEvent> blockEvent) const;
+        virtual bool TryUpdateConfigurationValue(std::string keyName, ConfigurationValue value) = 0;
+
+        static ISimulationBlock& FindBlockById(std::string id, const std::vector<std::unique_ptr<ISimulationBlock>>& blocksToFind);
+        static std::shared_ptr<ISimulationBlock> FindBlockById(std::string id, const std::vector<std::shared_ptr<ISimulationBlock>>& blocksToFind);
     };
 }
 

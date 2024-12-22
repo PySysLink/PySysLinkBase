@@ -8,7 +8,7 @@ namespace PySysLinkBase
     class SimulationManager
     {
         public:
-        void RunSimulation(std::shared_ptr<SimulationModel> simulationModel);
+        void RunSimulation(std::shared_ptr<SimulationModel> simulationModel, double startTime, double endTime);
     };
 }
 

@@ -32,9 +32,11 @@ int main() {
   
 
     simulationModel->PropagateSampleTimes();
+    
+    PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::debug);
 
     std::unique_ptr<PySysLinkBase::SimulationManager> simulationManager = std::make_unique<PySysLinkBase::SimulationManager>();
-    simulationManager->RunSimulation(simulationModel);
+    simulationManager->RunSimulation(simulationModel, 0.0, 10.0);
 
     return 0;
 }
