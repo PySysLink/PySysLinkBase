@@ -13,7 +13,7 @@
 int main() {
 
     PySysLinkBase::SpdlogManager::ConfigureDefaultLogger();
-    PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::info);
+    PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::debug);
     
     std::shared_ptr<PySysLinkBase::IBlockEventsHandler> blockEventsHandler = std::make_shared<PySysLinkBase::BlockEventsHandler>();
 
@@ -22,9 +22,9 @@ int main() {
 
     std::map<std::string, std::unique_ptr<PySysLinkBase::IBlockFactory>> blockFactories = plugingLoader->LoadPlugins("/usr/local/lib");
     
-    PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::info);
+    PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::debug);
 
-    std::shared_ptr<PySysLinkBase::SimulationModel> simulationModel = std::make_unique<PySysLinkBase::SimulationModel>(PySysLinkBase::ModelParser::ParseFromYaml("/home/pello/PySysLink/Tests/system1.yaml", blockFactories, blockEventsHandler));
+    std::shared_ptr<PySysLinkBase::SimulationModel> simulationModel = std::make_unique<PySysLinkBase::SimulationModel>(PySysLinkBase::ModelParser::ParseFromYaml("/home/pello/PySysLink/Tests/system1_complex.yaml", blockFactories, blockEventsHandler));
 
     std::vector<std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>>> blockChains = simulationModel->GetDirectBlockChains();
     

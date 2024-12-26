@@ -5,6 +5,8 @@
 #include <variant>
 #include "ConfigurationValue.h"
 #include "spdlog/spdlog.h"
+#include <regex>
+#include <sstream>
 
 namespace PySysLinkBase
 {
@@ -64,7 +66,11 @@ namespace PySysLinkBase
                     try {
                         return node.as<bool>();
                     } catch (...) {
-                        return node.as<std::string>();
+                        try {
+                            return ModelParser::ParseComplex(node.as<std::string>());
+                        } catch (...) {
+                            return node.as<std::string>();
+                        }
                     }
                 }
             }
@@ -120,6 +126,24 @@ namespace PySysLinkBase
             if (areBool) {
                 return boolElements;
             }
+            
+            std::vector<std::complex<double>> complexElements;
+            
+            bool areComplex = true;
+            for (const auto& subNode : node) {
+                if (subNode.IsScalar()) {
+                    try {
+                        complexElements.push_back(ModelParser::ParseComplex(subNode.as<std::string>()));
+                    } catch (...) {
+                        areComplex = false;
+                        break;
+                    }
+                }
+            }
+
+            if (areComplex) {
+                return complexElements;
+            }
 
             std::vector<std::string> stringElements;
             bool areString = true;
@@ -150,7 +174,11 @@ namespace PySysLinkBase
                             try {
                                 elements.push_back(subNode.as<bool>());
                             } catch (...) {
-                                elements.push_back(subNode.as<std::string>());
+                                try {
+                                    elements.push_back(ModelParser::ParseComplex(subNode.as<std::string>()));
+                                } catch (...) {
+                                    elements.push_back(subNode.as<std::string>());
+                                }
                             }
                         }
                     }
@@ -188,5 +216,37 @@ namespace PySysLinkBase
             }
         }
         return blocks;
+    }
+
+    std::complex<double> ModelParser::ParseComplex(const std::string& str) {
+         std::regex complex_pattern(R"(\s*([-+]?\d*\.?\d+)?\s*([+-]\s*\d*\.?\d+)?\s*(i|j)?\s*)");
+
+        std::smatch matches;
+        if (std::regex_match(str, matches, complex_pattern)) {
+            double real_part = 0.0;
+            double imag_part = 0.0;
+
+            // Parse the real part if it exists
+            if (matches[1].matched) {
+                real_part = std::stod(matches[1].str());
+            }
+
+            // Parse the imaginary part if it exists
+            if (matches[2].matched) {
+                // Remove any extra spaces in the imaginary part
+                std::string imag_str = matches[2].str();
+                imag_str.erase(remove(imag_str.begin(), imag_str.end(), ' '), imag_str.end());
+                imag_part = std::stod(imag_str);
+            }
+
+            // If no imaginary part is provided but 'i' or 'j' exists, treat it as 1 or -1
+            if (matches[2].str().empty() && (matches[3].str() == "i" || matches[3].str() == "j")) {
+                imag_part = matches[1].matched ? 1.0 : -1.0;
+            }
+
+            return std::complex<double>(real_part, imag_part);
+        } else {
+            throw std::invalid_argument("Invalid complex number format: " + str);
+        }
     }
 } // namespace PySysLinkBase

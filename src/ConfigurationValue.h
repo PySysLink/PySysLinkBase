@@ -7,6 +7,7 @@
 #include <memory>
 #include <map>
 #include <stdexcept>
+#include <complex>
 
 namespace PySysLinkBase
 {
@@ -14,20 +15,24 @@ namespace PySysLinkBase
         int,
         double,
         bool,
+        std::complex<double>,
         std::string,
         std::vector<int>,
         std::vector<double>,
         std::vector<bool>,
+        std::vector<std::complex<double>>,
         std::vector<std::string>>;
     
     using ConfigurationValue = std::variant<
         int,
         double,
         bool,
+        std::complex<double>,
         std::string,
         std::vector<int>,
         std::vector<double>,
         std::vector<bool>,
+        std::vector<std::complex<double>>,
         std::vector<std::string>,
         ConfigurationValuePrimitive,
         std::vector<ConfigurationValuePrimitive>>;
