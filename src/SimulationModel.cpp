@@ -195,7 +195,7 @@ namespace PySysLinkBase
                 return true;
             }
             if (st1.GetSampleTimeType() == SampleTimeType::continuous && st2.GetSampleTimeType() == SampleTimeType::continuous) {
-                return true;
+                return st1.GetContinuousSampleTimeGroup() == st2.GetContinuousSampleTimeGroup();
             }
             if (st1.GetSampleTimeType() == SampleTimeType::discrete && st2.GetSampleTimeType() == SampleTimeType::discrete) {
                 double gcdSampleTimeMs = std::gcd(static_cast<int>(st1.GetDiscreteSampleTime()*1000), static_cast<int>(st2.GetDiscreteSampleTime()*1000));
@@ -209,6 +209,10 @@ namespace PySysLinkBase
                 return st1; // Constants resolve to constant
             }
             if (st1->GetSampleTimeType() == SampleTimeType::continuous && st2->GetSampleTimeType() == SampleTimeType::continuous) {
+                if (st1->GetContinuousSampleTimeGroup() != st2->GetContinuousSampleTimeGroup())
+                {
+                    throw std::runtime_error("Continuous sample times are incompatible: Not same group.");
+                }
                 return st1; // Continuous resolves to continuous
             }
             if (st1->GetSampleTimeType() == SampleTimeType::discrete && st2->GetSampleTimeType() == SampleTimeType::discrete) {
@@ -244,7 +248,7 @@ namespace PySysLinkBase
                     inputSampleTimes.push_back(originBlock->GetSampleTime());
                 }
 
-                if (allInputsResolved) {
+                if (allInputsResolved and (inputSampleTimes.size() != 0)) {
                     spdlog::get("default_pysyslink")->debug("All inputs resolved for block: {}", block->GetId());
                     const std::shared_ptr<SampleTime> blockSampleTime = block->GetSampleTime();
                     if (blockSampleTime->GetSampleTimeType() == SampleTimeType::inherited) {
@@ -285,7 +289,7 @@ namespace PySysLinkBase
                     }
                 }
 
-                if (allOutputsResolved) {
+                if (allOutputsResolved and (outputSampleTimes.size() != 0)) {
                     spdlog::get("default_pysyslink")->debug("Start propagating with block: {}", block->GetId());
 
                     const std::shared_ptr<SampleTime> blockSampleTime = block->GetSampleTime();

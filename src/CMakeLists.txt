@@ -10,6 +10,7 @@ add_library(PySysLinkBase SHARED
     PortLink.cpp
     SpdlogManager.cpp
     BlockEventsHandler.cpp
+    BasicOdeSolver.cpp
     PortsAndSignalValues/InputPort.cpp 
     PortsAndSignalValues/OutputPort.cpp 
     PortsAndSignalValues/Port.cpp 

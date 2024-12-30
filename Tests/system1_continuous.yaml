@@ -1,0 +1,29 @@
+Blocks:
+  - Id: const1
+    Name: Operand 1
+    BlockType: BasicCpp
+    BlockClass: BasicBlocks/Constant
+    Value: 5.0
+  - Id: display1
+    Name: Result
+    BlockType: BasicCpp
+    BlockClass: BasicBlocks/Display
+  - Id: integrator1
+    Name: Main integrator
+    BlockType: BasicCpp
+    BlockClass: BasicBlocks/Integrator
+
+Links:
+  - Id: link1
+    Name: link1
+    SourceBlockId: const1
+    SourcePortIdx: 0
+    DestinationBlockId: integrator1
+    DestinationPortIdx: 0
+  - Id: link2
+    Name: link2
+    SourceBlockId: integrator1
+    SourcePortIdx: 0
+    DestinationBlockId: display1
+    DestinationPortIdx: 0
+  
