@@ -1,4 +1,6 @@
 #include "BasicOdeSolver.h"
+#include <limits>
+#include <spdlog/spdlog.h>
 
 namespace PySysLinkBase
 {
@@ -8,6 +10,8 @@ namespace PySysLinkBase
     {
         this->continuousStatesInEachBlock = {};
         this->totalStates = 0;
+        this->nextTimeHit = std::numeric_limits<double>::quiet_NaN();
+        this->nextSuggestedTimeStep = std::numeric_limits<double>::quiet_NaN();
 
         for (auto& block : this->simulationBlocks)
         {
@@ -40,9 +44,12 @@ namespace PySysLinkBase
         int currentIndex = 0;
         for (auto& block : this->simulationBlocks)
         {
+            spdlog::get("default_pysyslink")->debug("Is block continuous?: {}", block->GetId());
+
             std::shared_ptr<ISimulationBlockWithContinuousStates> blockWithContinuousStates = std::dynamic_pointer_cast<ISimulationBlockWithContinuousStates>(block);
             if (blockWithContinuousStates)
             {
+                spdlog::get("default_pysyslink")->debug("Block with continuous states: {}", blockWithContinuousStates->GetId());
                 std::vector<double> states_i = blockWithContinuousStates->GetContinuousStates();
                 for (int j = 0; j < states_i.size(); j++)
                 {
@@ -53,6 +60,8 @@ namespace PySysLinkBase
 
             i += 1;
         }
+        
+        spdlog::get("default_pysyslink")->debug("States size: {}", states.size());
 
         return states;
     }
@@ -124,7 +133,7 @@ namespace PySysLinkBase
     }
 
 
-    double BasicOdeSolver::DoStep(std::shared_ptr<SampleTime> sampleTime, double currentTime, double timeStep)
+    void BasicOdeSolver::DoStep(double currentTime, double timeStep)
     {
         auto systemLambda = [this](std::vector<double> states, double time) {
             return this->SystemModel(states, time);
@@ -133,6 +142,17 @@ namespace PySysLinkBase
         auto resoult = this->odeStepSolver->SolveStep(systemLambda, this->GetStates(), currentTime, timeStep);
         this->SetStates(std::get<0>(resoult));
 
-        return std::get<1>(resoult);
+        this->nextSuggestedTimeStep = std::get<1>(resoult);
+        this->nextTimeHit = currentTime + std::get<1>(resoult);
+    }
+
+    double BasicOdeSolver::GetNextTimeHit() const
+    {
+        return this->nextTimeHit;
+    }
+
+    double BasicOdeSolver::GetNextSuggestedTimeStep() const
+    {
+        return this->nextSuggestedTimeStep;
     }
 } // namespace PySysLinkBase

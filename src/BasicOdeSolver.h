@@ -1,7 +1,6 @@
 #ifndef SRC_BASIC_ODE_SOLVER
 #define SRC_BASIC_ODE_SOLVER
 
-#include "IOdeSolver.h"
 #include "IOdeStepSolver.h"
 #include "ISimulationBlockWithContinuousStates.h"
 #include "SimulationModel.h"
@@ -10,7 +9,7 @@
 
 namespace PySysLinkBase
 {
-    class BasicOdeSolver : public IOdeSolver
+    class BasicOdeSolver
     {
         private:
             std::shared_ptr<IOdeStepSolver> odeStepSolver;
@@ -18,6 +17,9 @@ namespace PySysLinkBase
             std::vector<std::shared_ptr<ISimulationBlock>> simulationBlocks;
             std::vector<int> continuousStatesInEachBlock;
             int totalStates;
+
+            double nextTimeHit;
+            double nextSuggestedTimeStep;
 
             std::shared_ptr<SampleTime> sampleTime;
             
@@ -31,7 +33,10 @@ namespace PySysLinkBase
 
             BasicOdeSolver(std::shared_ptr<IOdeStepSolver> odeStepSolver, std::shared_ptr<SimulationModel> simulationModel, 
                             std::vector<std::shared_ptr<ISimulationBlock>> simulationBlocks, std::shared_ptr<SampleTime> sampleTime);
-            double DoStep(std::shared_ptr<SampleTime> sampleTime, double currentTime, double timeStep);
+            void DoStep(double currentTime, double timeStep);
+
+            double GetNextTimeHit() const;
+            double GetNextSuggestedTimeStep() const;
     };
 } // namespace PySysLinkBase
 

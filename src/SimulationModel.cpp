@@ -73,6 +73,16 @@ namespace PySysLinkBase
         std::vector<std::vector<std::shared_ptr<ISimulationBlock>>> resultChains = {};
         this->FindChains(freeSourceBlock, {}, resultChains);
 
+        spdlog::get("default_pysyslink")->debug("Working with block: {}", freeSourceBlock->GetId());
+        for (const auto& blockChain: resultChains)
+        {
+            spdlog::get("default_pysyslink")->debug("Chain start:");
+            for (const auto& block: blockChain)
+            {
+                spdlog::get("default_pysyslink")->debug(block->GetId());
+            }
+        }
+
         return resultChains;
     }
 
@@ -144,21 +154,25 @@ namespace PySysLinkBase
         };
 
         // Create a vector of iterators to track progress in each chain
-        std::vector<size_t> chainPositions(directBlockChains.size(), 0);
+        std::vector<int> chainPositions(directBlockChains.size(), 0);
 
         // Continue until all chains are exhausted
         bool progressMade = true;
         while (progressMade) {
             progressMade = false;
 
-            for (size_t i = 0; i < directBlockChains.size(); ++i) {
+            for (int i = 0; i < directBlockChains.size(); ++i) {
                 auto& chain = directBlockChains[i];
-                size_t& position = chainPositions[i];
+                int& position = chainPositions[i];
 
                 // Process blocks in this chain as far as possible
                 while (position < chain.size()) {
                     auto& block = chain[position];
-                    if (processedBlocks.find(block) == processedBlocks.end() && areInputsResolved(block)) {
+                    if (processedBlocks.find(block) != processedBlocks.end())
+                    {
+                        ++position;
+                    }
+                    else if (areInputsResolved(block)) {
                         // Add the block to the ordered list and mark it as processed
                         orderedBlocks.push_back(block);
                         processedBlocks.insert(block);
@@ -171,6 +185,13 @@ namespace PySysLinkBase
                 }
             }
         }
+
+        spdlog::get("default_pysyslink")->debug("Final chain start:");
+        for (const auto& block: orderedBlocks)
+        {
+            spdlog::get("default_pysyslink")->debug(block->GetId());
+        }
+
         return orderedBlocks;
     }
 
@@ -257,6 +278,7 @@ namespace PySysLinkBase
                         for (const auto& inputSampleTime : inputSampleTimes) {
                             resolvedSampleTime = resolveSampleTime(resolvedSampleTime, inputSampleTime);
                         }
+                        spdlog::get("default_pysyslink")->debug("Block {} gets sample time {}", block->GetId(), SampleTime::SampleTimeTypeString(resolvedSampleTime->GetSampleTimeType()));
                         block->SetSampleTime(resolvedSampleTime);
                         progressMade = true;
                     }
@@ -299,6 +321,7 @@ namespace PySysLinkBase
                         for (const auto& outputSampleTime : outputSampleTimes) {
                             resolvedSampleTime = resolveSampleTime(resolvedSampleTime, outputSampleTime);
                         }
+                        spdlog::get("default_pysyslink")->debug("Block {} gets sample time {}", block->GetId(), SampleTime::SampleTimeTypeString(resolvedSampleTime->GetSampleTimeType()));
                         block->GetSampleTime() = resolvedSampleTime;
                         progressMade = true;
                     }
