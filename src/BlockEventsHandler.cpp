@@ -7,7 +7,7 @@ namespace PySysLinkBase
 {
     BlockEventsHandler::BlockEventsHandler()
     {
-
+        this->valueUpdateBlockEventCallbacks = {};
     }
 
     void BlockEventsHandler::BlockEventCallback(const std::shared_ptr<BlockEvent> blockEvent) const
@@ -29,7 +29,18 @@ namespace PySysLinkBase
                 std::string complexNumber = oss.str();
                 spdlog::get("default_pysyslink")->info("Value {}, {:03.2f} s : {}", displayUpdateBlockEvent->valueId, displayUpdateBlockEvent->simulationTime, complexNumber);
             }
+
+            for (const auto& callback : this->valueUpdateBlockEventCallbacks)
+            {
+                callback(displayUpdateBlockEvent);
+            }
             
         }
     }
+
+    void BlockEventsHandler::RegisterValueUpdateBlockEventCallback(std::function<void (std::shared_ptr<ValueUpdateBlockEvent>)> callback)
+    {
+        this->valueUpdateBlockEventCallbacks.push_back(callback);
+    }
+
 } // namespace PySysLinkBase

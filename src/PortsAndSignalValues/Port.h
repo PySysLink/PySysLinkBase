@@ -4,7 +4,7 @@
 #include <string>
 #include "UnknownTypeSignalValue.h"
 #include <memory>
-
+#include <functional>
 
 
 namespace PySysLinkBase
@@ -13,14 +13,24 @@ namespace PySysLinkBase
 
     class Port {
     protected:
-        std::unique_ptr<UnknownTypeSignalValue> value;
+        std::shared_ptr<UnknownTypeSignalValue> value;
+
+        std::vector<std::function<void (const Port&, const Port&, std::shared_ptr<UnknownTypeSignalValue>)>> copyCallbacks;
+        
     public:
-        Port(std::unique_ptr<UnknownTypeSignalValue> value);
+        Port(std::shared_ptr<UnknownTypeSignalValue> value);
 
         void TryCopyValueToPort(Port& otherPort) const;
 
-        void SetValue(std::unique_ptr<UnknownTypeSignalValue> value);
-        std::unique_ptr<UnknownTypeSignalValue> GetValue() const;
+        void SetValue(std::shared_ptr<UnknownTypeSignalValue> value);
+        std::shared_ptr<UnknownTypeSignalValue> GetValue() const;
+
+        void RegisterCopyCallback(std::function<void (const Port&, const Port&, std::shared_ptr<UnknownTypeSignalValue>)> callback);
+
+        bool operator==(const Port& rhs) const
+        {
+            return this == &rhs;
+        }
     };
 }
 

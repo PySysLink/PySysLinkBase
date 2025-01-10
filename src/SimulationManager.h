@@ -5,8 +5,12 @@
 #include "SimulationOptions.h"
 #include "BasicOdeSolver.h"
 #include "IOdeStepSolver.h"
+#include "SimulationOutput.h"
+#include "BlockEvents/ValueUpdateBlockEvent.h"
 
 #include <tuple>
+#include <unordered_map>
+#include <functional>
 
 namespace PySysLinkBase
 {
@@ -14,7 +18,7 @@ namespace PySysLinkBase
     {
         public:
         SimulationManager(std::shared_ptr<SimulationModel> simulationModel, std::shared_ptr<SimulationOptions> simulationOptions);
-        void RunSimulation();
+        std::shared_ptr<SimulationOutput> RunSimulation();
 
         private:
 
@@ -38,9 +42,17 @@ namespace PySysLinkBase
 
         std::map<double, std::vector<std::shared_ptr<SampleTime>>> timeHitsToSampleTimes;
         std::vector<double> timeHits;
+        double currentTime;
 
         std::shared_ptr<SimulationModel> simulationModel;
         std::shared_ptr<SimulationOptions> simulationOptions;
+
+        std::shared_ptr<SimulationOutput> simulationOutput;
+
+        void ValueUpdateBlockEventCallback(const std::shared_ptr<ValueUpdateBlockEvent> blockEvent);
+        void PortToLogCopyCallback(const Port &thisPort, const Port &otherPort, std::shared_ptr<UnknownTypeSignalValue> value);
+        std::unordered_map<const Port*, const Port*> portToLogInToAvoidRepetition = {};
+        std::unordered_map<const Port*, std::pair<std::string, int>> loggedPortToCorrespondentBlockIdAndOutputPortIndex = {};
     };
 }
 

@@ -3,7 +3,7 @@
 
 namespace PySysLinkBase
 {
-    InputPort::InputPort(bool hasDirectFeedthrough, std::unique_ptr<UnknownTypeSignalValue> value) : Port(std::move(value))
+    InputPort::InputPort(bool hasDirectFeedthrough, std::shared_ptr<UnknownTypeSignalValue> value) : Port(value)
     {
         this->hasDirectFeedthrough = hasDirectFeedthrough;
     }

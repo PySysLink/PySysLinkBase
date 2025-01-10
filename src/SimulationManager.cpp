@@ -3,8 +3,10 @@
 #include <thread>
 #include <chrono>
 #include "BasicOdeSolver.h"
+#include "PortsAndSignalValues/SignalValue.h"
 #include "EulerForwardStepSolver.h"
 #include <limits>
+#include <iostream>
 
 namespace PySysLinkBase
 {
@@ -31,6 +33,99 @@ namespace PySysLinkBase
         }
 
         this->GetTimeHitsToSampleTimes(simulationOptions, blocksForEachDiscreteSampleTime);
+
+        this->simulationOutput = std::make_shared<SimulationOutput>();
+        this->simulationModel->blockEventsHandler->RegisterValueUpdateBlockEventCallback(std::bind(&SimulationManager::ValueUpdateBlockEventCallback, this, std::placeholders::_1));
+
+        for (const auto& blockIdAndOutputIndexToLog : simulationOptions->blockIdsAndOutputIndexesToLog)
+        {
+            std::string blockId = blockIdAndOutputIndexToLog.first;
+            int outputIndex = blockIdAndOutputIndexToLog.second;
+            std::shared_ptr<ISimulationBlock> block = ISimulationBlock::FindBlockById(blockId, this->simulationModel->simulationBlocks);
+            std::shared_ptr<OutputPort> outputPort = block->GetOutputPorts()[outputIndex];
+
+            outputPort->RegisterCopyCallback(std::bind(&SimulationManager::PortToLogCopyCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+
+            this->loggedPortToCorrespondentBlockIdAndOutputPortIndex.insert({outputPort.get(), std::make_pair(blockId, outputIndex)});
+        }
+
+    }
+
+    void SimulationManager::PortToLogCopyCallback(const Port &thisPort, const Port &otherPort, std::shared_ptr<UnknownTypeSignalValue> value)
+    {
+        if (this->portToLogInToAvoidRepetition.find(&thisPort) == this->portToLogInToAvoidRepetition.end())
+        {
+            this->portToLogInToAvoidRepetition.insert({&thisPort, &otherPort});
+        }
+
+        if (&otherPort == this->portToLogInToAvoidRepetition[&thisPort])
+        {
+            std::pair<std::string, int> blockIdAndOutputIndex = this->loggedPortToCorrespondentBlockIdAndOutputPortIndex[&thisPort];
+            std::string signalId = blockIdAndOutputIndex.first + "/" + std::to_string(blockIdAndOutputIndex.second);
+            if (this->simulationOutput->signals.find("LoggedSignals") == this->simulationOutput->signals.end())
+            {
+                this->simulationOutput->signals.insert({"LoggedSignals", std::map<std::string, std::shared_ptr<UnknownTypeSignal>>()});
+            }
+            
+            try
+            {
+                double valueDouble = value->TryCastToTyped<double>()->GetPayload();
+
+                if (this->simulationOutput->signals["LoggedSignals"].find(signalId) == this->simulationOutput->signals["LoggedSignals"].end())
+                {
+                    this->simulationOutput->signals["LoggedSignals"].insert({signalId, std::make_shared<Signal<double>>()});
+                }
+                this->simulationOutput->signals["LoggedSignals"][signalId]->TryInsertValue<double>(this->currentTime, valueDouble);
+            }
+            catch(const std::bad_variant_access& e)
+            {
+                std::complex<double> valueComplex = value->TryCastToTyped<std::complex<double>>()->GetPayload();
+
+                if (this->simulationOutput->signals["LoggedSignals"].find(signalId) == this->simulationOutput->signals["LoggedSignals"].end())
+                {
+                    this->simulationOutput->signals["LoggedSignals"].insert({signalId, std::make_shared<Signal<std::complex<double>>>()});
+                }
+                this->simulationOutput->signals["LoggedSignals"][signalId]->TryInsertValue<std::complex<double>>(this->currentTime, valueComplex);
+            }
+        }
+    }
+
+    void SimulationManager::ValueUpdateBlockEventCallback(const std::shared_ptr<ValueUpdateBlockEvent> blockEvent)
+    {
+        std::string eventValueId = blockEvent->valueId;
+        int firstFinding = eventValueId.find("/");
+        int secondFinding = eventValueId.find("/", firstFinding + 1);
+        std::string valueEventType = eventValueId.substr(firstFinding + 1, secondFinding - firstFinding - 1);
+        std::string displayId = eventValueId.substr(secondFinding + 1, eventValueId.size() - secondFinding - 1);
+        spdlog::get("default_pysyslink")->debug("Value update event type: {}", valueEventType);
+        spdlog::get("default_pysyslink")->debug("Display id: {}", displayId);
+
+        if (valueEventType == "DisplayValue")
+        {
+            if (this->simulationOutput->signals.find("Displays") == this->simulationOutput->signals.end())
+            {
+                this->simulationOutput->signals.insert({"Displays", std::map<std::string, std::shared_ptr<UnknownTypeSignal>>()});
+            }
+            
+            try
+            {
+                double value = std::get<double>(blockEvent->value);
+                if (this->simulationOutput->signals["Displays"].find(displayId) == this->simulationOutput->signals["Displays"].end())
+                {
+                    this->simulationOutput->signals["Displays"].insert({displayId, std::make_shared<Signal<double>>()});
+                }
+                this->simulationOutput->signals["Displays"][displayId]->TryInsertValue<double>(blockEvent->simulationTime, value);
+            }
+            catch(const std::bad_variant_access& e)
+            {
+                std::complex<double> value = std::get<std::complex<double>>(blockEvent->value);
+                if (this->simulationOutput->signals["Displays"].find(displayId) == this->simulationOutput->signals["Displays"].end())
+                {
+                    this->simulationOutput->signals["Displays"].insert({displayId, std::make_shared<Signal<std::complex<double>>>()});
+                }
+                this->simulationOutput->signals["Displays"][displayId]->TryInsertValue<std::complex<double>>(blockEvent->simulationTime, std::get<std::complex<double>>(blockEvent->value));
+            }
+        }
     }
 
 
@@ -126,10 +221,10 @@ namespace PySysLinkBase
         }
     }
 
-    void SimulationManager::RunSimulation()
+    std::shared_ptr<SimulationOutput> SimulationManager::RunSimulation()
     {        
         auto simulationStartTime = std::chrono::system_clock::now();
-        double currentTime = simulationOptions->startTime;
+        this->currentTime = simulationOptions->startTime;
         spdlog::get("default_pysyslink")->debug("Simulation start");
 
         int nextDiscreteTimeHitToProcessIndex = 0;
@@ -180,6 +275,8 @@ namespace PySysLinkBase
             }
         }
         spdlog::get("default_pysyslink")->debug("Simulation end");
+
+        return this->simulationOutput;
     }
 
     std::tuple<double, int, std::vector<std::shared_ptr<SampleTime>>> SimulationManager::GetNearestTimeHit(int nextDiscreteTimeHitToProcessIndex)

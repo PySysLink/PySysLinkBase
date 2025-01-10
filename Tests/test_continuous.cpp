@@ -8,7 +8,9 @@
 #include "PySysLinkBase/SpdlogManager.h"
 #include "PySysLinkBase/BlockEventsHandler.h"
 #include "PySysLinkBase/SimulationOptions.h"
+#include "PySysLinkBase/SimulationOutput.h"
 #include <map>
+#include <iostream>
 
 int main() {
 
@@ -41,11 +43,26 @@ int main() {
     simulationOptions->stopTime = 10.0;
     simulationOptions->runInNaturalTime = true;
     simulationOptions->naturalTimeSpeedMultiplier = 1;
+    simulationOptions->blockIdsAndOutputIndexesToLog = {{"const1", 0}, {"integrator1", 0}};
 
     std::unique_ptr<PySysLinkBase::SimulationManager> simulationManager = std::make_unique<PySysLinkBase::SimulationManager>(simulationModel, simulationOptions);
 
 
-    simulationManager->RunSimulation();
+    std::shared_ptr<PySysLinkBase::SimulationOutput> simulationOutput = simulationManager->RunSimulation();
+    
+    std::vector<double> continuousValues = simulationOutput->signals["Displays"]["display1"]->TryCastToTyped<double>()->values;
+    std::vector<double> continuousTimes = simulationOutput->signals["Displays"]["display1"]->TryCastToTyped<double>()->times;
+    for (int i = 0; i < continuousValues.size(); i++)
+    {
+        std::cout << continuousTimes[i] << ": " << continuousValues[i] << std::endl;
+    }
+    
+    std::vector<double> continuousValuesLog = simulationOutput->signals["LoggedSignals"]["integrator1/0"]->TryCastToTyped<double>()->values;
+    std::vector<double> continuousTimesLog = simulationOutput->signals["LoggedSignals"]["integrator1/0"]->TryCastToTyped<double>()->times;
+    for (int i = 0; i < continuousValuesLog.size(); i++)
+    {
+        std::cout << continuousTimesLog[i] << ": " << continuousValuesLog[i] << std::endl;
+    }
 
     return 0;
 }

@@ -1,5 +1,5 @@
-#ifndef PY_SYS_LINK_BASE_PORTS_AND_SIGNAL_VALUES_OUTPUT_PORT
-#define PY_SYS_LINK_BASE_PORTS_AND_SIGNAL_VALUES_OUTPUT_PORT
+#ifndef SRC_PORTS_AND_SIGNAL_VALUES_OUTPUT_PORT
+#define SRC_PORTS_AND_SIGNAL_VALUES_OUTPUT_PORT
 
 
 #include "Port.h"
@@ -8,8 +8,8 @@ namespace PySysLinkBase
 {
     class OutputPort : public Port {
         public:
-            OutputPort(std::unique_ptr<UnknownTypeSignalValue> value);
+            OutputPort(std::shared_ptr<UnknownTypeSignalValue> value);
     };
 }
 
-#endif /* PY_SYS_LINK_BASE_PORTS_AND_SIGNAL_VALUES_OUTPUT_PORT */
+#endif /* SRC_PORTS_AND_SIGNAL_VALUES_OUTPUT_PORT */

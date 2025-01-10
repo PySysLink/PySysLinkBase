@@ -5,10 +5,10 @@
 
 namespace PySysLinkBase
 {
-    Port::Port(std::unique_ptr<UnknownTypeSignalValue> value) : 
-        value(std::move(value))
+    Port::Port(std::shared_ptr<UnknownTypeSignalValue> value) : 
+        value(value)
     {
-
+        this->copyCallbacks = {};
     }
 
 
@@ -17,6 +17,11 @@ namespace PySysLinkBase
         if (this->GetValue()->GetTypeId() == otherPort.GetValue()->GetTypeId())
         {
             otherPort.SetValue(this->GetValue()->clone());
+
+            for (const auto& callback : this->copyCallbacks)
+            {
+                callback(*this, otherPort, otherPort.GetValue());
+            }
         }
         else
         {
@@ -24,16 +29,21 @@ namespace PySysLinkBase
         }
     } 
 
-    void Port::SetValue(std::unique_ptr<UnknownTypeSignalValue> value)
+    void Port::SetValue(std::shared_ptr<UnknownTypeSignalValue> value)
     {
-        this->value = move(value);
+        this->value = value;
     }
-    std::unique_ptr<UnknownTypeSignalValue> Port::GetValue() const
+    std::shared_ptr<UnknownTypeSignalValue> Port::GetValue() const
     {
         if (!this->value)
         {
             throw std::runtime_error("Value was null, should not be");
         }
         return this->value->clone();
+    }
+
+    void Port::RegisterCopyCallback(std::function<void (const Port&, const Port&, std::shared_ptr<UnknownTypeSignalValue>)> callback)
+    {
+        this->copyCallbacks.push_back(callback);
     }
 } // namespace PySysLinkBase

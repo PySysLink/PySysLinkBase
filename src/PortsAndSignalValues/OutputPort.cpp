@@ -2,7 +2,7 @@
 
 namespace PySysLinkBase
 {
-    OutputPort::OutputPort(std::unique_ptr<UnknownTypeSignalValue> value) : Port(std::move(value))
+    OutputPort::OutputPort(std::shared_ptr<UnknownTypeSignalValue> value) : Port(value)
     {
 
     }
