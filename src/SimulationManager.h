@@ -3,8 +3,8 @@
 
 #include "SimulationModel.h"
 #include "SimulationOptions.h"
-#include "BasicOdeSolver.h"
-#include "IOdeStepSolver.h"
+#include "ContinuousAndOde/BasicOdeSolver.h"
+#include "ContinuousAndOde/IOdeStepSolver.h"
 #include "SimulationOutput.h"
 #include "BlockEvents/ValueUpdateBlockEvent.h"
 

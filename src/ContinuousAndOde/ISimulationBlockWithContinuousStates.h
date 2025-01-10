@@ -1,7 +1,7 @@
 #ifndef PY_SYS_LINK_BASE_ISIMULATION_BLOCK_WITH_CONTINUOUS_STATES
 #define PY_SYS_LINK_BASE_ISIMULATION_BLOCK_WITH_CONTINUOUS_STATES
 
-#include "ISimulationBlock.h"
+#include "../ISimulationBlock.h"
 #include <vector>
 #include <memory>
 #include <stdexcept>

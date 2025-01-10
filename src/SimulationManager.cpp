@@ -2,9 +2,9 @@
 #include "spdlog/spdlog.h"
 #include <thread>
 #include <chrono>
-#include "BasicOdeSolver.h"
+#include "ContinuousAndOde/BasicOdeSolver.h"
 #include "PortsAndSignalValues/SignalValue.h"
-#include "EulerForwardStepSolver.h"
+#include "ContinuousAndOde/EulerForwardStepSolver.h"
 #include <limits>
 #include <iostream>
 

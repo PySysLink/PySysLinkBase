@@ -1,6 +1,6 @@
 # Define a library
 add_library(PySysLinkBase SHARED
-    ContinuousState.cpp
+    ContinuousAndOde/ContinuousState.cpp
     SimulationModel.cpp
     ModelParser.cpp
     ISimulationBlock.cpp
@@ -10,9 +10,9 @@ add_library(PySysLinkBase SHARED
     PortLink.cpp
     SpdlogManager.cpp
     BlockEventsHandler.cpp
-    BasicOdeSolver.cpp
-    EulerForwardStepSolver.cpp
-    
+    ContinuousAndOde/BasicOdeSolver.cpp
+    ContinuousAndOde/EulerForwardStepSolver.cpp
+
     PortsAndSignalValues/InputPort.cpp 
     PortsAndSignalValues/OutputPort.cpp 
     PortsAndSignalValues/Port.cpp 

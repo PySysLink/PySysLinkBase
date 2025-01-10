@@ -1,5 +1,5 @@
-#ifndef SRC_PY_SYS_LINK_BASE_ISIMULATION_BLOCK
-#define SRC_PY_SYS_LINK_BASE_ISIMULATION_BLOCK
+#ifndef SRC_ISIMULATION_BLOCK
+#define SRC_ISIMULATION_BLOCK
 
 #include <string>
 #include <vector>
@@ -7,7 +7,7 @@
 #include "PortsAndSignalValues/InputPort.h"
 #include "PortsAndSignalValues/OutputPort.h"
 #include "SampleTime.h"
-#include "ContinuousState.h"
+#include "ContinuousAndOde/ContinuousState.h"
 #include <stdexcept>
 #include <map>
 #include "ConfigurationValue.h"
@@ -48,4 +48,4 @@ namespace PySysLinkBase
     };
 }
 
-#endif /* SRC_PY_SYS_LINK_BASE_ISIMULATION_BLOCK */
+#endif /* SRC_ISIMULATION_BLOCK */

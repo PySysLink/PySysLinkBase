@@ -2,7 +2,7 @@
 #define SRC_BLOCK_EVENTS_VALUE_UPDATE_BLOCK_EVENT
 
 #include <string>
-#include <PySysLinkBase/ConfigurationValue.h>
+#include <PySysLinkBase/FullySupportedSignalValue.h>
 #include "BlockEvent.h"
 
 namespace PySysLinkBase
@@ -12,8 +12,8 @@ namespace PySysLinkBase
         public:
         double simulationTime;
         std::string valueId;
-        ConfigurationValue value;
-        ValueUpdateBlockEvent(double simulationTime, std::string valueId, ConfigurationValue value) : simulationTime(simulationTime), valueId(valueId), value(value), BlockEvent("ValueUpdate") {}
+        FullySupportedSignalValue value;
+        ValueUpdateBlockEvent(double simulationTime, std::string valueId, FullySupportedSignalValue value) : simulationTime(simulationTime), valueId(valueId), value(value), BlockEvent("ValueUpdate") {}
 
         ~ValueUpdateBlockEvent() = default;
     };

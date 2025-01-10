@@ -3,7 +3,7 @@
 
 #include "IOdeStepSolver.h"
 #include "ISimulationBlockWithContinuousStates.h"
-#include "SimulationModel.h"
+#include "../SimulationModel.h"
 #include <memory>
 #include <vector>
 
