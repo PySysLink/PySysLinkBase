@@ -9,6 +9,8 @@ namespace PySysLinkBase
         this->id = ConfigurationValueManager::TryGetConfigurationValue<std::string>("Id", blockConfiguration);
 
         this->blockEventsHandler = blockEventsHandler;
+
+        this->calculateOutputCallbacks = {};
     }
 
     const std::string ISimulationBlock::GetId() const
@@ -89,6 +91,27 @@ namespace PySysLinkBase
     {
         this->blockEventsHandler->BlockEventCallback(blockEvent);
     }
+
+    const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>> ISimulationBlock::ComputeOutputsOfBlock(const std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double currentTime, bool isMinorStep)
+    {
+        const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>> outputPorts = this->_ComputeOutputsOfBlock(sampleTime, currentTime, isMinorStep);
+
+        if (!isMinorStep)
+        {
+            for (const auto& callback : this->calculateOutputCallbacks)
+            {
+                callback(this->id, outputPorts, sampleTime, currentTime);
+            }
+        }
+
+        return outputPorts;
+    }
+
+    void ISimulationBlock::RegisterCalculateOutputCallbacks(std::function<void (const std::string, const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>>, std::shared_ptr<PySysLinkBase::SampleTime>, double)> callback)
+    {
+        this->calculateOutputCallbacks.push_back(callback);
+    }
+
 
 
 } // namespace PySysLinkBase

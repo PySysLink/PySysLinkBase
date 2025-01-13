@@ -32,7 +32,15 @@ namespace PySysLinkBase
     {
         for (auto& block : this->simulationBlocks)
         {
-            this->ComputeBlockOutputs(block, sampleTime, currentTime);
+            this->ComputeBlockOutputs(block, sampleTime, currentTime, true);
+        }
+    }
+
+    void BasicOdeSolver::ComputeMajorOutputs(std::shared_ptr<SampleTime> sampleTime, double currentTime)
+    {
+        for (auto& block : this->simulationBlocks)
+        {
+            this->ComputeBlockOutputs(block, sampleTime, currentTime, false);
         }
     }
 
@@ -113,9 +121,9 @@ namespace PySysLinkBase
     }
 
 
-    void BasicOdeSolver::ComputeBlockOutputs(std::shared_ptr<ISimulationBlock> block, std::shared_ptr<SampleTime> sampleTime, double currentTime)
+    void BasicOdeSolver::ComputeBlockOutputs(std::shared_ptr<ISimulationBlock> block, std::shared_ptr<SampleTime> sampleTime, double currentTime, bool isMinorStep)
     {
-        block->ComputeOutputsOfBlock(sampleTime, currentTime);
+        block->ComputeOutputsOfBlock(sampleTime, currentTime, isMinorStep);
         for (int i = 0; i < block->GetOutputPorts().size(); i++)
         {
             for (auto& connectedPort : simulationModel->GetConnectedPorts(block, i))
@@ -138,12 +146,21 @@ namespace PySysLinkBase
         auto systemLambda = [this](std::vector<double> states, double time) {
             return this->SystemModel(states, time);
         };
+        
+        auto result = this->odeStepSolver->SolveStep(systemLambda, this->GetStates(), currentTime, timeStep);
+        double newSuggestedTimeStep = std::get<2>(result);
+        while (!std::get<0>(result))
+        {
+            spdlog::get("default_pysyslink")->debug("Step rejected, trying new suggested step size");
+            result = this->odeStepSolver->SolveStep(systemLambda, this->GetStates(), currentTime, newSuggestedTimeStep);
+            newSuggestedTimeStep = std::get<2>(result);
+        }
+        this->SetStates(std::get<1>(result));
 
-        auto resoult = this->odeStepSolver->SolveStep(systemLambda, this->GetStates(), currentTime, timeStep);
-        this->SetStates(std::get<0>(resoult));
+        this->nextSuggestedTimeStep = newSuggestedTimeStep;
+        this->nextTimeHit = currentTime + newSuggestedTimeStep;
 
-        this->nextSuggestedTimeStep = std::get<1>(resoult);
-        this->nextTimeHit = currentTime + std::get<1>(resoult);
+        this->ComputeMajorOutputs(this->sampleTime, currentTime);
     }
 
     double BasicOdeSolver::GetNextTimeHit() const

@@ -1,5 +1,5 @@
-#ifndef SRC_EULER_FORWARD_STEP_SOLVER
-#define SRC_EULER_FORWARD_STEP_SOLVER
+#ifndef SRC_CONTINUOUS_AND_ODE_ODEINT_STEP_SOLVER
+#define SRC_CONTINUOUS_AND_ODE_ODEINT_STEP_SOLVER
 
 
 #include <tuple>
@@ -9,7 +9,7 @@
 
 namespace PySysLinkBase
 {
-    class EulerForwardStepSolver : public IOdeStepSolver
+    class OdeintStepSolver : public IOdeStepSolver
     {
         public:
             std::tuple<bool, std::vector<double>, double> SolveStep(std::function<std::vector<double>(std::vector<double>, double)> system, 
@@ -17,4 +17,4 @@ namespace PySysLinkBase
     };
 } // namespace PySysLinkBase
 
-#endif /* SRC_EULER_FORWARD_STEP_SOLVER */
+#endif /* SRC_CONTINUOUS_AND_ODE_ODEINT_STEP_SOLVER */

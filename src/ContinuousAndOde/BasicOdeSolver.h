@@ -23,8 +23,9 @@ namespace PySysLinkBase
 
             std::shared_ptr<SampleTime> sampleTime;
             
-            void ComputeBlockOutputs(std::shared_ptr<ISimulationBlock> block, std::shared_ptr<SampleTime> sampleTime, double currentTime);
+            void ComputeBlockOutputs(std::shared_ptr<ISimulationBlock> block, std::shared_ptr<SampleTime> sampleTime, double currentTime, bool isMinorStep=false);
             void ComputeMinorOutputs(std::shared_ptr<SampleTime> sampleTime, double currentTime);
+            void ComputeMajorOutputs(std::shared_ptr<SampleTime> sampleTime, double currentTime);
             std::vector<double> GetDerivatives(std::shared_ptr<SampleTime> sampleTime, double currentTime);
             void SetStates(std::vector<double> newStates);
             std::vector<double> GetStates();

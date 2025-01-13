@@ -1,5 +1,5 @@
-#ifndef SRC_PY_SYS_LINK_BASE_CONFIGURATION_VALUE
-#define SRC_PY_SYS_LINK_BASE_CONFIGURATION_VALUE
+#ifndef SRC_CONFIGURATION_VALUE
+#define SRC_CONFIGURATION_VALUE
 
 #include <string>
 #include <variant>
@@ -64,4 +64,4 @@ namespace PySysLinkBase
 
 
 
-#endif /* SRC_PY_SYS_LINK_BASE_CONFIGURATION_VALUE */
+#endif /* SRC_CONFIGURATION_VALUE */

@@ -3,7 +3,7 @@
 
 namespace PySysLinkBase
 {
-    std::tuple<std::vector<double>, double> EulerForwardStepSolver::SolveStep(std::function<std::vector<double>(std::vector<double>, double)> system, std::vector<double> states_0, double currentTime, double timeStep)
+    std::tuple<bool, std::vector<double>, double> EulerForwardStepSolver::SolveStep(std::function<std::vector<double>(std::vector<double>, double)> system, std::vector<double> states_0, double currentTime, double timeStep)
     {
         std::vector<double> gradient = system(states_0, currentTime);
         spdlog::get("default_pysyslink")->debug("Gradient size: {}", gradient.size());
@@ -17,7 +17,7 @@ namespace PySysLinkBase
         {
             newStates[i] = states_0[i] + gradient[i] * timeStep;
         }
-        return {newStates, timeStep};
+        return {true, newStates, timeStep};
     }
 
 } // namespace PySysLinkBase

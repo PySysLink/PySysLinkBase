@@ -50,7 +50,9 @@ namespace PySysLinkBase
         std::shared_ptr<SimulationOutput> simulationOutput;
 
         void ValueUpdateBlockEventCallback(const std::shared_ptr<ValueUpdateBlockEvent> blockEvent);
-        void PortToLogCopyCallback(const Port &thisPort, const Port &otherPort, std::shared_ptr<UnknownTypeSignalValue> value);
+        
+        void LogSignalOutputUpdateCallback(const std::string blockId, const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>> outputPorts, int outputPortIndex, std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double currentTime);
+
         std::unordered_map<const Port*, const Port*> portToLogInToAvoidRepetition = {};
         std::unordered_map<const Port*, std::pair<std::string, int>> loggedPortToCorrespondentBlockIdAndOutputPortIndex = {};
     };

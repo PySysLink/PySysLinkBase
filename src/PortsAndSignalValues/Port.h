@@ -14,8 +14,6 @@ namespace PySysLinkBase
     class Port {
     protected:
         std::shared_ptr<UnknownTypeSignalValue> value;
-
-        std::vector<std::function<void (const Port&, const Port&, std::shared_ptr<UnknownTypeSignalValue>)>> copyCallbacks;
         
     public:
         Port(std::shared_ptr<UnknownTypeSignalValue> value);
@@ -24,8 +22,6 @@ namespace PySysLinkBase
 
         void SetValue(std::shared_ptr<UnknownTypeSignalValue> value);
         std::shared_ptr<UnknownTypeSignalValue> GetValue() const;
-
-        void RegisterCopyCallback(std::function<void (const Port&, const Port&, std::shared_ptr<UnknownTypeSignalValue>)> callback);
 
         bool operator==(const Port& rhs) const
         {
