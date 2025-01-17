@@ -30,10 +30,12 @@ namespace PySysLinkBase
             void SetStates(std::vector<double> newStates);
             std::vector<double> GetStates();
         public:
+            double firstTimeStep;
+
             std::vector<double> SystemModel(std::vector<double> states, double time);
 
             BasicOdeSolver(std::shared_ptr<IOdeStepSolver> odeStepSolver, std::shared_ptr<SimulationModel> simulationModel, 
-                            std::vector<std::shared_ptr<ISimulationBlock>> simulationBlocks, std::shared_ptr<SampleTime> sampleTime);
+                            std::vector<std::shared_ptr<ISimulationBlock>> simulationBlocks, std::shared_ptr<SampleTime> sampleTime, double firstTimeStep = 1e-6);
             void DoStep(double currentTime, double timeStep);
 
             double GetNextTimeHit() const;

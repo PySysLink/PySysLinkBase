@@ -29,7 +29,8 @@ namespace PySysLinkBase
 
         for (std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>::iterator iter = blocksForEachContinuousSampleTimeGroup.begin(); iter != blocksForEachContinuousSampleTimeGroup.end(); ++iter)
         {
-            std::shared_ptr<IOdeStepSolver> odeStepSolver;            
+            std::shared_ptr<IOdeStepSolver> odeStepSolver;
+            std::string selectedKey = "default";            
             if (this->simulationOptions->solversConfiguration.find(std::to_string(iter->first->GetContinuousSampleTimeGroup())) == this->simulationOptions->solversConfiguration.end())
             {
                 if (this->simulationOptions->solversConfiguration.find("default") == this->simulationOptions->solversConfiguration.end())
@@ -39,15 +40,27 @@ namespace PySysLinkBase
                 else
                 {
                     spdlog::get("default_pysyslink")->info("Solver for continuous sample time {} not found in configuration, using default solver.", iter->first->GetContinuousSampleTimeGroup());
-                    odeStepSolver = SolverFactory::CreateOdeStepSolver(this->simulationOptions->solversConfiguration["default"]);
+                    selectedKey = "default";
                 }
             }
             else
             {
-                odeStepSolver = SolverFactory::CreateOdeStepSolver(this->simulationOptions->solversConfiguration[std::to_string(iter->first->GetContinuousSampleTimeGroup())]);
+                selectedKey = std::to_string(iter->first->GetContinuousSampleTimeGroup());
             }
 
-            std::shared_ptr<BasicOdeSolver> odeSolver = std::make_shared<BasicOdeSolver>(odeStepSolver, this->simulationModel, iter->second, iter->first);
+            double firstTimeStep = 1e-6;
+            try
+            {
+                firstTimeStep = ConfigurationValueManager::TryGetConfigurationValue<double>("FirstTimeStep", this->simulationOptions->solversConfiguration[selectedKey]);
+            }
+            catch (std::out_of_range const& ex)
+            {
+                spdlog::get("default_pysyslink")->debug("First time step not found in configuration, using default value.");
+            }
+
+            odeStepSolver = SolverFactory::CreateOdeStepSolver(this->simulationOptions->solversConfiguration[selectedKey]);
+
+            std::shared_ptr<BasicOdeSolver> odeSolver = std::make_shared<BasicOdeSolver>(odeStepSolver, this->simulationModel, iter->second, iter->first, firstTimeStep);
             this->odeSolversForEachContinuousSampleTimeGroup.insert({iter->first, odeSolver});
         }
 
@@ -242,7 +255,7 @@ namespace PySysLinkBase
         for (std::map<std::shared_ptr<SampleTime>, std::shared_ptr<BasicOdeSolver>>::iterator iter = this->odeSolversForEachContinuousSampleTimeGroup.begin(); iter != this->odeSolversForEachContinuousSampleTimeGroup.end(); ++iter)
         {
             spdlog::get("default_pysyslink")->debug("First simulation step with continuous blocks of group {}", iter->first->GetContinuousSampleTimeGroup());
-            iter->second->DoStep(currentTime, 1e-2);
+            iter->second->DoStep(currentTime, iter->second->firstTimeStep);
         }
         
         spdlog::get("default_pysyslink")->debug("Main simulation loop start");
