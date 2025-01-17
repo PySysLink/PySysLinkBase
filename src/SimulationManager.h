@@ -55,6 +55,8 @@ namespace PySysLinkBase
 
         std::unordered_map<const Port*, const Port*> portToLogInToAvoidRepetition = {};
         std::unordered_map<const Port*, std::pair<std::string, int>> loggedPortToCorrespondentBlockIdAndOutputPortIndex = {};
+
+        std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>> orderedBlocks;
     };
 }
 

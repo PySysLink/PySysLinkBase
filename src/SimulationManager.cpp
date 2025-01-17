@@ -16,7 +16,7 @@ namespace PySysLinkBase
                                         : simulationModel(simulationModel), simulationOptions(simulationOptions)
     {
         std::vector<std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>>> blockChains = simulationModel->GetDirectBlockChains();
-        std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>> orderedBlocks = simulationModel->OrderBlockChainsOntoFreeOrder(blockChains);
+        this->orderedBlocks = simulationModel->OrderBlockChainsOntoFreeOrder(blockChains);
         
         this->blocksForEachDiscreteSampleTime = {};
         this->blocksForEachContinuousSampleTimeGroup = {};
@@ -284,19 +284,43 @@ namespace PySysLinkBase
                 spdlog::get("default_pysyslink")->debug("Simulated Time: {}, Real Time Elapsed: {} seconds", currentTime, elapsedRealTime);            
             }
 
-            for (const auto& sampleTime : sampleTimesToProcess)
+            if (sampleTimesToProcess.size() < 2)
             {
-                if (sampleTime->GetSampleTimeType() == SampleTimeType::discrete)
+                for (const auto& sampleTime : sampleTimesToProcess)
                 {
-                    for (auto& block : blocksForEachDiscreteSampleTime[sampleTime])
+                    if (sampleTime->GetSampleTimeType() == SampleTimeType::discrete)
                     {
-                        this->ProcessBlock(simulationModel, block, sampleTime, currentTime);
+                        for (auto& block : blocksForEachDiscreteSampleTime[sampleTime])
+                        {
+                            this->ProcessBlock(simulationModel, block, sampleTime, currentTime);
+                        }
+                    }
+                    else if (sampleTime->GetSampleTimeType() == SampleTimeType::continuous)
+                    {
+                        auto odeSolver = this->odeSolversForEachContinuousSampleTimeGroup[sampleTime];
+                        odeSolver->DoStep(currentTime, odeSolver->GetNextSuggestedTimeStep());
                     }
                 }
-                else if (sampleTime->GetSampleTimeType() == SampleTimeType::continuous)
+            }
+            else
+            {
+                for (const auto& block : this->orderedBlocks)
                 {
-                    auto odeSolver = this->odeSolversForEachContinuousSampleTimeGroup[sampleTime];
-                    odeSolver->DoStep(currentTime, odeSolver->GetNextSuggestedTimeStep());
+                    auto sampleTime = block->GetSampleTime();
+
+                    // Only process if the sample time is in the current list to process
+                    if (std::find(sampleTimesToProcess.begin(), sampleTimesToProcess.end(), sampleTime) != sampleTimesToProcess.end())
+                    {
+                        if (sampleTime->GetSampleTimeType() == SampleTimeType::discrete)
+                        {
+                            this->ProcessBlock(simulationModel, block, sampleTime, currentTime);
+                        }
+                        else if (sampleTime->GetSampleTimeType() == SampleTimeType::continuous)
+                        {
+                            auto odeSolver = this->odeSolversForEachContinuousSampleTimeGroup[sampleTime];
+                            odeSolver->DoStep(currentTime, odeSolver->GetNextSuggestedTimeStep());
+                        }
+                    }
                 }
             }
         }
