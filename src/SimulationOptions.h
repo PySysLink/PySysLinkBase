@@ -4,6 +4,7 @@
 #include <vector>
 #include <utility>
 #include <string>
+#include "ConfigurationValue.h"
 
 namespace PySysLinkBase
 {
@@ -19,6 +20,8 @@ namespace PySysLinkBase
         double naturalTimeSpeedMultiplier = 1.0;
 
         std::vector<std::pair<std::string, int>> blockIdsAndOutputIndexesToLog = {};
+
+        std::map<std::string, std::map<std::string, ConfigurationValue>> solversConfiguration;
     };
 } // namespace PySysLinkBase
 

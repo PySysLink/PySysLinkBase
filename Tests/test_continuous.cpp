@@ -44,6 +44,12 @@ int main() {
     simulationOptions->runInNaturalTime = true;
     simulationOptions->naturalTimeSpeedMultiplier = 1;
     simulationOptions->blockIdsAndOutputIndexesToLog = {{"const1", 0}, {"integrator1", 0}};
+    simulationOptions->solversConfiguration = {
+            { "default", {
+                { "Type", PySysLinkBase::ConfigurationValue(std::string("odeint")) },
+                { "ControlledSolver", PySysLinkBase::ConfigurationValue(std::string("runge_kutta_fehlberg78")) }
+            }}
+        };
 
     std::unique_ptr<PySysLinkBase::SimulationManager> simulationManager = std::make_unique<PySysLinkBase::SimulationManager>(simulationModel, simulationOptions);
 

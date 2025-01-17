@@ -6,6 +6,7 @@
 #include "PortsAndSignalValues/SignalValue.h"
 #include "ContinuousAndOde/EulerForwardStepSolver.h"
 #include "ContinuousAndOde/OdeintStepSolver.h"
+#include "ContinuousAndOde/SolverFactory.h"
 #include <limits>
 #include <iostream>
 
@@ -28,7 +29,24 @@ namespace PySysLinkBase
 
         for (std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>::iterator iter = blocksForEachContinuousSampleTimeGroup.begin(); iter != blocksForEachContinuousSampleTimeGroup.end(); ++iter)
         {
-            std::shared_ptr<IOdeStepSolver> odeStepSolver = std::make_shared<OdeintStepSolver>();
+            std::shared_ptr<IOdeStepSolver> odeStepSolver;            
+            if (this->simulationOptions->solversConfiguration.find(std::to_string(iter->first->GetContinuousSampleTimeGroup())) == this->simulationOptions->solversConfiguration.end())
+            {
+                if (this->simulationOptions->solversConfiguration.find("default") == this->simulationOptions->solversConfiguration.end())
+                {
+                    throw std::invalid_argument("Solver for continuous sample time " + std::to_string(iter->first->GetContinuousSampleTimeGroup()) + " not found in configuration, and no default solver was provided.");
+                }
+                else
+                {
+                    spdlog::get("default_pysyslink")->info("Solver for continuous sample time {} not found in configuration, using default solver.", iter->first->GetContinuousSampleTimeGroup());
+                    odeStepSolver = SolverFactory::CreateOdeStepSolver(this->simulationOptions->solversConfiguration["default"]);
+                }
+            }
+            else
+            {
+                odeStepSolver = SolverFactory::CreateOdeStepSolver(this->simulationOptions->solversConfiguration[std::to_string(iter->first->GetContinuousSampleTimeGroup())]);
+            }
+
             std::shared_ptr<BasicOdeSolver> odeSolver = std::make_shared<BasicOdeSolver>(odeStepSolver, this->simulationModel, iter->second, iter->first);
             this->odeSolversForEachContinuousSampleTimeGroup.insert({iter->first, odeSolver});
         }

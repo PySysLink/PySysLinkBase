@@ -12,7 +12,8 @@ add_library(PySysLinkBase SHARED
     BlockEventsHandler.cpp
     ContinuousAndOde/BasicOdeSolver.cpp
     ContinuousAndOde/EulerForwardStepSolver.cpp
-    ContinuousAndOde/OdeintStepSolver.cpp
+    ContinuousAndOde/SolverFactory.cpp
+
     PortsAndSignalValues/InputPort.cpp 
     PortsAndSignalValues/OutputPort.cpp 
     PortsAndSignalValues/Port.cpp 
