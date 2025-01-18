@@ -152,62 +152,96 @@ namespace PySysLinkBase
                                             std::vector<std::shared_ptr<ISimulationBlock>>& blocksWithConstantSampleTime,
                                             std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>& blocksForEachContinuousSampleTimeGroup)
     {
+        auto insertBlockInDiscreteSampleTime = [](const std::shared_ptr<ISimulationBlock> block, std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>& blocksForEachDiscreteSampleTime) -> void {
+            bool isAlreadyOnDiscreteSampleTimes = false;
+            std::shared_ptr<SampleTime> currentSampleTime;
+            for (std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>::iterator iter = blocksForEachDiscreteSampleTime.begin(); iter != blocksForEachDiscreteSampleTime.end(); ++iter)
+            {
+                if (iter->first->GetDiscreteSampleTime() == block->GetSampleTime()->GetDiscreteSampleTime())
+                {
+                    isAlreadyOnDiscreteSampleTimes = true;
+                    currentSampleTime = iter->first;
+                    break;
+                }
+            }
+
+            if (!isAlreadyOnDiscreteSampleTimes)
+            {
+                blocksForEachDiscreteSampleTime.insert({block->GetSampleTime(), std::vector<std::shared_ptr<ISimulationBlock>>({block})});
+            }
+            else
+            {
+                blocksForEachDiscreteSampleTime[currentSampleTime].push_back(block);
+            }
+        };
+
+        auto insertBlockInContinuousSampleTime = [](const std::shared_ptr<ISimulationBlock> block, std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>& blocksForEachContinuousSampleTimeGroup) -> void {
+            spdlog::get("default_pysyslink")->debug("Block with continuous sample time: {}", block->GetId());
+
+            bool isAlreadyOnContinuousSampleTimes = false;
+            std::shared_ptr<SampleTime> currentSampleTime;
+            for (std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>::iterator iter = blocksForEachContinuousSampleTimeGroup.begin(); iter != blocksForEachContinuousSampleTimeGroup.end(); ++iter)
+            {
+                if (iter->first->GetContinuousSampleTimeGroup() == block->GetSampleTime()->GetContinuousSampleTimeGroup())
+                {
+                    isAlreadyOnContinuousSampleTimes = true;
+                    currentSampleTime = iter->first;
+                    break;
+                }
+            }
+
+            if (!isAlreadyOnContinuousSampleTimes)
+            {
+                spdlog::get("default_pysyslink")->debug("Inserting onto dict");
+
+                blocksForEachContinuousSampleTimeGroup.insert({block->GetSampleTime(), std::vector<std::shared_ptr<ISimulationBlock>>({block})});
+            } else {
+                spdlog::get("default_pysyslink")->debug("Seems to be in dict, push back");
+
+                blocksForEachContinuousSampleTimeGroup[currentSampleTime].push_back(block);
+            }
+        };
+
         for (const auto& block : orderedBlocks)
         {
             spdlog::get("default_pysyslink")->debug("Block {} has sample time {}", block->GetId(), SampleTime::SampleTimeTypeString(block->GetSampleTime()->GetSampleTimeType()));
             if (block->GetSampleTime()->GetSampleTimeType() == SampleTimeType::discrete)
             {
-                bool isAlreadyOnDiscreteSampleTimes = false;
-                std::shared_ptr<SampleTime> currentSampleTime;
-                for (std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>::iterator iter = blocksForEachDiscreteSampleTime.begin(); iter != blocksForEachDiscreteSampleTime.end(); ++iter)
-                {
-                    if (iter->first->GetDiscreteSampleTime() == block->GetSampleTime()->GetDiscreteSampleTime())
-                    {
-                        isAlreadyOnDiscreteSampleTimes = true;
-                        currentSampleTime = iter->first;
-                        break;
-                    }
-                }
-
-                if (!isAlreadyOnDiscreteSampleTimes)
-                {
-                    blocksForEachDiscreteSampleTime.insert({block->GetSampleTime(), std::vector<std::shared_ptr<ISimulationBlock>>({block})});
-                }
-                else
-                {
-                    blocksForEachDiscreteSampleTime[currentSampleTime].push_back(block);
-                }
+                insertBlockInDiscreteSampleTime(block, blocksForEachDiscreteSampleTime);
             }
             else if (block->GetSampleTime()->GetSampleTimeType() == SampleTimeType::continuous)
             {
-                spdlog::get("default_pysyslink")->debug("Block with continuous sample time: {}", block->GetId());
-
-                bool isAlreadyOnContinuousSampleTimes = false;
-                std::shared_ptr<SampleTime> currentSampleTime;
-                for (std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>::iterator iter = blocksForEachContinuousSampleTimeGroup.begin(); iter != blocksForEachContinuousSampleTimeGroup.end(); ++iter)
-                {
-                    if (iter->first->GetContinuousSampleTimeGroup() == block->GetSampleTime()->GetContinuousSampleTimeGroup())
-                    {
-                        isAlreadyOnContinuousSampleTimes = true;
-                        currentSampleTime = iter->first;
-                        break;
-                    }
-                }
-
-                if (!isAlreadyOnContinuousSampleTimes)
-                {
-                    spdlog::get("default_pysyslink")->debug("Inserting onto dict");
-
-                    blocksForEachContinuousSampleTimeGroup.insert({block->GetSampleTime(), std::vector<std::shared_ptr<ISimulationBlock>>({block})});
-                } else {
-                    spdlog::get("default_pysyslink")->debug("Seems to be in dict, push back");
-
-                    blocksForEachContinuousSampleTimeGroup[currentSampleTime].push_back(block);
-                }
+                insertBlockInContinuousSampleTime(block, blocksForEachContinuousSampleTimeGroup);
             }
             else if (block->GetSampleTime()->GetSampleTimeType() == SampleTimeType::constant)
             {
                 blocksWithConstantSampleTime.push_back(block);
+            }
+            else if (block->GetSampleTime()->GetSampleTimeType() == SampleTimeType::multirate)
+            {
+                for (const auto& sampleTime : block->GetSampleTime()->GetMultirateSampleTimes())
+                {
+                    if (sampleTime->GetSampleTimeType() == SampleTimeType::discrete)
+                    {
+                        insertBlockInDiscreteSampleTime(block, blocksForEachDiscreteSampleTime);
+                    }
+                    else if (sampleTime->GetSampleTimeType() == SampleTimeType::continuous)
+                    {
+                        insertBlockInContinuousSampleTime(block, blocksForEachContinuousSampleTimeGroup);
+                    }
+                    else if (sampleTime->GetSampleTimeType() == SampleTimeType::constant)
+                    {
+                        blocksWithConstantSampleTime.push_back(block);
+                    }
+                    else
+                    {
+                        throw std::invalid_argument("Sample time of type " + SampleTime::SampleTimeTypeString(sampleTime->GetSampleTimeType()) + " should not be in simulation manager.");
+                    }
+                }
+            }
+            else
+            {
+                throw std::invalid_argument("Sample time of type " + SampleTime::SampleTimeTypeString(block->GetSampleTime()->GetSampleTimeType()) + " should not be in simulation manager.");
             }
         }
     }

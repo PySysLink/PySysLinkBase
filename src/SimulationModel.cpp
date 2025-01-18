@@ -374,7 +374,7 @@ namespace PySysLinkBase
                 }
             }
         }
-spdlog::get("default_pysyslink")->debug("Start backward propagation of sample time");
+        spdlog::get("default_pysyslink")->debug("Start backward propagation of sample time");
 
         // Backward propagation
         progressMade = true;
