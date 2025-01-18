@@ -207,8 +207,53 @@ namespace PySysLinkBase
 
     void SimulationModel::PropagateSampleTimes() {
         // Helper lambdas
-        auto hasKnownSampleTime = [](const std::shared_ptr<SampleTime> sampleTime) -> bool {
-            return sampleTime->GetSampleTimeType() != SampleTimeType::inherited;
+        auto hasKnownInputSampleTime = [](const std::shared_ptr<SampleTime> sampleTime) -> bool {
+            if (sampleTime->GetSampleTimeType() != SampleTimeType::multirate)
+            {
+                return sampleTime->GetSampleTimeType() != SampleTimeType::inherited;
+            }
+            else
+            {
+                if (sampleTime->HasMultirateInheritedSampleTime())
+                {
+                    if (std::isnan(sampleTime->GetOutputMultirateInheritedSampleTimeIndex()))
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    return true;
+                }
+            }
+        };
+        auto hasKnownOutputSampleTime = [](const std::shared_ptr<SampleTime> sampleTime) -> bool {
+            if (sampleTime->GetSampleTimeType() != SampleTimeType::multirate)
+            {
+                return sampleTime->GetSampleTimeType() != SampleTimeType::inherited;
+            }
+            else
+            {
+                if (sampleTime->HasMultirateInheritedSampleTime())
+                {
+                    if (std::isnan(sampleTime->GetInputMultirateInheritedSampleTimeIndex()))
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    return true;
+                }
+            }
         };
 
         auto areSampleTimesCompatible = [](const SampleTime& st1, const SampleTime& st2) -> bool {
@@ -226,6 +271,9 @@ namespace PySysLinkBase
         };
 
         auto resolveSampleTime = [](const std::shared_ptr<SampleTime> st1, const std::shared_ptr<SampleTime> st2) -> std::shared_ptr<SampleTime> {
+            if (st1->GetSampleTimeType() == SampleTimeType::multirate || st2->GetSampleTimeType() == SampleTimeType::multirate) {
+                throw std::runtime_error("Multirate sample times are not supported for sample time resolution.");
+            }
             if (st1->GetSampleTimeType() == SampleTimeType::constant && st2->GetSampleTimeType() == SampleTimeType::constant) {
                 return st1; // Constants resolve to constant
             }
@@ -260,33 +308,73 @@ namespace PySysLinkBase
                 bool allInputsResolved = true;
                 std::vector<std::shared_ptr<SampleTime>> inputSampleTimes;
 
-                for (int i = 0; i < block->GetInputPorts().size(); i++) {
+                for (int i = 0; i < block->GetInputPorts().size(); i++) 
+                {
                     const auto originBlock = GetOriginBlock(block, i);
-                    if (!originBlock || !hasKnownSampleTime(originBlock->GetSampleTime())) {
+                    if (!originBlock || !hasKnownOutputSampleTime(originBlock->GetSampleTime())) 
+                    {
                         allInputsResolved = false;
                         break;
                     }
-                    inputSampleTimes.push_back(originBlock->GetSampleTime());
+                    if (originBlock->GetSampleTime()->GetSampleTimeType() == SampleTimeType::multirate) {
+                        if (std::isnan(originBlock->GetSampleTime()->GetOutputMultirateInheritedSampleTimeIndex())) {
+                            inputSampleTimes.push_back(originBlock->GetSampleTime());
+                        } else {
+                            inputSampleTimes.push_back(originBlock->GetSampleTime()->GetMultirateSampleTimes()[originBlock->GetSampleTime()->GetOutputMultirateInheritedSampleTimeIndex()]);
+                        }
+                    } 
+                    else {
+                        inputSampleTimes.push_back(originBlock->GetSampleTime());
+                    }
                 }
 
                 if (allInputsResolved and (inputSampleTimes.size() != 0)) {
                     spdlog::get("default_pysyslink")->debug("All inputs resolved for block: {}", block->GetId());
                     const std::shared_ptr<SampleTime> blockSampleTime = block->GetSampleTime();
+
+                    std::shared_ptr<SampleTime> resolvedSampleTime = inputSampleTimes.front();
+                    for (const auto& inputSampleTime : inputSampleTimes) {
+                        resolvedSampleTime = resolveSampleTime(resolvedSampleTime, inputSampleTime);
+                    }
+
                     if (blockSampleTime->GetSampleTimeType() == SampleTimeType::inherited) {
                         spdlog::get("default_pysyslink")->debug("Inherited sample time");
-                        std::shared_ptr<SampleTime> resolvedSampleTime = inputSampleTimes.front();
-                        for (const auto& inputSampleTime : inputSampleTimes) {
-                            resolvedSampleTime = resolveSampleTime(resolvedSampleTime, inputSampleTime);
+
+                        std::vector<SampleTimeType> supportedSampleTimeTypesForInheritance = block->GetSampleTime()->GetSupportedSampleTimeTypesForInheritance();
+                        if (std::find(supportedSampleTimeTypesForInheritance.begin(), supportedSampleTimeTypesForInheritance.end(), resolvedSampleTime->GetSampleTimeType()) != supportedSampleTimeTypesForInheritance.end())
+                        {
+                            spdlog::get("default_pysyslink")->debug("Block {} gets sample time {}", block->GetId(), SampleTime::SampleTimeTypeString(resolvedSampleTime->GetSampleTimeType()));
+                            block->SetSampleTime(resolvedSampleTime);
+                            progressMade = true;
                         }
-                        spdlog::get("default_pysyslink")->debug("Block {} gets sample time {}", block->GetId(), SampleTime::SampleTimeTypeString(resolvedSampleTime->GetSampleTimeType()));
-                        block->SetSampleTime(resolvedSampleTime);
-                        progressMade = true;
+                        else
+                        {
+                            throw std::runtime_error("Sample time propagation failed: Incompatible sample time types.");
+                        }
+                    }
+                    else if (blockSampleTime->GetSampleTimeType() == SampleTimeType::multirate)
+                    {
+                        spdlog::get("default_pysyslink")->debug("Multirate sample time");
+                        if (!std::isnan(blockSampleTime->GetInputMultirateInheritedSampleTimeIndex()))
+                        {
+                            spdlog::get("default_pysyslink")->debug("Input sample time not resolved for multirate block: {}", block->GetId());
+                            std::vector<SampleTimeType> supportedSampleTimeTypesForInheritance = block->GetSampleTime()->GetMultirateSampleTimes()[block->GetSampleTime()->GetInputMultirateInheritedSampleTimeIndex()]->GetSupportedSampleTimeTypesForInheritance();
+                            if (std::find(supportedSampleTimeTypesForInheritance.begin(), supportedSampleTimeTypesForInheritance.end(), resolvedSampleTime->GetSampleTimeType()) != supportedSampleTimeTypesForInheritance.end())
+                            {
+                                spdlog::get("default_pysyslink")->debug("Block {} gets sample time at input {}", block->GetId(), SampleTime::SampleTimeTypeString(resolvedSampleTime->GetSampleTimeType()));
+                                block->GetSampleTime()->SetMultirateSampleTimeInIndex(resolvedSampleTime, blockSampleTime->GetInputMultirateInheritedSampleTimeIndex());
+                                progressMade = true;
+                            }
+                            else
+                            {
+                                throw std::runtime_error("Sample time propagation failed: Incompatible sample time types.");
+                            }
+                        }
                     }
                 }
             }
         }
-
-        spdlog::get("default_pysyslink")->debug("Start backward propagation of sample time");
+spdlog::get("default_pysyslink")->debug("Start backward propagation of sample time");
 
         // Backward propagation
         progressMade = true;
@@ -303,11 +391,21 @@ namespace PySysLinkBase
                     const std::vector<std::shared_ptr<ISimulationBlock>> connectedBlocks = connectedBlocksInfoPair.first;
                     const std::vector<int> connectedPortIndexes = connectedBlocksInfoPair.second;
                     for (int j = 0; j < connectedBlocks.size(); j++) {
-                        if (!connectedBlocks[j] || !hasKnownSampleTime(connectedBlocks[j]->GetSampleTime())) {
+                        if (!connectedBlocks[j] || !hasKnownInputSampleTime(connectedBlocks[j]->GetSampleTime())) {
                             allOutputsResolved = false;
                             break;
                         }
-                        outputSampleTimes.push_back(connectedBlocks[j]->GetSampleTime());
+                        if (connectedBlocks[j]->GetSampleTime()->GetSampleTimeType() == SampleTimeType::multirate) {
+                            if (std::isnan(connectedBlocks[j]->GetSampleTime()->GetInputMultirateInheritedSampleTimeIndex())) {
+                                outputSampleTimes.push_back(connectedBlocks[j]->GetSampleTime());
+                            } else {
+                                outputSampleTimes.push_back(connectedBlocks[j]->GetSampleTime()->GetMultirateSampleTimes()[connectedBlocks[j]->GetSampleTime()->GetInputMultirateInheritedSampleTimeIndex()]);
+                            }
+                        }
+                        else
+                        {
+                            outputSampleTimes.push_back(connectedBlocks[j]->GetSampleTime());
+                        }
                     }
                 }
 
@@ -316,14 +414,43 @@ namespace PySysLinkBase
 
                     const std::shared_ptr<SampleTime> blockSampleTime = block->GetSampleTime();
                     spdlog::get("default_pysyslink")->debug("Sample time type: {}", SampleTime::SampleTimeTypeString(blockSampleTime->GetSampleTimeType()));
+
+                    std::shared_ptr<SampleTime> resolvedSampleTime = outputSampleTimes.front();
+                    for (const auto& outputSampleTime : outputSampleTimes) {
+                        resolvedSampleTime = resolveSampleTime(resolvedSampleTime, outputSampleTime);
+                    }
+
                     if (blockSampleTime->GetSampleTimeType() == SampleTimeType::inherited) {
-                        std::shared_ptr<SampleTime> resolvedSampleTime = outputSampleTimes.front();
-                        for (const auto& outputSampleTime : outputSampleTimes) {
-                            resolvedSampleTime = resolveSampleTime(resolvedSampleTime, outputSampleTime);
+                        std::vector<SampleTimeType> supportedSampleTimeTypesForInheritance = block->GetSampleTime()->GetSupportedSampleTimeTypesForInheritance();
+                        if (std::find(supportedSampleTimeTypesForInheritance.begin(), supportedSampleTimeTypesForInheritance.end(), resolvedSampleTime->GetSampleTimeType()) != supportedSampleTimeTypesForInheritance.end())
+                        {
+                            spdlog::get("default_pysyslink")->debug("Block {} gets sample time {}", block->GetId(), SampleTime::SampleTimeTypeString(resolvedSampleTime->GetSampleTimeType()));
+                            block->SetSampleTime(resolvedSampleTime);
+                            progressMade = true;
                         }
-                        spdlog::get("default_pysyslink")->debug("Block {} gets sample time {}", block->GetId(), SampleTime::SampleTimeTypeString(resolvedSampleTime->GetSampleTimeType()));
-                        block->GetSampleTime() = resolvedSampleTime;
-                        progressMade = true;
+                        else
+                        {
+                            throw std::runtime_error("Sample time propagation failed: Incompatible sample time types.");
+                        }
+                    }
+                    else if (blockSampleTime->GetSampleTimeType() == SampleTimeType::multirate)
+                    {
+                        spdlog::get("default_pysyslink")->debug("Multirate sample time");
+                        if (!std::isnan(blockSampleTime->GetOutputMultirateInheritedSampleTimeIndex()))
+                        {
+                            spdlog::get("default_pysyslink")->debug("Output sample time not resolved for multirate block: {}", block->GetId());
+                            std::vector<SampleTimeType> supportedSampleTimeTypesForInheritance = block->GetSampleTime()->GetMultirateSampleTimes()[block->GetSampleTime()->GetOutputMultirateInheritedSampleTimeIndex()]->GetSupportedSampleTimeTypesForInheritance();
+                            if (std::find(supportedSampleTimeTypesForInheritance.begin(), supportedSampleTimeTypesForInheritance.end(), resolvedSampleTime->GetSampleTimeType()) != supportedSampleTimeTypesForInheritance.end())
+                            {
+                                spdlog::get("default_pysyslink")->debug("Block {} gets sample time at output {}", block->GetId(), SampleTime::SampleTimeTypeString(resolvedSampleTime->GetSampleTimeType()));
+                                block->GetSampleTime()->SetMultirateSampleTimeInIndex(resolvedSampleTime, blockSampleTime->GetOutputMultirateInheritedSampleTimeIndex());
+                                progressMade = true;
+                            }
+                            else
+                            {
+                                throw std::runtime_error("Sample time propagation failed: Incompatible sample time types.");
+                            }
+                        }
                     }
                 }
             }
@@ -332,7 +459,7 @@ namespace PySysLinkBase
 
         // Final validation
         for (const auto& block : simulationBlocks) {
-            if (!hasKnownSampleTime(block->GetSampleTime())) {
+            if (!hasKnownInputSampleTime(block->GetSampleTime()) || !hasKnownOutputSampleTime(block->GetSampleTime())) {
                 throw std::runtime_error("Sample time propagation failed: Unresolved sample times remain.");
             }
         }
