@@ -69,18 +69,30 @@ namespace PySysLinkBase
         this->simulationOutput = std::make_shared<SimulationOutput>();
         this->simulationModel->blockEventsHandler->RegisterValueUpdateBlockEventCallback(std::bind(&SimulationManager::ValueUpdateBlockEventCallback, this, std::placeholders::_1));
 
-        for (const auto& blockIdAndOutputIndexToLog : simulationOptions->blockIdsAndOutputIndexesToLog)
+        for (const auto& blockIdInputOrOutputAndIndexeToLog : simulationOptions->blockIdsInputOrOutputAndIndexesToLog)
         {
-            std::string blockId = blockIdAndOutputIndexToLog.first;
-            int outputIndex = blockIdAndOutputIndexToLog.second;
+            std::string blockId = std::get<0>(blockIdInputOrOutputAndIndexeToLog);
+            std::string inputOrOutput = std::get<1>(blockIdInputOrOutputAndIndexeToLog);
+            int outputIndex = std::get<2>(blockIdInputOrOutputAndIndexeToLog);
             std::shared_ptr<ISimulationBlock> block = ISimulationBlock::FindBlockById(blockId, this->simulationModel->simulationBlocks);
-            block->RegisterCalculateOutputCallbacks(std::bind(&SimulationManager::LogSignalOutputUpdateCallback, this, std::placeholders::_1, std::placeholders::_2, outputIndex, std::placeholders::_3, std::placeholders::_4));
+            if (inputOrOutput == "input")
+            {
+                block->RegisterReadInputsCallbacks(std::bind(&SimulationManager::LogSignalInputReadCallback, this, std::placeholders::_1, std::placeholders::_2, outputIndex, std::placeholders::_3, std::placeholders::_4));
+            }
+            else if (inputOrOutput == "output")
+            {
+                block->RegisterCalculateOutputCallbacks(std::bind(&SimulationManager::LogSignalOutputUpdateCallback, this, std::placeholders::_1, std::placeholders::_2, outputIndex, std::placeholders::_3, std::placeholders::_4));
+            }
+            else
+            {
+                spdlog::get("default_pysyslink")->error("Invalid input or output type in signal log configuration: {}", inputOrOutput);
+            }        
         }
     }
 
     void SimulationManager::LogSignalOutputUpdateCallback(const std::string blockId, const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>> outputPorts, int outputPortIndex, std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double currentTime)
     {
-        std::string signalId = blockId + "/" + std::to_string(outputPortIndex);
+        std::string signalId = blockId + "/output/" + std::to_string(outputPortIndex);
         if (this->simulationOutput->signals.find("LoggedSignals") == this->simulationOutput->signals.end())
         {
             this->simulationOutput->signals.insert({"LoggedSignals", std::map<std::string, std::shared_ptr<UnknownTypeSignal>>()});
@@ -99,6 +111,35 @@ namespace PySysLinkBase
         catch(const std::bad_variant_access& e)
         {
             std::complex<double> valueComplex = outputPorts[outputPortIndex]->GetValue()->TryCastToTyped<std::complex<double>>()->GetPayload();
+
+            if (this->simulationOutput->signals["LoggedSignals"].find(signalId) == this->simulationOutput->signals["LoggedSignals"].end())
+            {
+                this->simulationOutput->signals["LoggedSignals"].insert({signalId, std::make_shared<Signal<std::complex<double>>>()});
+            }
+            this->simulationOutput->signals["LoggedSignals"][signalId]->TryInsertValue<std::complex<double>>(this->currentTime, valueComplex);
+        }
+    }
+    void SimulationManager::LogSignalInputReadCallback(const std::string blockId, const std::vector<std::shared_ptr<PySysLinkBase::InputPort>> inputPorts, int inputPortIndex, std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double currentTime)
+    {
+        std::string signalId = blockId + "/input/" + std::to_string(inputPortIndex);
+        if (this->simulationOutput->signals.find("LoggedSignals") == this->simulationOutput->signals.end())
+        {
+            this->simulationOutput->signals.insert({"LoggedSignals", std::map<std::string, std::shared_ptr<UnknownTypeSignal>>()});
+        }
+        
+        try
+        {
+            double valueDouble = inputPorts[inputPortIndex]->GetValue()->TryCastToTyped<double>()->GetPayload();
+
+            if (this->simulationOutput->signals["LoggedSignals"].find(signalId) == this->simulationOutput->signals["LoggedSignals"].end())
+            {
+                this->simulationOutput->signals["LoggedSignals"].insert({signalId, std::make_shared<Signal<double>>()});
+            }
+            this->simulationOutput->signals["LoggedSignals"][signalId]->TryInsertValue<double>(this->currentTime, valueDouble);
+        }
+        catch(const std::bad_variant_access& e)
+        {
+            std::complex<double> valueComplex = inputPorts[inputPortIndex]->GetValue()->TryCastToTyped<std::complex<double>>()->GetPayload();
 
             if (this->simulationOutput->signals["LoggedSignals"].find(signalId) == this->simulationOutput->signals["LoggedSignals"].end())
             {
@@ -152,12 +193,23 @@ namespace PySysLinkBase
                                             std::vector<std::shared_ptr<ISimulationBlock>>& blocksWithConstantSampleTime,
                                             std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>& blocksForEachContinuousSampleTimeGroup)
     {
-        auto insertBlockInDiscreteSampleTime = [](const std::shared_ptr<ISimulationBlock> block, std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>& blocksForEachDiscreteSampleTime) -> void {
+        auto insertBlockInDiscreteSampleTime = [](const std::shared_ptr<ISimulationBlock> block, std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>& blocksForEachDiscreteSampleTime, std::shared_ptr<SampleTime> multirateSampleTime=nullptr) -> void {
             bool isAlreadyOnDiscreteSampleTimes = false;
             std::shared_ptr<SampleTime> currentSampleTime;
+
+            std::shared_ptr<SampleTime> keySampleTime;
+            if (multirateSampleTime == nullptr)
+            {
+                keySampleTime = block->GetSampleTime();
+            }
+            else
+            {
+                keySampleTime = multirateSampleTime;
+            }
+
             for (std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>::iterator iter = blocksForEachDiscreteSampleTime.begin(); iter != blocksForEachDiscreteSampleTime.end(); ++iter)
             {
-                if (iter->first->GetDiscreteSampleTime() == block->GetSampleTime()->GetDiscreteSampleTime())
+                if (iter->first->GetDiscreteSampleTime() == keySampleTime->GetDiscreteSampleTime())
                 {
                     isAlreadyOnDiscreteSampleTimes = true;
                     currentSampleTime = iter->first;
@@ -167,7 +219,7 @@ namespace PySysLinkBase
 
             if (!isAlreadyOnDiscreteSampleTimes)
             {
-                blocksForEachDiscreteSampleTime.insert({block->GetSampleTime(), std::vector<std::shared_ptr<ISimulationBlock>>({block})});
+                blocksForEachDiscreteSampleTime.insert({keySampleTime, std::vector<std::shared_ptr<ISimulationBlock>>({block})});
             }
             else
             {
@@ -175,14 +227,25 @@ namespace PySysLinkBase
             }
         };
 
-        auto insertBlockInContinuousSampleTime = [](const std::shared_ptr<ISimulationBlock> block, std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>& blocksForEachContinuousSampleTimeGroup) -> void {
+        auto insertBlockInContinuousSampleTime = [](const std::shared_ptr<ISimulationBlock> block, std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>& blocksForEachContinuousSampleTimeGroup, std::shared_ptr<SampleTime> multirateSampleTime=nullptr) -> void {
             spdlog::get("default_pysyslink")->debug("Block with continuous sample time: {}", block->GetId());
 
             bool isAlreadyOnContinuousSampleTimes = false;
             std::shared_ptr<SampleTime> currentSampleTime;
+
+            std::shared_ptr<SampleTime> keySampleTime;
+            if (multirateSampleTime == nullptr)
+            {
+                keySampleTime = block->GetSampleTime();
+            }
+            else
+            {
+                keySampleTime = multirateSampleTime;
+            }
+
             for (std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>::iterator iter = blocksForEachContinuousSampleTimeGroup.begin(); iter != blocksForEachContinuousSampleTimeGroup.end(); ++iter)
             {
-                if (iter->first->GetContinuousSampleTimeGroup() == block->GetSampleTime()->GetContinuousSampleTimeGroup())
+                if (iter->first->GetContinuousSampleTimeGroup() == keySampleTime->GetContinuousSampleTimeGroup())
                 {
                     isAlreadyOnContinuousSampleTimes = true;
                     currentSampleTime = iter->first;
@@ -194,7 +257,7 @@ namespace PySysLinkBase
             {
                 spdlog::get("default_pysyslink")->debug("Inserting onto dict");
 
-                blocksForEachContinuousSampleTimeGroup.insert({block->GetSampleTime(), std::vector<std::shared_ptr<ISimulationBlock>>({block})});
+                blocksForEachContinuousSampleTimeGroup.insert({keySampleTime, std::vector<std::shared_ptr<ISimulationBlock>>({block})});
             } else {
                 spdlog::get("default_pysyslink")->debug("Seems to be in dict, push back");
 
@@ -223,11 +286,11 @@ namespace PySysLinkBase
                 {
                     if (sampleTime->GetSampleTimeType() == SampleTimeType::discrete)
                     {
-                        insertBlockInDiscreteSampleTime(block, blocksForEachDiscreteSampleTime);
+                        insertBlockInDiscreteSampleTime(block, blocksForEachDiscreteSampleTime, sampleTime);
                     }
                     else if (sampleTime->GetSampleTimeType() == SampleTimeType::continuous)
                     {
-                        insertBlockInContinuousSampleTime(block, blocksForEachContinuousSampleTimeGroup);
+                        insertBlockInContinuousSampleTime(block, blocksForEachContinuousSampleTimeGroup, sampleTime);
                     }
                     else if (sampleTime->GetSampleTimeType() == SampleTimeType::constant)
                     {

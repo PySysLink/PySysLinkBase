@@ -23,23 +23,23 @@ namespace PySysLinkBase
         private:
             SampleTimeType sampleTimeType;
             double discreteSampleTime;
-            int continuousSampleTimeGroup = std::numeric_limits<int>::quiet_NaN();
+            int continuousSampleTimeGroup = -1;
             std::vector<SampleTimeType> supportedSampleTimeTypesForInheritance = std::vector<SampleTimeType>{};
             std::vector<std::shared_ptr<SampleTime>> multirateSampleTimes = {};
-            int inputMultirateInheritedSampleTimeIndex = std::numeric_limits<int>::quiet_NaN();
-            int outputMultirateInheritedSampleTimeIndex = std::numeric_limits<int>::quiet_NaN();
+            int inputMultirateSampleTimeIndex = -1;
+            int outputMultirateSampleTimeIndex = -1;
         public:
             SampleTime(SampleTimeType sampleTimeType, 
                         double discreteSampleTime, int continuousSampleTimeGroup, std::vector<SampleTimeType> supportedSampleTimeTypesForInheritance, std::vector<std::shared_ptr<SampleTime>> multirateSampleTimes, 
-                        int inputMultirateInheritedSampleTimeIndex = std::numeric_limits<int>::quiet_NaN(), int outputMultirateInheritedSampleTimeIndex = std::numeric_limits<int>::quiet_NaN());
+                        int inputMultirateSampleTimeIndex = -1, int outputMultirateSampleTimeIndex = -1);
 
-            SampleTime(SampleTimeType sampleTimeType) : SampleTime(sampleTimeType, std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<int>::quiet_NaN(), std::vector<SampleTimeType>{}, {}){}
-            SampleTime(SampleTimeType sampleTimeType, double discreteSampleTime) : SampleTime(sampleTimeType, discreteSampleTime, std::numeric_limits<int>::quiet_NaN(), std::vector<SampleTimeType>{}, {}){}
+            SampleTime(SampleTimeType sampleTimeType) : SampleTime(sampleTimeType, std::numeric_limits<double>::quiet_NaN(), -1, std::vector<SampleTimeType>{}, {}){}
+            SampleTime(SampleTimeType sampleTimeType, double discreteSampleTime) : SampleTime(sampleTimeType, discreteSampleTime, -1, std::vector<SampleTimeType>{}, {}){}
             SampleTime(SampleTimeType sampleTimeType, int continuousSampleTimeGroup) : SampleTime(sampleTimeType, std::numeric_limits<double>::quiet_NaN(), continuousSampleTimeGroup, std::vector<SampleTimeType>{}, {}){}
-            SampleTime(SampleTimeType sampleTimeType, std::vector<SampleTimeType> supportedSampleTimeTypesForInheritance) : SampleTime(sampleTimeType, std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<int>::quiet_NaN(), supportedSampleTimeTypesForInheritance, {}){}
-            SampleTime(SampleTimeType sampleTimeType, std::vector<std::shared_ptr<SampleTime>> multirateSampleTimes) : SampleTime(sampleTimeType, std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<int>::quiet_NaN(), {}, multirateSampleTimes){}
-            SampleTime(SampleTimeType sampleTimeType, std::vector<std::shared_ptr<SampleTime>> multirateSampleTimes, int inputMultirateInheritedSampleTimeIndex = std::numeric_limits<int>::quiet_NaN(), int outputMultirateInheritedSampleTimeIndex = std::numeric_limits<int>::quiet_NaN()) 
-            : SampleTime(sampleTimeType, std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<int>::quiet_NaN(), {}, multirateSampleTimes, inputMultirateInheritedSampleTimeIndex, outputMultirateInheritedSampleTimeIndex){}
+            SampleTime(SampleTimeType sampleTimeType, std::vector<SampleTimeType> supportedSampleTimeTypesForInheritance) : SampleTime(sampleTimeType, std::numeric_limits<double>::quiet_NaN(), -1, supportedSampleTimeTypesForInheritance, {}){}
+            SampleTime(SampleTimeType sampleTimeType, std::vector<std::shared_ptr<SampleTime>> multirateSampleTimes) : SampleTime(sampleTimeType, std::numeric_limits<double>::quiet_NaN(), -1, {}, multirateSampleTimes){}
+            SampleTime(SampleTimeType sampleTimeType, std::vector<std::shared_ptr<SampleTime>> multirateSampleTimes, int inputMultirateSampleTimeIndex = -1, int outputMultirateSampleTimeIndex = -1) 
+            : SampleTime(sampleTimeType, std::numeric_limits<double>::quiet_NaN(), -1, {}, multirateSampleTimes, inputMultirateSampleTimeIndex, outputMultirateSampleTimeIndex){}
             
             const SampleTimeType& GetSampleTimeType() const;
             const double GetDiscreteSampleTime() const;
@@ -48,8 +48,10 @@ namespace PySysLinkBase
             const std::vector<std::shared_ptr<SampleTime>> GetMultirateSampleTimes() const;
             const void SetMultirateSampleTimeInIndex(std::shared_ptr<SampleTime> multirateSampleTime, int index);
             const bool HasMultirateInheritedSampleTime() const;
-            const int GetInputMultirateInheritedSampleTimeIndex() const;
-            const int GetOutputMultirateInheritedSampleTimeIndex() const;
+            const int GetInputMultirateSampleTimeIndex() const;
+            const int GetOutputMultirateSampleTimeIndex() const;
+            const bool IsInputMultirateInherited() const;
+            const bool IsOutputMultirateInherited() const;
 
             static std::string SampleTimeTypeString(SampleTimeType sampleTimeType);
     };

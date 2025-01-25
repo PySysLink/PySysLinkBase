@@ -1,6 +1,7 @@
 # Add test executable
 add_executable(PySysLinkTests test_main.cpp)
 add_executable(Continuous test_continuous.cpp)
+add_executable(Multirate test_multirate.cpp)
 
 
 # Include directories
@@ -12,6 +13,7 @@ target_include_directories(PySysLinkTests PRIVATE
 # Link the main project (if necessary)
 target_link_libraries(PySysLinkTests PRIVATE PySysLinkBase)
 target_link_libraries(Continuous PRIVATE PySysLinkBase)
+target_link_libraries(Multirate PRIVATE PySysLinkBase)
 
 # Add test framework (if using one, like GoogleTest)
 # Example: Linking with GoogleTest

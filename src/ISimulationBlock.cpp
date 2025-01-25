@@ -94,6 +94,14 @@ namespace PySysLinkBase
 
     const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>> ISimulationBlock::ComputeOutputsOfBlock(const std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double currentTime, bool isMinorStep)
     {
+        if (!isMinorStep)
+        {
+            for (const auto& callback : this->readInputCallbacks)
+            {
+                callback(this->id, this->GetInputPorts(), sampleTime, currentTime);
+            }
+        }
+
         const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>> outputPorts = this->_ComputeOutputsOfBlock(sampleTime, currentTime, isMinorStep);
 
         if (!isMinorStep)
@@ -105,6 +113,11 @@ namespace PySysLinkBase
         }
 
         return outputPorts;
+    }
+
+    void ISimulationBlock::RegisterReadInputsCallbacks(std::function<void (const std::string, const std::vector<std::shared_ptr<PySysLinkBase::InputPort>>, std::shared_ptr<PySysLinkBase::SampleTime>, double)> callback)
+    {
+        this->readInputCallbacks.push_back(callback);
     }
 
     void ISimulationBlock::RegisterCalculateOutputCallbacks(std::function<void (const std::string, const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>>, std::shared_ptr<PySysLinkBase::SampleTime>, double)> callback)

@@ -26,7 +26,7 @@ int main() {
     
     PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::debug);
 
-    std::shared_ptr<PySysLinkBase::SimulationModel> simulationModel = std::make_unique<PySysLinkBase::SimulationModel>(PySysLinkBase::ModelParser::ParseFromYaml("/home/pello/PySysLink/Tests/system1_continuous.yaml", blockFactories, blockEventsHandler));
+    std::shared_ptr<PySysLinkBase::SimulationModel> simulationModel = std::make_unique<PySysLinkBase::SimulationModel>(PySysLinkBase::ModelParser::ParseFromYaml("/home/pello/PySysLink/Tests/system1_multirate.yaml", blockFactories, blockEventsHandler));
 
     std::vector<std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>>> blockChains = simulationModel->GetDirectBlockChains();
     
@@ -43,7 +43,7 @@ int main() {
     simulationOptions->stopTime = 10.0;
     simulationOptions->runInNaturalTime = true;
     simulationOptions->naturalTimeSpeedMultiplier = 1;
-    simulationOptions->blockIdsInputOrOutputAndIndexesToLog = {{"const1", "output", 0}, {"integrator1", "output", 0}};
+    simulationOptions->blockIdsInputOrOutputAndIndexesToLog = {{"const1", "output", 0}, {"integrator2", "output", 0}, {"display1", "input", 0}};
     simulationOptions->solversConfiguration = {
             { "default", {
                 { "Type", PySysLinkBase::ConfigurationValue(std::string("odeint")) },
@@ -56,15 +56,15 @@ int main() {
 
     std::shared_ptr<PySysLinkBase::SimulationOutput> simulationOutput = simulationManager->RunSimulation();
     
-    std::vector<double> continuousValues = simulationOutput->signals["Displays"]["display1"]->TryCastToTyped<double>()->values;
-    std::vector<double> continuousTimes = simulationOutput->signals["Displays"]["display1"]->TryCastToTyped<double>()->times;
+    std::vector<double> continuousValues = simulationOutput->signals["LoggedSignals"]["integrator2/output/0"]->TryCastToTyped<double>()->values;
+    std::vector<double> continuousTimes = simulationOutput->signals["LoggedSignals"]["integrator2/output/0"]->TryCastToTyped<double>()->times;
     for (int i = 0; i < continuousValues.size(); i++)
     {
         std::cout << continuousTimes[i] << ": " << continuousValues[i] << std::endl;
     }
     
-    std::vector<double> continuousValuesLog = simulationOutput->signals["LoggedSignals"]["integrator1/output/0"]->TryCastToTyped<double>()->values;
-    std::vector<double> continuousTimesLog = simulationOutput->signals["LoggedSignals"]["integrator1/output/0"]->TryCastToTyped<double>()->times;
+    std::vector<double> continuousValuesLog = simulationOutput->signals["LoggedSignals"]["display1/input/0"]->TryCastToTyped<double>()->values;
+    std::vector<double> continuousTimesLog = simulationOutput->signals["LoggedSignals"]["display1/input/0"]->TryCastToTyped<double>()->times;
     for (int i = 0; i < continuousValuesLog.size(); i++)
     {
         std::cout << continuousTimesLog[i] << ": " << continuousValuesLog[i] << std::endl;
