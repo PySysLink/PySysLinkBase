@@ -9,6 +9,7 @@
 
 namespace PySysLinkBase
 {
+
     class BasicOdeSolver
     {
         private:
@@ -20,6 +21,7 @@ namespace PySysLinkBase
 
             double nextTimeHit;
             double nextSuggestedTimeStep;
+            std::vector<double> nextTimeHitStates;
 
             std::shared_ptr<SampleTime> sampleTime;
             
@@ -29,13 +31,18 @@ namespace PySysLinkBase
             std::vector<double> GetDerivatives(std::shared_ptr<SampleTime> sampleTime, double currentTime);
             void SetStates(std::vector<double> newStates);
             std::vector<double> GetStates();
+
+            bool activateEvents;
+            double eventTolerance;
+            const std::vector<std::pair<double, double>> GetEvents(const std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double eventTime, std::vector<double> eventTimeStates) const;
         public:
             double firstTimeStep;
 
             std::vector<double> SystemModel(std::vector<double> states, double time);
 
             BasicOdeSolver(std::shared_ptr<IOdeStepSolver> odeStepSolver, std::shared_ptr<SimulationModel> simulationModel, 
-                            std::vector<std::shared_ptr<ISimulationBlock>> simulationBlocks, std::shared_ptr<SampleTime> sampleTime, double firstTimeStep = 1e-6);
+                            std::vector<std::shared_ptr<ISimulationBlock>> simulationBlocks, std::shared_ptr<SampleTime> sampleTime, 
+                            double firstTimeStep = 1e-6, bool activateEvents=true, double eventTolerance=1e-2);
             void DoStep(double currentTime, double timeStep);
 
             double GetNextTimeHit() const;

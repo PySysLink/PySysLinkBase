@@ -39,6 +39,8 @@ namespace PySysLinkBase
                 boost::numeric::odeint::controlled_step_result result = this->controlledStepper->try_step(systemFunction, newStates, currentTime, dt);
                 // controlled_step_result result = stepper.try_step(systemFunction, newStates, currentTime, dt);
 
+                system(states_0, currentTime); // Set initial states again, may be optimized
+
                 // Debug log output
                 if (result == boost::numeric::odeint::success)
                 {

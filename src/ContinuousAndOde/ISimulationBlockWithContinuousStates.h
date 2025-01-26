@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <stdexcept>
+#include <utility>
 
 namespace PySysLinkBase
 {
@@ -23,7 +24,7 @@ namespace PySysLinkBase
                 throw std::logic_error("Jacobian not implemented in block " + this->GetId() + ". This is the deffault behaviour.");
             }
 
-            virtual const std::vector<double> GetEvents(const std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double currentTime) const
+            virtual const std::vector<std::pair<double, double>> GetEvents(const std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double eventTime, std::vector<double> eventTimeStates) const
             {
                 return {};
             }
