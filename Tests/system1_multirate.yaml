@@ -28,7 +28,7 @@ Blocks:
     Name: ContinuousToDiscrete1
     BlockType: BasicCpp
     BlockClass: BasicBlocks/ContinuousToDiscrete
-    DiscreteSampleTime: 0.1
+    DiscreteSampleTime: 1.0
 
 Links:
   - Id: link1

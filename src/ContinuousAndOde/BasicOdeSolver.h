@@ -6,6 +6,7 @@
 #include "../SimulationModel.h"
 #include <memory>
 #include <vector>
+#include "../SimulationOptions.h"
 
 namespace PySysLinkBase
 {
@@ -19,7 +20,9 @@ namespace PySysLinkBase
             std::vector<int> continuousStatesInEachBlock;
             int totalStates;
 
-            double nextTimeHit;
+            std::vector<double> knownTimeHits = {};
+            int currentKnownTimeHit = 0;
+            double nextUnknownTimeHit;
             double nextSuggestedTimeStep;
             std::vector<double> nextTimeHitStates;
 
@@ -42,7 +45,10 @@ namespace PySysLinkBase
 
             BasicOdeSolver(std::shared_ptr<IOdeStepSolver> odeStepSolver, std::shared_ptr<SimulationModel> simulationModel, 
                             std::vector<std::shared_ptr<ISimulationBlock>> simulationBlocks, std::shared_ptr<SampleTime> sampleTime, 
+                            std::shared_ptr<SimulationOptions> simulationOptions,
                             double firstTimeStep = 1e-6, bool activateEvents=true, double eventTolerance=1e-2);
+            
+            void UpdateStatesToNextTimeHits();
             void DoStep(double currentTime, double timeStep);
 
             double GetNextTimeHit() const;

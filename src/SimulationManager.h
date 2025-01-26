@@ -40,6 +40,9 @@ namespace PySysLinkBase
         std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>> blocksForEachContinuousSampleTimeGroup;
         std::vector<std::shared_ptr<ISimulationBlock>> blocksWithConstantSampleTime;
 
+        bool IsBlockInSampleTimes(const std::shared_ptr<ISimulationBlock>& block, const std::vector<std::shared_ptr<SampleTime>>& sampleTimes, 
+                                            const std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>& blockMap);
+
         std::map<double, std::vector<std::shared_ptr<SampleTime>>> timeHitsToSampleTimes;
         std::vector<double> timeHits;
         double currentTime;

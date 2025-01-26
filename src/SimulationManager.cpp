@@ -60,7 +60,7 @@ namespace PySysLinkBase
 
             odeStepSolver = SolverFactory::CreateOdeStepSolver(this->simulationOptions->solversConfiguration[selectedKey]);
 
-            std::shared_ptr<BasicOdeSolver> odeSolver = std::make_shared<BasicOdeSolver>(odeStepSolver, this->simulationModel, iter->second, iter->first, firstTimeStep);
+            std::shared_ptr<BasicOdeSolver> odeSolver = std::make_shared<BasicOdeSolver>(odeStepSolver, this->simulationModel, iter->second, iter->first, this->simulationOptions, firstTimeStep);
             this->odeSolversForEachContinuousSampleTimeGroup.insert({iter->first, odeSolver});
         }
 
@@ -385,6 +385,7 @@ namespace PySysLinkBase
             {
                 for (const auto& sampleTime : sampleTimesToProcess)
                 {
+                    spdlog::get("default_pysyslink")->debug("Solving sample time of type: {}", SampleTime::SampleTimeTypeString(sampleTime->GetSampleTimeType()));            
                     if (sampleTime->GetSampleTimeType() == SampleTimeType::discrete)
                     {
                         for (auto& block : blocksForEachDiscreteSampleTime[sampleTime])
@@ -401,22 +402,49 @@ namespace PySysLinkBase
             }
             else
             {
+                spdlog::get("default_pysyslink")->debug("Solving many sample times"); 
+
+                for (const auto& sampleTime : sampleTimesToProcess)
+                {
+                    if (sampleTime->GetSampleTimeType() == SampleTimeType::continuous)
+                    {
+                        auto odeSolver = this->odeSolversForEachContinuousSampleTimeGroup[sampleTime];
+                        odeSolver->UpdateStatesToNextTimeHits(); // So that the output of each block can be correctly calculated
+                    }
+                }           
                 for (const auto& block : this->orderedBlocks)
                 {
                     auto sampleTime = block->GetSampleTime();
-
-                    // Only process if the sample time is in the current list to process
-                    if (std::find(sampleTimesToProcess.begin(), sampleTimesToProcess.end(), sampleTime) != sampleTimesToProcess.end())
+                    
+                    bool processBlock = false;
+                    if (sampleTime->GetSampleTimeType() == SampleTimeType::discrete)
                     {
-                        if (sampleTime->GetSampleTimeType() == SampleTimeType::discrete)
-                        {
-                            this->ProcessBlock(simulationModel, block, sampleTime, currentTime);
-                        }
-                        else if (sampleTime->GetSampleTimeType() == SampleTimeType::continuous)
-                        {
-                            auto odeSolver = this->odeSolversForEachContinuousSampleTimeGroup[sampleTime];
-                            odeSolver->DoStep(currentTime, odeSolver->GetNextSuggestedTimeStep());
-                        }
+                        processBlock = this->IsBlockInSampleTimes(block, sampleTimesToProcess, this->blocksForEachDiscreteSampleTime);
+                    }
+                    else if (sampleTime->GetSampleTimeType() == SampleTimeType::continuous)
+                    {
+                        processBlock = this->IsBlockInSampleTimes(block, sampleTimesToProcess, this->blocksForEachContinuousSampleTimeGroup);
+                    }
+                    else if (sampleTime->GetSampleTimeType() == SampleTimeType::multirate)
+                    {
+                        bool processBlock1 = this->IsBlockInSampleTimes(block, sampleTimesToProcess, this->blocksForEachDiscreteSampleTime);
+                        bool processBlock2 = this->IsBlockInSampleTimes(block, sampleTimesToProcess, this->blocksForEachContinuousSampleTimeGroup);
+                        processBlock = processBlock1 || processBlock2;
+                    }
+                    // Only process if the sample time is in the current list to process
+                    if (processBlock)
+                    {
+                        spdlog::get("default_pysyslink")->debug("Block to process on multiple time hit: {}", block->GetId()); 
+
+                        this->ProcessBlock(simulationModel, block, sampleTime, currentTime);
+                    }
+                }
+                for (const auto& sampleTime : sampleTimesToProcess)
+                {
+                    if (sampleTime->GetSampleTimeType() == SampleTimeType::continuous)
+                    {
+                        auto odeSolver = this->odeSolversForEachContinuousSampleTimeGroup[sampleTime];
+                        odeSolver->DoStep(currentTime, odeSolver->GetNextSuggestedTimeStep());
                     }
                 }
             }
@@ -424,6 +452,24 @@ namespace PySysLinkBase
         spdlog::get("default_pysyslink")->debug("Simulation end");
 
         return this->simulationOutput;
+    }
+
+    bool SimulationManager::IsBlockInSampleTimes(const std::shared_ptr<ISimulationBlock>& block, const std::vector<std::shared_ptr<SampleTime>>& sampleTimes, 
+                                            const std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>& blockMap)
+    {
+        for (const auto& sampleTime : sampleTimes)
+        {
+            auto it = blockMap.find(sampleTime);
+            if (it != blockMap.end())
+            {
+                // Use std::find to check if the block exists in the vector
+                if (std::find(it->second.begin(), it->second.end(), block) != it->second.end())
+                {
+                    return true;  // Block found in this sample time
+                }
+            }
+        }
+        return false;  // Block not found in any sample time
     }
 
     std::tuple<double, int, std::vector<std::shared_ptr<SampleTime>>> SimulationManager::GetNearestTimeHit(int nextDiscreteTimeHitToProcessIndex)
@@ -456,6 +502,7 @@ namespace PySysLinkBase
             }
             else if (nextTimeHit_i == nearestTimeHit)
             {
+                spdlog::get("default_pysyslink")->debug("New continuous sample time hit at the same moment!");
                 sampleTimesToProcess.push_back(iter->first);
             }
         }
