@@ -50,11 +50,11 @@ namespace PySysLinkBase
         }
     }
 
-    void BasicOdeSolver::ComputeMajorOutputs(std::shared_ptr<SampleTime> sampleTime, double currentTime)
+    void BasicOdeSolver::ComputeMajorOutputs(double currentTime)
     {
         for (auto& block : this->simulationBlocks)
         {
-            this->ComputeBlockOutputs(block, sampleTime, currentTime, false);
+            this->ComputeBlockOutputs(block, this->sampleTime, currentTime, false);
         }
     }
 
@@ -282,8 +282,6 @@ namespace PySysLinkBase
 
         this->nextSuggestedTimeStep = newSuggestedTimeStep;
         this->nextUnknownTimeHit = currentTime + appliedTimeStep;
-
-        this->ComputeMajorOutputs(this->sampleTime, currentTime);
     }
 
     double BasicOdeSolver::GetNextTimeHit() const

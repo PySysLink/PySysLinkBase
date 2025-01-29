@@ -353,6 +353,7 @@ namespace PySysLinkBase
         {
             spdlog::get("default_pysyslink")->debug("First simulation step with continuous blocks of group {}", iter->first->GetContinuousSampleTimeGroup());
             iter->second->DoStep(currentTime, iter->second->firstTimeStep);
+            iter->second->ComputeMajorOutputs(currentTime);
         }
         
         spdlog::get("default_pysyslink")->debug("Main simulation loop start");
@@ -397,6 +398,7 @@ namespace PySysLinkBase
                     {
                         auto odeSolver = this->odeSolversForEachContinuousSampleTimeGroup[sampleTime];
                         odeSolver->DoStep(currentTime, odeSolver->GetNextSuggestedTimeStep());
+                        odeSolver->ComputeMajorOutputs(currentTime);
                     }
                 }
             }
@@ -412,33 +414,9 @@ namespace PySysLinkBase
                         odeSolver->UpdateStatesToNextTimeHits(); // So that the output of each block can be correctly calculated
                     }
                 }           
-                for (const auto& block : this->orderedBlocks)
-                {
-                    auto sampleTime = block->GetSampleTime();
-                    
-                    bool processBlock = false;
-                    if (sampleTime->GetSampleTimeType() == SampleTimeType::discrete)
-                    {
-                        processBlock = this->IsBlockInSampleTimes(block, sampleTimesToProcess, this->blocksForEachDiscreteSampleTime);
-                    }
-                    else if (sampleTime->GetSampleTimeType() == SampleTimeType::continuous)
-                    {
-                        processBlock = this->IsBlockInSampleTimes(block, sampleTimesToProcess, this->blocksForEachContinuousSampleTimeGroup);
-                    }
-                    else if (sampleTime->GetSampleTimeType() == SampleTimeType::multirate)
-                    {
-                        bool processBlock1 = this->IsBlockInSampleTimes(block, sampleTimesToProcess, this->blocksForEachDiscreteSampleTime);
-                        bool processBlock2 = this->IsBlockInSampleTimes(block, sampleTimesToProcess, this->blocksForEachContinuousSampleTimeGroup);
-                        processBlock = processBlock1 || processBlock2;
-                    }
-                    // Only process if the sample time is in the current list to process
-                    if (processBlock)
-                    {
-                        spdlog::get("default_pysyslink")->debug("Block to process on multiple time hit: {}", block->GetId()); 
+                
+                this->ProcessBlocksInSampleTimes(sampleTimesToProcess, true);
 
-                        this->ProcessBlock(simulationModel, block, sampleTime, currentTime);
-                    }
-                }
                 for (const auto& sampleTime : sampleTimesToProcess)
                 {
                     if (sampleTime->GetSampleTimeType() == SampleTimeType::continuous)
@@ -447,12 +425,46 @@ namespace PySysLinkBase
                         odeSolver->DoStep(currentTime, odeSolver->GetNextSuggestedTimeStep());
                     }
                 }
+
+                this->ProcessBlocksInSampleTimes(sampleTimesToProcess, false);                
             }
         }
         spdlog::get("default_pysyslink")->debug("Simulation end");
 
         return this->simulationOutput;
     }
+
+    void SimulationManager::ProcessBlocksInSampleTimes(const std::vector<std::shared_ptr<SampleTime>> sampleTimes, bool isMinorStep)
+    {
+        for (const auto& block : this->orderedBlocks)
+        {
+            auto sampleTime = block->GetSampleTime();
+            
+            bool processBlock = false;
+            if (sampleTime->GetSampleTimeType() == SampleTimeType::discrete)
+            {
+                processBlock = this->IsBlockInSampleTimes(block, sampleTimes, this->blocksForEachDiscreteSampleTime);
+            }
+            else if (sampleTime->GetSampleTimeType() == SampleTimeType::continuous)
+            {
+                processBlock = this->IsBlockInSampleTimes(block, sampleTimes, this->blocksForEachContinuousSampleTimeGroup);
+            }
+            else if (sampleTime->GetSampleTimeType() == SampleTimeType::multirate)
+            {
+                bool processBlock1 = this->IsBlockInSampleTimes(block, sampleTimes, this->blocksForEachDiscreteSampleTime);
+                bool processBlock2 = this->IsBlockInSampleTimes(block, sampleTimes, this->blocksForEachContinuousSampleTimeGroup);
+                processBlock = processBlock1 || processBlock2;
+            }
+            // Only process if the sample time is in the current list to process
+            if (processBlock)
+            {
+                spdlog::get("default_pysyslink")->debug("Block to process on multiple time hit: {}", block->GetId()); 
+
+                this->ProcessBlock(simulationModel, block, sampleTime, currentTime, isMinorStep);
+            }
+        }
+    }
+
 
     bool SimulationManager::IsBlockInSampleTimes(const std::shared_ptr<ISimulationBlock>& block, const std::vector<std::shared_ptr<SampleTime>>& sampleTimes, 
                                             const std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>& blockMap)
@@ -523,10 +535,10 @@ namespace PySysLinkBase
         return {nearestTimeHit, nextDiscreteTimeHitToProcessIndex, sampleTimesToProcess};
     }
 
-    void SimulationManager::ProcessBlock(std::shared_ptr<SimulationModel> simulationModel, std::shared_ptr<ISimulationBlock> block, std::shared_ptr<SampleTime> sampleTime, double currentTime)
+    void SimulationManager::ProcessBlock(std::shared_ptr<SimulationModel> simulationModel, std::shared_ptr<ISimulationBlock> block, std::shared_ptr<SampleTime> sampleTime, double currentTime, bool isMinorStep)
     {
         spdlog::get("default_pysyslink")->debug("Processing block: {} at time {}", block->GetId(), currentTime);
-        block->ComputeOutputsOfBlock(sampleTime, currentTime);
+        block->ComputeOutputsOfBlock(sampleTime, currentTime, isMinorStep);
         for (int i = 0; i < block->GetOutputPorts().size(); i++)
         {
             for (auto& connectedPort : simulationModel->GetConnectedPorts(block, i))
