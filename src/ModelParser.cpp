@@ -10,7 +10,7 @@
 
 namespace PySysLinkBase
 {
-    SimulationModel ModelParser::ParseFromYaml(std::string filename, const std::map<std::string, std::unique_ptr<IBlockFactory>>& blockFactories, std::shared_ptr<IBlockEventsHandler> blockEventsHandler)
+    SimulationModel ModelParser::ParseFromYaml(std::string filename, const std::map<std::string, std::shared_ptr<IBlockFactory>>& blockFactories, std::shared_ptr<IBlockEventsHandler> blockEventsHandler)
     {
         YAML::Node config = YAML::LoadFile(filename);
        
@@ -201,7 +201,7 @@ namespace PySysLinkBase
         return links;
     }
 
-    std::vector<std::shared_ptr<ISimulationBlock>> ModelParser::ParseBlocks(std::vector<std::map<std::string, ConfigurationValue>> blocksConfigurations, const std::map<std::string, std::unique_ptr<IBlockFactory>>& blockFactories, std::shared_ptr<IBlockEventsHandler> blockEventsHandler)
+    std::vector<std::shared_ptr<ISimulationBlock>> ModelParser::ParseBlocks(std::vector<std::map<std::string, ConfigurationValue>> blocksConfigurations, const std::map<std::string, std::shared_ptr<IBlockFactory>>& blockFactories, std::shared_ptr<IBlockEventsHandler> blockEventsHandler)
     {
         std::vector<std::shared_ptr<ISimulationBlock>> blocks = {};
         for (int i = 0; i < blocksConfigurations.size(); i++)

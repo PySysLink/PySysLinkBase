@@ -28,8 +28,12 @@ message(STATUS "Default install path: ${CMAKE_INSTALL_PREFIX}")
 
 # Add subdirectories
 add_subdirectory(src)
-add_subdirectory(Tests)
 
+option(ENABLE_TESTS "Enable building tests" OFF)
+
+if(ENABLE_TESTS)
+    add_subdirectory(Tests)
+endif()
 
 set(PY_SYS_LINK_BASE_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
 set(PY_SYS_LINK_BASE_LIBRARIES "${CMAKE_INSTALL_PREFIX}/lib/libPySysLinkBase.a")
@@ -67,7 +71,7 @@ set(PACKAGE_LIBRARIES "${CMAKE_INSTALL_PREFIX}/lib")
 # Create and install the config file
 configure_package_config_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/PySysLinkBaseConfig.cmake.in
-    ${CMAKE_BINARY_DIR}/PySysLinkBaseConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/PySysLinkBaseConfig.cmake
     INSTALL_DESTINATION lib/cmake/PySysLinkBase
 )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/PySysLinkBaseConfig.cmake

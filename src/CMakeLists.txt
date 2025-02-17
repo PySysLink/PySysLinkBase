@@ -1,5 +1,5 @@
 # Define a library
-add_library(PySysLinkBase SHARED
+add_library(PySysLinkBase STATIC
     ContinuousAndOde/ContinuousState.cpp
     SimulationModel.cpp
     ModelParser.cpp
@@ -19,6 +19,9 @@ add_library(PySysLinkBase SHARED
     PortsAndSignalValues/Port.cpp 
 )
 
+set_target_properties(PySysLinkBase PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+
 include(FetchContent)
 
 FetchContent_Declare(
@@ -28,6 +31,9 @@ FetchContent_Declare(
 )
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+option(YAML_CPP_BUILD_TOOLS "Enable testing and parse tools" OFF)
+set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+
 FetchContent_MakeAvailable(yaml-cpp)
 
 add_dependencies(PySysLinkBase yaml-cpp)
@@ -41,6 +47,20 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(spdlog)
+
+include(GNUInstallDirs)
+
+# Ensure spdlog is installed with your project
+install(TARGETS spdlog
+    EXPORT SpdlogTargets
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+# Ensure spdlog is part of your export
+install(EXPORT SpdlogTargets
+    FILE SpdlogConfig.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/spdlog
+)
 
 add_dependencies(PySysLinkBase spdlog::spdlog)
 target_link_libraries(PySysLinkBase PRIVATE spdlog::spdlog)
