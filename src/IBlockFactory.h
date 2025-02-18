@@ -1,5 +1,5 @@
-#ifndef PY_SYS_LINK_BASE_IBLOCK_FACTORY
-#define PY_SYS_LINK_BASE_IBLOCK_FACTORY
+#ifndef SRC_PY_SYS_LINK_BASE_IBLOCK_FACTORY
+#define SRC_PY_SYS_LINK_BASE_IBLOCK_FACTORY
 
 #include "ISimulationBlock.h"
 #include <vector>
@@ -18,4 +18,4 @@ namespace PySysLinkBase
    };
 }
 
-#endif /* PY_SYS_LINK_BASE_IBLOCK_FACTORY */
+#endif /* SRC_PY_SYS_LINK_BASE_IBLOCK_FACTORY */
