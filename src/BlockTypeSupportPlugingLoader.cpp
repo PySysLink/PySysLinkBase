@@ -8,22 +8,14 @@ namespace PySysLinkBase
         std::map<std::string, std::shared_ptr<IBlockFactory>> factoryRegistry;
         
         for (const auto& pluginPath : this->FindSharedLibraries(pluginDirectory)) {
+            spdlog::get("default_pysyslink")->debug("Trying to open pluging: {}", pluginPath);
+
             void* handle = dlopen(pluginPath.c_str(), RTLD_LAZY);
             if (!handle) {
                 spdlog::get("default_pysyslink")->error("Failed to load plugin: {}", pluginPath);
                 spdlog::get("default_pysyslink")->error(dlerror());
                 continue;
             }
-
-            auto registerFuncFactory = reinterpret_cast<void(*)(std::map<std::string, std::shared_ptr<IBlockFactory>>&)>(dlsym(handle, "RegisterBlockFactories"));
-
-            if (!registerFuncFactory) {
-                spdlog::get("default_pysyslink")->error("Failed to find RegisterBlockFactories entry point in: ", pluginPath);
-                spdlog::get("default_pysyslink")->error(dlerror());
-                dlclose(handle);
-                continue;
-            }
-            registerFuncFactory(factoryRegistry);
 
             auto registerFuncLogger = reinterpret_cast<void(*)(std::shared_ptr<spdlog::logger>)>(dlsym(handle, "RegisterSpdlogLogger"));
 
@@ -33,9 +25,30 @@ namespace PySysLinkBase
                 dlclose(handle);
                 continue;
             }
+
+            spdlog::get("default_pysyslink")->debug("registerFuncLogger opened on pluging: {}", pluginPath);
+
             registerFuncLogger(spdlog::get("default_pysyslink"));
             
+            spdlog::get("default_pysyslink")->debug("registerFuncLogger called on pluging: {}", pluginPath);
+
+            auto registerFuncFactory = reinterpret_cast<void(*)(std::map<std::string, std::shared_ptr<IBlockFactory>>&)>(dlsym(handle, "RegisterBlockFactories"));
+
+            if (!registerFuncFactory) {
+                spdlog::get("default_pysyslink")->error("Failed to find RegisterBlockFactories entry point in: ", pluginPath);
+                spdlog::get("default_pysyslink")->error(dlerror());
+                dlclose(handle);
+                continue;
+            }
+
+            spdlog::get("default_pysyslink")->debug("registerFuncFactory opened on pluging: {}", pluginPath);
+
+            registerFuncFactory(factoryRegistry);
+
+            spdlog::get("default_pysyslink")->debug("registerFuncFactory called on pluging: {}", pluginPath);
+
             spdlog::get("default_pysyslink")->debug("Pluging loaded: {}", pluginPath);
+            dlclose(handle);
         }
         return factoryRegistry;
     }
