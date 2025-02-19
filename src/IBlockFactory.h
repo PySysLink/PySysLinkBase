@@ -1,5 +1,5 @@
-#ifndef PY_SYS_LINK_BASE_IBLOCK_FACTORY
-#define PY_SYS_LINK_BASE_IBLOCK_FACTORY
+#ifndef SRC_IBLOCK_FACTORY
+#define SRC_IBLOCK_FACTORY
 
 #include "ISimulationBlock.h"
 #include <vector>
@@ -14,8 +14,8 @@ namespace PySysLinkBase
    class IBlockFactory {
       public:
          virtual ~IBlockFactory() = default;
-         virtual std::unique_ptr<ISimulationBlock> CreateBlock(std::map<std::string, ConfigurationValue> blockConfiguration, std::shared_ptr<IBlockEventsHandler> blockEventsHandler) = 0;
+         virtual std::shared_ptr<ISimulationBlock> CreateBlock(std::map<std::string, ConfigurationValue> blockConfiguration, std::shared_ptr<IBlockEventsHandler> blockEventsHandler) = 0;
    };
 }
 
-#endif /* PY_SYS_LINK_BASE_IBLOCK_FACTORY */
+#endif /* SRC_IBLOCK_FACTORY */
