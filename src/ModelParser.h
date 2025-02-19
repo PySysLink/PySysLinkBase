@@ -19,7 +19,7 @@ namespace PySysLinkBase
             static std::complex<double> ParseComplex(const std::string& str);
 
         public:
-            static SimulationModel ParseFromYaml(std::string filename, const std::map<std::string, std::shared_ptr<IBlockFactory>>& blockFactories, std::shared_ptr<IBlockEventsHandler> blockEventsHandler);
+            static std::shared_ptr<SimulationModel> ParseFromYaml(std::string filename, const std::map<std::string, std::shared_ptr<IBlockFactory>>& blockFactories, std::shared_ptr<IBlockEventsHandler> blockEventsHandler);
     };
 } // namespace PySysLinkBase
 

@@ -10,7 +10,7 @@
 
 namespace PySysLinkBase
 {
-    SimulationModel ModelParser::ParseFromYaml(std::string filename, const std::map<std::string, std::shared_ptr<IBlockFactory>>& blockFactories, std::shared_ptr<IBlockEventsHandler> blockEventsHandler)
+    std::shared_ptr<SimulationModel> ModelParser::ParseFromYaml(std::string filename, const std::map<std::string, std::shared_ptr<IBlockFactory>>& blockFactories, std::shared_ptr<IBlockEventsHandler> blockEventsHandler)
     {
         YAML::Node config = YAML::LoadFile(filename);
        
@@ -46,7 +46,7 @@ namespace PySysLinkBase
             
             spdlog::get("default_pysyslink")->debug("Blocks and links parsed");
 
-            return SimulationModel(std::move(blocks), std::move(links), blockEventsHandler);
+            return std::make_shared<SimulationModel>(std::move(blocks), std::move(links), blockEventsHandler);
         } 
         else
         {
