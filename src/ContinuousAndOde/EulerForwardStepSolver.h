@@ -12,7 +12,7 @@ namespace PySysLinkBase
     class EulerForwardStepSolver : public IOdeStepSolver
     {
         public:
-            std::tuple<bool, std::vector<double>, double> SolveStep(std::function<std::vector<double>(std::vector<double>, double)> system, 
+            virtual std::tuple<bool, std::vector<double>, double> SolveStep(std::function<std::vector<double>(std::vector<double>, double)> system, 
                                                                     std::vector<double> states_0, double currentTime, double timeStep);
     };
 } // namespace PySysLinkBase
