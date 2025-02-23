@@ -108,6 +108,38 @@ To help you understand how PySysLinkBase works, here are some of the main interf
 
 PySysLinkBase supports an extensible architecture by dynamically loading plug‑ins that provide new block type supports. The core mechanism is implemented in the `BlockTypeSupportPlugingLoader` class. Here’s an overview of how it works and what you need to do to create a new plug‑in:
 
+```mermaid
+graph TD
+    %% Core Simulation Engine
+    A[PySysLinkBase<br/>Core Engine]
+    
+    %% Block Interface
+    B[BlockTypesBasicCpp<br/>Block Interface Definitions]
+    
+    %% Support Layer for C++ Blocks
+    C[BlockTypeSupportsBasicCpp<br/>Plugin Loader & Support]
+    
+    %% Concrete Block Libraries
+    D[BlockLibrariesBasicBlocksBasicCpp<br/>Concrete Blocks]
+    F[Other Block Libraries]
+    
+    %% Python Bindings
+    E[Python Bindings]
+
+    I[Other BlockTypeSupports]
+
+    %% Dependencies / Relationships
+
+    A -->|Loads plugins via| C
+    A -->|Can load additional|I
+    C -->|Dynamically loads| D
+    C -->|Can load additional| F
+    E -->|Wraps/Exposes| A
+
+    %% Optional: Show that BlockTypesBasicCpp is shared among Core and Support
+    C -->|Implements based on| B
+```
+
 ### How Plug‑in Loading Works
 
 - **Scanning for Plug‑ins:**  
