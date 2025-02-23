@@ -9,7 +9,7 @@ To build and install PySysLinkBase on your system, follow these steps:
 1. **Clone the Repository:**
 
    ```bash
-   git clone https://github.com/yourorg/PySysLinkBase.git
+   git clone https://github.com/PySysLink/PySysLinkBase.git
    cd PySysLinkBase
    ```
 
