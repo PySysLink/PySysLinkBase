@@ -12,7 +12,15 @@ namespace PySysLinkBase
 {
     std::shared_ptr<SimulationModel> ModelParser::ParseFromYaml(std::string filename, const std::map<std::string, std::shared_ptr<IBlockFactory>>& blockFactories, std::shared_ptr<IBlockEventsHandler> blockEventsHandler)
     {
-        YAML::Node config = YAML::LoadFile(filename);
+        YAML::Node config;
+        try
+        {
+            config = YAML::LoadFile(filename);
+        }
+        catch (YAML::BadFile)
+        {
+            throw std::runtime_error("Could not read file: " + filename);
+        }
        
         spdlog::get("default_pysyslink")->debug("File readed: {}", filename);
 
