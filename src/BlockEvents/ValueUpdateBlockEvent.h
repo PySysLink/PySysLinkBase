@@ -2,7 +2,7 @@
 #define SRC_BLOCK_EVENTS_VALUE_UPDATE_BLOCK_EVENT
 
 #include <string>
-#include <PySysLinkBase/FullySupportedSignalValue.h>
+#include "../FullySupportedSignalValue.h"
 #include "BlockEvent.h"
 
 namespace PySysLinkBase
