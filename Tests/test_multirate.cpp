@@ -26,7 +26,7 @@ int main() {
     
     PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::debug);
 
-    std::shared_ptr<PySysLinkBase::SimulationModel> simulationModel = PySysLinkBase::ModelParser::ParseFromYaml("/home/pello/PySysLink/Tests/system1_multirate.yaml", blockFactories, blockEventsHandler);
+    std::shared_ptr<PySysLinkBase::SimulationModel> simulationModel = PySysLinkBase::ModelParser::ParseFromYaml("../Tests/system1_multirate.yaml", blockFactories, blockEventsHandler);
 
     std::vector<std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>>> blockChains = simulationModel->GetDirectBlockChains();
     
