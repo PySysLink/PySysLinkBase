@@ -88,6 +88,7 @@ out/
 # Gradle files
 .gradle/
 build/
+build_tests/
 
 # Local configuration file (sdk path, etc)
 local.properties
@@ -535,6 +536,7 @@ ui_*.h
 *.jsc
 Makefile*
 *build-*
+*build_*
 *.qm
 *.prl
 
@@ -654,6 +656,7 @@ StyleCopReport.xml
 *.vspscc
 *.vssscc
 .builds
+.build_tests
 *.pidb
 *.svclog
 *.scc
@@ -923,6 +926,7 @@ FodyWeavers.xsd
 ##### Gradle
 .gradle
 **/build/
+**/build_tests/
 !src/**/build/
 
 # Ignore Gradle GUI config
