@@ -22,7 +22,6 @@ namespace PySysLinkBase
             if (!registerFuncLogger) {
                 spdlog::get("default_pysyslink")->error("Failed to find RegisterSpdlogLogger entry point in: ", pluginPath);
                 spdlog::get("default_pysyslink")->error(dlerror());
-                dlclose(handle);
                 continue;
             }
 
@@ -37,7 +36,6 @@ namespace PySysLinkBase
             if (!registerFuncFactory) {
                 spdlog::get("default_pysyslink")->error("Failed to find RegisterBlockFactories entry point in: ", pluginPath);
                 spdlog::get("default_pysyslink")->error(dlerror());
-                dlclose(handle);
                 continue;
             }
 
@@ -48,7 +46,7 @@ namespace PySysLinkBase
             spdlog::get("default_pysyslink")->debug("registerFuncFactory called on pluging: {}", pluginPath);
 
             spdlog::get("default_pysyslink")->debug("Pluging loaded: {}", pluginPath);
-            dlclose(handle);
+            spdlog::get("default_pysyslink")->debug("Dll closed");
         }
         return factoryRegistry;
     }
