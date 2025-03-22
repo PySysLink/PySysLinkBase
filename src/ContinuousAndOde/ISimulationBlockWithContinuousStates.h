@@ -9,7 +9,7 @@
 
 namespace PySysLinkBase
 {
-    class ISimulationBlockWithContinuousStates : public virtual ISimulationBlock
+    class ISimulationBlockWithContinuousStates : public ISimulationBlock
     {
         public:
             ISimulationBlockWithContinuousStates(std::map<std::string, ConfigurationValue> blockConfiguration, std::shared_ptr<IBlockEventsHandler> blockEventsHandler) 
