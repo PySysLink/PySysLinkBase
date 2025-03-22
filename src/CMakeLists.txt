@@ -1,6 +1,5 @@
 # Define a library
 add_library(PySysLinkBase STATIC
-    ContinuousAndOde/ContinuousState.cpp
     SimulationModel.cpp
     ModelParser.cpp
     ISimulationBlock.cpp

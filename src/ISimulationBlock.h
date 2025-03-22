@@ -7,7 +7,6 @@
 #include "PortsAndSignalValues/InputPort.h"
 #include "PortsAndSignalValues/OutputPort.h"
 #include "SampleTime.h"
-#include "ContinuousAndOde/ContinuousState.h"
 #include <stdexcept>
 #include <map>
 #include "ConfigurationValue.h"
