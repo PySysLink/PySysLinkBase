@@ -1,23 +1,23 @@
 Blocks:
   - Id: sum1
-    Name: Main sumator
+    Name: Main Adder
     BlockType: BasicCpp
-    BlockClass: BasicBlocks/Sumator
+    BlockClass: BasicBlocks/Adder
     Gains:
       - 1.0
       - 1.0
   - Id: sum2
-    Name: Second sumator
+    Name: Second Adder
     BlockType: BasicCpp
-    BlockClass: BasicBlocks/Sumator
+    BlockClass: BasicBlocks/Adder
     Gains:
       - 1.0
       - 1.0
       - 0.1
   - Id: sum3
-    Name: Second sumator
+    Name: Second Adder
     BlockType: BasicCpp
-    BlockClass: BasicBlocks/Sumator
+    BlockClass: BasicBlocks/Adder
     Gains:
       - -0.11
       - 1.0
@@ -35,10 +35,10 @@ Blocks:
     Name: Result
     BlockType: BasicCpp
     BlockClass: BasicBlocks/Display
-  - Id: acumulator1
-    Name: Main acumulator
+  - Id: accumulator1
+    Name: Main accumulator
     BlockType: BasicCpp
-    BlockClass: BasicBlocks/Acumulator
+    BlockClass: BasicBlocks/Accumulator
     SampleTime: 0.2
     InitialValue: -1.0
 
@@ -83,11 +83,11 @@ Links:
     Name: link3
     SourceBlockId: sum3
     SourcePortIdx: 0
-    DestinationBlockId: acumulator1
+    DestinationBlockId: accumulator1
     DestinationPortIdx: 0
   - Id: link6
     Name: link3
-    SourceBlockId: acumulator1
+    SourceBlockId: accumulator1
     SourcePortIdx: 0
     DestinationBlockId: sum3
     DestinationPortIdx: 0

@@ -3,7 +3,7 @@
 #include "PySysLinkBase/ISimulationBlock.h"
 #include "PySysLinkBase/PortLink.h"
 #include "PySysLinkBase/IBlockFactory.h"
-#include "PySysLinkBase/BlockTypeSupportPlugingLoader.h"
+#include "PySysLinkBase/BlockTypeSupportPluginLoader.h"
 #include "PySysLinkBase/SimulationManager.h"
 #include "PySysLinkBase/SpdlogManager.h"
 #include "PySysLinkBase/BlockEventsHandler.h"
@@ -19,10 +19,10 @@ int main() {
     
     std::shared_ptr<PySysLinkBase::IBlockEventsHandler> blockEventsHandler = std::make_shared<PySysLinkBase::BlockEventsHandler>();
 
-    std::unique_ptr<PySysLinkBase::BlockTypeSupportPlugingLoader> plugingLoader = std::make_unique<PySysLinkBase::BlockTypeSupportPlugingLoader>();
+    std::unique_ptr<PySysLinkBase::BlockTypeSupportPluginLoader> pluginLoader = std::make_unique<PySysLinkBase::BlockTypeSupportPluginLoader>();
     PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::debug);
 
-    std::map<std::string, std::shared_ptr<PySysLinkBase::IBlockFactory>> blockFactories = plugingLoader->LoadPlugins("/usr/local/lib");
+    std::map<std::string, std::shared_ptr<PySysLinkBase::IBlockFactory>> blockFactories = pluginLoader->LoadPlugins("/usr/local/lib");
     
     PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::debug);
 

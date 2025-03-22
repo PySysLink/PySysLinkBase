@@ -142,7 +142,7 @@ namespace PySysLinkBase
         // A lambda to check if all feedthrough inputs of a block are processed
         auto areInputsResolved = [&](const std::shared_ptr<ISimulationBlock>& block) -> bool {
             for (int i = 0; i < block->GetInputPorts().size(); i++) {
-                if (block->GetInputPorts()[i]->HasDirectFeedtrough()) {
+                if (block->GetInputPorts()[i]->HasDirectFeedthrough()) {
                     auto originBlock = GetOriginBlock(block, i);
                     if (originBlock && processedBlocks.find(originBlock) == processedBlocks.end()) {
                         // If the origin block isn't processed, inputs are not resolved

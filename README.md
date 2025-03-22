@@ -80,9 +80,9 @@ To help you understand how PySysLinkBase works, here are some of the main interf
   Manages the simulation execution. It processes the model’s blocks over time, handles the simulation time steps, and directs the simulation workflow.
 
 - **IBlockFactory**  
-  An interface for factories that create concrete simulation blocks. This allows the simulation engine to remain decoupled from specific block implementations. Each pluging can define its own derived class of **ISimulationBlock**, and register a concrete implementation of **IBlockFactory** to create them.
+  An interface for factories that create concrete simulation blocks. This allows the simulation engine to remain decoupled from specific block implementations. Each plugin can define its own derived class of **ISimulationBlock**, and register a concrete implementation of **IBlockFactory** to create them.
 
-- **BlockTypeSupportPlugingLoader**  
+- **BlockTypeSupportPluginLoader**  
   Responsible for dynamically loading plug‑ins (BlockTypeSupports) that extend the simulation engine with new block types.
 
 - **PortsAndSignalValues (Port, InputPort, OutputPort, SignalValue, UnknownTypeSignalValue)**  
@@ -106,7 +106,7 @@ To help you understand how PySysLinkBase works, here are some of the main interf
 
 ## Plug‑in Loading in PySysLinkBase
 
-PySysLinkBase supports an extensible architecture by dynamically loading plug‑ins that provide new block type supports. The core mechanism is implemented in the `BlockTypeSupportPlugingLoader` class. Here’s an overview of how it works and what you need to do to create a new plug‑in:
+PySysLinkBase supports an extensible architecture by dynamically loading plug‑ins that provide new block type supports. The core mechanism is implemented in the `BlockTypeSupportPluginLoader` class. Here’s an overview of how it works and what you need to do to create a new plug‑in:
 
 ```mermaid
 graph TD

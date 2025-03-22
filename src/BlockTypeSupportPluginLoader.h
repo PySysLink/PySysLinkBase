@@ -10,7 +10,7 @@
 
 namespace PySysLinkBase {
 
-class BlockTypeSupportPlugingLoader {
+class BlockTypeSupportPluginLoader {
 public:
     std::map<std::string, std::shared_ptr<IBlockFactory>> LoadPlugins(const std::string& pluginDirectory);
 

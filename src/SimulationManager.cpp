@@ -22,7 +22,7 @@ namespace PySysLinkBase
         this->blocksForEachContinuousSampleTimeGroup = {};
         this->blocksWithConstantSampleTime = {};
         
-        this->ClasificateBlocks(orderedBlocks, blocksForEachDiscreteSampleTime, blocksWithConstantSampleTime, blocksForEachContinuousSampleTimeGroup);
+        this->ClassifyBlocks(orderedBlocks, blocksForEachDiscreteSampleTime, blocksWithConstantSampleTime, blocksForEachContinuousSampleTimeGroup);
         spdlog::get("default_pysyslink")->debug("Different discrete sample times: {}", blocksForEachDiscreteSampleTime.size());
         spdlog::get("default_pysyslink")->debug("Blocks with constant sample time: {}", blocksWithConstantSampleTime.size());
         spdlog::get("default_pysyslink")->debug("Different continuous sample times: {}", blocksForEachContinuousSampleTimeGroup.size());
@@ -188,7 +188,7 @@ namespace PySysLinkBase
     }
 
 
-    void SimulationManager::ClasificateBlocks(std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>> orderedBlocks, 
+    void SimulationManager::ClassifyBlocks(std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>> orderedBlocks, 
                                             std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>& blocksForEachDiscreteSampleTime,
                                             std::vector<std::shared_ptr<ISimulationBlock>>& blocksWithConstantSampleTime,
                                             std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>& blocksForEachContinuousSampleTimeGroup)

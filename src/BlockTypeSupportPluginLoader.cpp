@@ -1,14 +1,14 @@
-#include "BlockTypeSupportPlugingLoader.h"
+#include "BlockTypeSupportPluginLoader.h"
 #include <filesystem>
 #include "spdlog/spdlog.h"
 
 namespace PySysLinkBase
 {
-    std::map<std::string, std::shared_ptr<IBlockFactory>> BlockTypeSupportPlugingLoader::LoadPlugins(const std::string& pluginDirectory) {
+    std::map<std::string, std::shared_ptr<IBlockFactory>> BlockTypeSupportPluginLoader::LoadPlugins(const std::string& pluginDirectory) {
         std::map<std::string, std::shared_ptr<IBlockFactory>> factoryRegistry;
         
         for (const auto& pluginPath : this->FindSharedLibraries(pluginDirectory)) {
-            spdlog::get("default_pysyslink")->debug("Trying to open pluging: {}", pluginPath);
+            spdlog::get("default_pysyslink")->debug("Trying to open plugin: {}", pluginPath);
 
             void* handle = dlopen(pluginPath.c_str(), RTLD_LAZY);
             if (!handle) {
@@ -25,11 +25,11 @@ namespace PySysLinkBase
                 continue;
             }
 
-            spdlog::get("default_pysyslink")->debug("registerFuncLogger opened on pluging: {}", pluginPath);
+            spdlog::get("default_pysyslink")->debug("registerFuncLogger opened on plugin: {}", pluginPath);
 
             registerFuncLogger(spdlog::get("default_pysyslink"));
             
-            spdlog::get("default_pysyslink")->debug("registerFuncLogger called on pluging: {}", pluginPath);
+            spdlog::get("default_pysyslink")->debug("registerFuncLogger called on plugin: {}", pluginPath);
 
             auto registerFuncFactory = reinterpret_cast<void(*)(std::map<std::string, std::shared_ptr<IBlockFactory>>&)>(dlsym(handle, "RegisterBlockFactories"));
 
@@ -39,19 +39,19 @@ namespace PySysLinkBase
                 continue;
             }
 
-            spdlog::get("default_pysyslink")->debug("registerFuncFactory opened on pluging: {}", pluginPath);
+            spdlog::get("default_pysyslink")->debug("registerFuncFactory opened on plugin: {}", pluginPath);
 
             registerFuncFactory(factoryRegistry);
 
-            spdlog::get("default_pysyslink")->debug("registerFuncFactory called on pluging: {}", pluginPath);
+            spdlog::get("default_pysyslink")->debug("registerFuncFactory called on plugin: {}", pluginPath);
 
-            spdlog::get("default_pysyslink")->debug("Pluging loaded: {}", pluginPath);
+            spdlog::get("default_pysyslink")->debug("Plugin loaded: {}", pluginPath);
             spdlog::get("default_pysyslink")->debug("Dll closed");
         }
         return factoryRegistry;
     }
 
-    std::vector<std::string> BlockTypeSupportPlugingLoader::FindSharedLibraries(const std::string& searchDirectory) {
+    std::vector<std::string> BlockTypeSupportPluginLoader::FindSharedLibraries(const std::string& searchDirectory) {
         std::vector<std::string> sharedLibraries;
 
         try {
@@ -74,7 +74,7 @@ namespace PySysLinkBase
         return sharedLibraries;
     }
 
-    bool BlockTypeSupportPlugingLoader::StringEndsWith(const std::string& str, const std::string& suffix) {
+    bool BlockTypeSupportPluginLoader::StringEndsWith(const std::string& str, const std::string& suffix) {
         return str.size() >= suffix.size() &&
             str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
     }

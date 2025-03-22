@@ -5,7 +5,7 @@ add_library(PySysLinkBase STATIC
     ModelParser.cpp
     ISimulationBlock.cpp
     SampleTime.cpp
-    BlockTypeSupportPlugingLoader.cpp
+    BlockTypeSupportPluginLoader.cpp
     SimulationManager.cpp
     PortLink.cpp
     SpdlogManager.cpp

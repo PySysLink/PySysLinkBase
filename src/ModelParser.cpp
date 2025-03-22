@@ -22,7 +22,7 @@ namespace PySysLinkBase
             throw std::runtime_error("Could not read file: " + filename);
         }
        
-        spdlog::get("default_pysyslink")->debug("File readed: {}", filename);
+        spdlog::get("default_pysyslink")->debug("File read: {}", filename);
 
         if (config["Blocks"] && config["Links"]) {
             std::vector<std::map<std::string, ConfigurationValue>> blocksConfigurations = {};

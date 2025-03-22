@@ -48,7 +48,7 @@ namespace PySysLinkBase
         bool areAllInputsNotDirectFeedthrough = true;
         for (int j = 0; j < inputPorts.size(); j++)
         {
-            areAllInputsNotDirectFeedthrough &= !inputPorts[j]->HasDirectFeedtrough();
+            areAllInputsNotDirectFeedthrough &= !inputPorts[j]->HasDirectFeedthrough();
         }
         if (areAllInputsNotDirectFeedthrough)
         {
@@ -62,7 +62,7 @@ namespace PySysLinkBase
 
     bool ISimulationBlock::IsInputDirectBlockChainEnd(int inputIndex) const
     {
-        if (this->GetOutputPorts().size() == 0 || !this->GetInputPorts()[inputIndex]->HasDirectFeedtrough())
+        if (this->GetOutputPorts().size() == 0 || !this->GetInputPorts()[inputIndex]->HasDirectFeedthrough())
         {
             return true;
         }

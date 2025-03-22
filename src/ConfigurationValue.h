@@ -43,16 +43,16 @@ namespace PySysLinkBase
         template <typename T> 
         static T TryGetConfigurationValue(std::string keyName, std::map<std::string, ConfigurationValue> configurationValues)
         {
-            ConfigurationValue findedValue;
+            ConfigurationValue foundValue;
             auto it = configurationValues.find(keyName);
             if (it == configurationValues.end()) {
                 throw std::out_of_range("Key name: " + keyName + " not found in configuration.");
             } else {
-                findedValue = it->second;
+                foundValue = it->second;
             }
             try
             {
-                return std::get<T>(findedValue);
+                return std::get<T>(foundValue);
             }
             catch (std::bad_variant_access const& ex)
             {

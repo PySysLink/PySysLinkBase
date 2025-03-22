@@ -94,7 +94,7 @@ namespace PySysLinkBase
             std::shared_ptr<ISimulationBlockWithContinuousStates> blockWithContinuousStates = std::dynamic_pointer_cast<ISimulationBlockWithContinuousStates>(block);
             if (blockWithContinuousStates)
             {
-                std::vector<double> derivatives_i = blockWithContinuousStates->GetContinousStateDerivatives(sampleTime, currentTime);
+                std::vector<double> derivatives_i = blockWithContinuousStates->GetContinuousStateDerivatives(sampleTime, currentTime);
                 for (int j = 0; j < derivatives_i.size(); j++)
                 {
                     derivatives[currentIndex] = derivatives_i[j];
@@ -278,7 +278,7 @@ namespace PySysLinkBase
                 spdlog::get("default_pysyslink")->debug("Event resolved, new time hit: {}", t_2);
             }
         }
-        spdlog::get("default_pysyslink")->debug("Aplied step size in time {}: {}", currentTime, appliedTimeStep);
+        spdlog::get("default_pysyslink")->debug("Applied step size in time {}: {}", currentTime, appliedTimeStep);
 
         this->nextSuggestedTimeStep = newSuggestedTimeStep;
         this->nextUnknownTimeHit = currentTime + appliedTimeStep;

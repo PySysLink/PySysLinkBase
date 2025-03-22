@@ -10,7 +10,7 @@ namespace PySysLinkBase
         bool hasDirectFeedthrough;
     public:
         InputPort(bool hasDirectFeedthrough, std::shared_ptr<UnknownTypeSignalValue> value);
-        const bool HasDirectFeedtrough() const;    
+        const bool HasDirectFeedthrough() const;    
     };
 }
 

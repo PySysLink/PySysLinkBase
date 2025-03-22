@@ -17,9 +17,9 @@ Blocks:
     BlockType: BasicCpp
     BlockClass: BasicBlocks/Integrator
   - Id: sum1
-    Name: Main sumator
+    Name: Main Adder
     BlockType: BasicCpp
-    BlockClass: BasicBlocks/Sumator
+    BlockClass: BasicBlocks/Adder
     Gains:
       - 1.0
       - -1.0

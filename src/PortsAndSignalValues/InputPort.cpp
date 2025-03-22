@@ -8,7 +8,7 @@ namespace PySysLinkBase
         this->hasDirectFeedthrough = hasDirectFeedthrough;
     }
 
-    const bool InputPort::HasDirectFeedtrough() const
+    const bool InputPort::HasDirectFeedthrough() const
     {
         return this->hasDirectFeedthrough;
     }   
