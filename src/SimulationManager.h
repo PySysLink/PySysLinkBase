@@ -20,7 +20,14 @@ namespace PySysLinkBase
         SimulationManager(std::shared_ptr<SimulationModel> simulationModel, std::shared_ptr<SimulationOptions> simulationOptions);
         std::shared_ptr<SimulationOutput> RunSimulation();
 
+        double RunSimulationStep();
+        std::shared_ptr<SimulationOutput> GetSimulationOutput();
+
         private:
+        bool hasRunFullSimulation = false;
+        bool isRunningStepByStep = false;
+        bool isFirstStepDone = false;
+        std::vector<std::shared_ptr<SampleTime>> nextSampleTimesToProcess = {};
 
         void ClassifyBlocks(std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>> orderedBlocks, 
                             std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>& blocksForEachDiscreteSampleTime,
@@ -32,6 +39,7 @@ namespace PySysLinkBase
         void GetTimeHitsToSampleTimes(std::shared_ptr<SimulationOptions> simulationOptions, std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>> blocksForEachDiscreteSampleTime);
 
         std::tuple<double, int, std::vector<std::shared_ptr<SampleTime>>> GetNearestTimeHit(int nextDiscreteTimeHitToProcessIndex);
+        std::tuple<double, std::vector<std::shared_ptr<SampleTime>>> GetNearestTimeHit(double currentTime);
 
 
         std::map<std::shared_ptr<SampleTime>, std::shared_ptr<BasicOdeSolver>> odeSolversForEachContinuousSampleTimeGroup;
@@ -63,6 +71,8 @@ namespace PySysLinkBase
         std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>> orderedBlocks;
 
         void ProcessBlocksInSampleTimes(const std::vector<std::shared_ptr<SampleTime>> sampleTimes, bool isMinorStep=false);
+        void MakeFirstSimulationStep();
+        void ProcessTimeHit(double time, const std::vector<std::shared_ptr<SampleTime>>& sampleTimesToProcess);
     };
 }
 

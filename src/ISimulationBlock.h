@@ -51,7 +51,7 @@ namespace PySysLinkBase
         void RegisterReadInputsCallbacks(std::function<void (const std::string, const std::vector<std::shared_ptr<PySysLinkBase::InputPort>>, std::shared_ptr<PySysLinkBase::SampleTime>, double)> callback);
         void RegisterCalculateOutputCallbacks(std::function<void (const std::string, const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>>, std::shared_ptr<PySysLinkBase::SampleTime>, double)> callback);
 
-        virtual const std::vector<std::pair<double, double>> GetEvents(const std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double eventTime, std::vector<double> eventTimeStates) const
+        virtual const std::vector<std::pair<double, double>> GetEvents(const std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double eventTime, std::vector<double> eventTimeStates, bool includeKnownEvents=false) const
         {
             return {};
         }

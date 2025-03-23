@@ -9,6 +9,7 @@
 #include "ContinuousAndOde/SolverFactory.h"
 #include <limits>
 #include <iostream>
+#include <cmath>
 
 namespace PySysLinkBase
 {
@@ -55,7 +56,7 @@ namespace PySysLinkBase
             }
             catch (std::out_of_range const& ex)
             {
-                spdlog::get("default_pysyslink")->debug("First time step not found in configuration, using default value.");
+                spdlog::get("default_pysyslink")->debug("First time step not found in configuration, using default value: {}", firstTimeStep);
             }
 
             odeStepSolver = SolverFactory::CreateOdeStepSolver(this->simulationOptions->solversConfiguration[selectedKey]);
@@ -69,11 +70,11 @@ namespace PySysLinkBase
         this->simulationOutput = std::make_shared<SimulationOutput>();
         this->simulationModel->blockEventsHandler->RegisterValueUpdateBlockEventCallback(std::bind(&SimulationManager::ValueUpdateBlockEventCallback, this, std::placeholders::_1));
 
-        for (const auto& blockIdInputOrOutputAndIndexeToLog : simulationOptions->blockIdsInputOrOutputAndIndexesToLog)
+        for (const auto& blockIdInputOrOutputAndIndexToLog : simulationOptions->blockIdsInputOrOutputAndIndexesToLog)
         {
-            std::string blockId = std::get<0>(blockIdInputOrOutputAndIndexeToLog);
-            std::string inputOrOutput = std::get<1>(blockIdInputOrOutputAndIndexeToLog);
-            int outputIndex = std::get<2>(blockIdInputOrOutputAndIndexeToLog);
+            std::string blockId = std::get<0>(blockIdInputOrOutputAndIndexToLog);
+            std::string inputOrOutput = std::get<1>(blockIdInputOrOutputAndIndexToLog);
+            int outputIndex = std::get<2>(blockIdInputOrOutputAndIndexToLog);
             std::shared_ptr<ISimulationBlock> block = ISimulationBlock::FindBlockById(blockId, this->simulationModel->simulationBlocks);
             if (inputOrOutput == "input")
             {
@@ -336,26 +337,60 @@ namespace PySysLinkBase
         }
     }
 
+    double SimulationManager::RunSimulationStep()
+    {
+        if (this->hasRunFullSimulation)
+        {
+            spdlog::get("default_pysyslink")->error("Simulation manager has already ran full simulation, cannot run step by step.");
+            return -1;
+        }   
+
+        this->isRunningStepByStep = true;
+        
+        if (!this->isFirstStepDone)
+        {
+            this->currentTime = 0;
+            this->isFirstStepDone = true;
+            this->MakeFirstSimulationStep();
+
+            std::tuple<double, std::vector<std::shared_ptr<PySysLinkBase::SampleTime>>> nextTimeHitAndSampleTimes = this->GetNearestTimeHit(this->currentTime);
+            this->currentTime = std::get<0>(nextTimeHitAndSampleTimes);
+            this->nextSampleTimesToProcess = std::get<1>(nextTimeHitAndSampleTimes);
+            return this->currentTime;
+        }
+        else
+        {
+            this->ProcessTimeHit(this->currentTime, this->nextSampleTimesToProcess);
+
+            std::tuple<double, std::vector<std::shared_ptr<PySysLinkBase::SampleTime>>> nextTimeHitAndSampleTimes = this->GetNearestTimeHit(this->currentTime);
+            
+            this->currentTime = std::get<0>(nextTimeHitAndSampleTimes);
+            this->nextSampleTimesToProcess = std::get<1>(nextTimeHitAndSampleTimes);
+            return this->currentTime;
+        }
+    }
+
+    std::shared_ptr<SimulationOutput> SimulationManager::GetSimulationOutput()
+    {
+        return this->simulationOutput;
+    }
+
     std::shared_ptr<SimulationOutput> SimulationManager::RunSimulation()
-    {        
+    {  
+        if (this->isRunningStepByStep)
+        {
+            spdlog::get("default_pysyslink")->error("Simulation manager is already running step by step, can not run full simulation.");
+            return this->simulationOutput;
+        }   
+
+        this->hasRunFullSimulation = true;
+
         auto simulationStartTime = std::chrono::system_clock::now();
-        this->currentTime = simulationOptions->startTime;
-        spdlog::get("default_pysyslink")->debug("Simulation start");
+        
+        this->MakeFirstSimulationStep();
 
         int nextDiscreteTimeHitToProcessIndex = 0;
 
-        for (auto& block : blocksWithConstantSampleTime)
-        {
-            this->ProcessBlock(simulationModel, block, block->GetSampleTime(), currentTime);
-        }
-
-        for (std::map<std::shared_ptr<SampleTime>, std::shared_ptr<BasicOdeSolver>>::iterator iter = this->odeSolversForEachContinuousSampleTimeGroup.begin(); iter != this->odeSolversForEachContinuousSampleTimeGroup.end(); ++iter)
-        {
-            spdlog::get("default_pysyslink")->debug("First simulation step with continuous blocks of group {}", iter->first->GetContinuousSampleTimeGroup());
-            iter->second->DoStep(currentTime, iter->second->firstTimeStep);
-            iter->second->ComputeMajorOutputs(currentTime);
-        }
-        
         spdlog::get("default_pysyslink")->debug("Main simulation loop start");
         while (currentTime <= simulationOptions->stopTime)
         {
@@ -382,56 +417,79 @@ namespace PySysLinkBase
                 spdlog::get("default_pysyslink")->debug("Simulated Time: {}, Real Time Elapsed: {} seconds", currentTime, elapsedRealTime);            
             }
 
-            if (sampleTimesToProcess.size() < 2)
-            {
-                for (const auto& sampleTime : sampleTimesToProcess)
-                {
-                    spdlog::get("default_pysyslink")->debug("Solving sample time of type: {}", SampleTime::SampleTimeTypeString(sampleTime->GetSampleTimeType()));            
-                    if (sampleTime->GetSampleTimeType() == SampleTimeType::discrete)
-                    {
-                        for (auto& block : blocksForEachDiscreteSampleTime[sampleTime])
-                        {
-                            this->ProcessBlock(simulationModel, block, sampleTime, currentTime);
-                        }
-                    }
-                    else if (sampleTime->GetSampleTimeType() == SampleTimeType::continuous)
-                    {
-                        auto odeSolver = this->odeSolversForEachContinuousSampleTimeGroup[sampleTime];
-                        odeSolver->DoStep(currentTime, odeSolver->GetNextSuggestedTimeStep());
-                        odeSolver->ComputeMajorOutputs(currentTime);
-                    }
-                }
-            }
-            else
-            {
-                spdlog::get("default_pysyslink")->debug("Solving many sample times"); 
-
-                for (const auto& sampleTime : sampleTimesToProcess)
-                {
-                    if (sampleTime->GetSampleTimeType() == SampleTimeType::continuous)
-                    {
-                        auto odeSolver = this->odeSolversForEachContinuousSampleTimeGroup[sampleTime];
-                        odeSolver->UpdateStatesToNextTimeHits(); // So that the output of each block can be correctly calculated
-                    }
-                }           
-                
-                this->ProcessBlocksInSampleTimes(sampleTimesToProcess, true);
-
-                for (const auto& sampleTime : sampleTimesToProcess)
-                {
-                    if (sampleTime->GetSampleTimeType() == SampleTimeType::continuous)
-                    {
-                        auto odeSolver = this->odeSolversForEachContinuousSampleTimeGroup[sampleTime];
-                        odeSolver->DoStep(currentTime, odeSolver->GetNextSuggestedTimeStep());
-                    }
-                }
-
-                this->ProcessBlocksInSampleTimes(sampleTimesToProcess, false);                
-            }
+            this->ProcessTimeHit(currentTime, sampleTimesToProcess);
         }
         spdlog::get("default_pysyslink")->debug("Simulation end");
 
         return this->simulationOutput;
+    }
+
+    void SimulationManager::MakeFirstSimulationStep()
+    {
+        this->currentTime = simulationOptions->startTime;
+        spdlog::get("default_pysyslink")->debug("Simulation start");
+
+        for (auto& block : blocksWithConstantSampleTime)
+        {
+            this->ProcessBlock(simulationModel, block, block->GetSampleTime(), currentTime);
+        }
+
+        for (std::map<std::shared_ptr<SampleTime>, std::shared_ptr<BasicOdeSolver>>::iterator iter = this->odeSolversForEachContinuousSampleTimeGroup.begin(); iter != this->odeSolversForEachContinuousSampleTimeGroup.end(); ++iter)
+        {
+            spdlog::get("default_pysyslink")->debug("First simulation step with continuous blocks of group {}", iter->first->GetContinuousSampleTimeGroup());
+            iter->second->DoStep(currentTime, iter->second->firstTimeStep);
+            iter->second->ComputeMajorOutputs(currentTime);
+        }
+    }
+
+    void SimulationManager::ProcessTimeHit(double time, const std::vector<std::shared_ptr<SampleTime>>& sampleTimesToProcess)
+    {
+        if (sampleTimesToProcess.size() < 2)
+        {
+            for (const auto& sampleTime : sampleTimesToProcess)
+            {
+                spdlog::get("default_pysyslink")->debug("Solving sample time of type: {}", SampleTime::SampleTimeTypeString(sampleTime->GetSampleTimeType()));            
+                if (sampleTime->GetSampleTimeType() == SampleTimeType::discrete)
+                {
+                    for (auto& block : blocksForEachDiscreteSampleTime[sampleTime])
+                    {
+                        this->ProcessBlock(simulationModel, block, sampleTime, currentTime);
+                    }
+                }
+                else if (sampleTime->GetSampleTimeType() == SampleTimeType::continuous)
+                {
+                    auto odeSolver = this->odeSolversForEachContinuousSampleTimeGroup[sampleTime];
+                    odeSolver->DoStep(currentTime, odeSolver->GetNextSuggestedTimeStep());
+                    odeSolver->ComputeMajorOutputs(currentTime);
+                }
+            }
+        }
+        else
+        {
+            spdlog::get("default_pysyslink")->debug("Solving many sample times"); 
+
+            for (const auto& sampleTime : sampleTimesToProcess)
+            {
+                if (sampleTime->GetSampleTimeType() == SampleTimeType::continuous)
+                {
+                    auto odeSolver = this->odeSolversForEachContinuousSampleTimeGroup[sampleTime];
+                    odeSolver->UpdateStatesToNextTimeHits(); // So that the output of each block can be correctly calculated
+                }
+            }           
+            
+            this->ProcessBlocksInSampleTimes(sampleTimesToProcess, true);
+
+            for (const auto& sampleTime : sampleTimesToProcess)
+            {
+                if (sampleTime->GetSampleTimeType() == SampleTimeType::continuous)
+                {
+                    auto odeSolver = this->odeSolversForEachContinuousSampleTimeGroup[sampleTime];
+                    odeSolver->DoStep(currentTime, odeSolver->GetNextSuggestedTimeStep());
+                }
+            }
+
+            this->ProcessBlocksInSampleTimes(sampleTimesToProcess, false);                
+        }
     }
 
     void SimulationManager::ProcessBlocksInSampleTimes(const std::vector<std::shared_ptr<SampleTime>> sampleTimes, bool isMinorStep)
@@ -482,6 +540,57 @@ namespace PySysLinkBase
             }
         }
         return false;  // Block not found in any sample time
+    }
+
+    std::tuple<double, std::vector<std::shared_ptr<SampleTime>>> SimulationManager::GetNearestTimeHit(double currentTime)
+    {
+        double nearestTimeHit = std::numeric_limits<double>::quiet_NaN();
+        std::vector<std::shared_ptr<SampleTime>> sampleTimesToProcess = {};
+
+        for (std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>::iterator iter = this->blocksForEachDiscreteSampleTime.begin(); iter != this->blocksForEachDiscreteSampleTime.end(); ++iter)
+        {
+            int elapsedTimeHits = currentTime / iter->first->GetDiscreteSampleTime();
+            double nextCandidateTimeHit = (elapsedTimeHits + 1) * iter->first->GetDiscreteSampleTime();
+            if (std::isnan(nearestTimeHit))
+            {
+                nearestTimeHit = nextCandidateTimeHit;
+                sampleTimesToProcess = {iter->first};
+            }
+            else if (nextCandidateTimeHit < nearestTimeHit)
+            {
+                nearestTimeHit = nextCandidateTimeHit;
+                sampleTimesToProcess = {iter->first};
+            }
+            else if (nextCandidateTimeHit == nearestTimeHit)
+            {
+                sampleTimesToProcess.push_back(iter->first);
+            }
+        }
+
+        for (std::map<std::shared_ptr<SampleTime>, std::shared_ptr<BasicOdeSolver>>::iterator iter = this->odeSolversForEachContinuousSampleTimeGroup.begin(); iter != this->odeSolversForEachContinuousSampleTimeGroup.end(); ++iter)
+        {
+            spdlog::get("default_pysyslink")->debug("Looking on continuous sample time...");
+
+            double nextTimeHit_i = iter->second->GetNextTimeHit();
+            
+            if (std::isnan(nearestTimeHit))
+            {
+                nearestTimeHit = nextTimeHit_i;
+                sampleTimesToProcess = {iter->first};
+            }
+            else if (nextTimeHit_i < nearestTimeHit)
+            {
+                nearestTimeHit = nextTimeHit_i;
+                sampleTimesToProcess = {iter->first};
+            }
+            else if (nextTimeHit_i == nearestTimeHit)
+            {
+                spdlog::get("default_pysyslink")->debug("New continuous sample time hit at the same moment!");
+                sampleTimesToProcess.push_back(iter->first);
+            }
+        }
+
+        return {nearestTimeHit, sampleTimesToProcess};
     }
 
     std::tuple<double, int, std::vector<std::shared_ptr<SampleTime>>> SimulationManager::GetNearestTimeHit(int nextDiscreteTimeHitToProcessIndex)
