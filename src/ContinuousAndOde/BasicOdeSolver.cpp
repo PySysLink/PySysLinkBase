@@ -232,6 +232,7 @@ namespace PySysLinkBase
             for (int i = 0; i < currentEvents.size(); i++)
             {
                 spdlog::get("default_pysyslink")->debug("Current event {}: {}", i, currentEvents[i].first);
+                spdlog::get("default_pysyslink")->debug("Initial event {}: {}", i, initialEvents[i].first);
                 if ((initialEvents[i].first < 0) != (currentEvents[i].first < 0))
                 {
                     isThereEvent = true;
