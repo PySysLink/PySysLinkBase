@@ -442,7 +442,7 @@ namespace PySysLinkBase
         }
     }
 
-    void SimulationManager::ProcessTimeHit(double time, const std::vector<std::shared_ptr<SampleTime>>& sampleTimesToProcess)
+    void SimulationManager::ProcessTimeHit(double currentTime, const std::vector<std::shared_ptr<SampleTime>>& sampleTimesToProcess)
     {
         if (sampleTimesToProcess.size() < 2)
         {
