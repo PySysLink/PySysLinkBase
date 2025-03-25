@@ -217,7 +217,7 @@ namespace PySysLinkBase
         double newSuggestedTimeStep = std::get<2>(result);
         while (!std::get<0>(result))
         {
-            spdlog::get("default_pysyslink")->debug("Step rejected, trying new suggested step size");
+            spdlog::get("default_pysyslink")->debug("Step with size: {} rejected, trying new suggested step size; {}", appliedTimeStep, newSuggestedTimeStep);
             appliedTimeStep = newSuggestedTimeStep;
             result = this->odeStepSolver->SolveStep(systemLambda, this->GetStates(), currentTime, newSuggestedTimeStep);
             newSuggestedTimeStep = std::get<2>(result);
