@@ -64,6 +64,7 @@ namespace PySysLinkBase
 
         void LogSignalInputReadCallback(const std::string blockId, const std::vector<std::shared_ptr<PySysLinkBase::InputPort>> inputPorts, int inputPortIndex, std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double currentTime);
         void LogSignalOutputUpdateCallback(const std::string blockId, const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>> outputPorts, int outputPortIndex, std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double currentTime);
+        void UpdateConfigurationValueCallback(const std::string blockId, const std::string keyName, ConfigurationValue value);
 
         std::unordered_map<const Port*, const Port*> portToLogInToAvoidRepetition = {};
         std::unordered_map<const Port*, std::pair<std::string, int>> loggedPortToCorrespondentBlockIdAndOutputPortIndex = {};
@@ -73,6 +74,8 @@ namespace PySysLinkBase
         void ProcessBlocksInSampleTimes(const std::vector<std::shared_ptr<SampleTime>> sampleTimes, bool isMinorStep=false);
         void MakeFirstSimulationStep();
         void ProcessTimeHit(double time, const std::vector<std::shared_ptr<SampleTime>>& sampleTimesToProcess);
+
+        std::vector<std::shared_ptr<ISimulationBlock>> simulationBlocksForceOutputUpdate = {};
     };
 }
 

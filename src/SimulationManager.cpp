@@ -89,6 +89,11 @@ namespace PySysLinkBase
                 spdlog::get("default_pysyslink")->error("Invalid input or output type in signal log configuration: {}", inputOrOutput);
             }        
         }
+
+        for (const auto& block : this->simulationModel->simulationBlocks)
+        {
+            block->RegisterUpdateConfigurationValueCallbacks(std::bind(&SimulationManager::UpdateConfigurationValueCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+        }
     }
 
     void SimulationManager::LogSignalOutputUpdateCallback(const std::string blockId, const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>> outputPorts, int outputPortIndex, std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double currentTime)
@@ -186,6 +191,12 @@ namespace PySysLinkBase
                 this->simulationOutput->signals["Displays"][displayId]->TryInsertValue<std::complex<double>>(blockEvent->simulationTime, std::get<std::complex<double>>(blockEvent->value));
             }
         }
+    }
+
+    void SimulationManager::UpdateConfigurationValueCallback(const std::string blockId, const std::string keyName, ConfigurationValue value)
+    {
+        std::shared_ptr<ISimulationBlock> block = ISimulationBlock::FindBlockById(blockId, this->simulationModel->simulationBlocks);
+        this->simulationBlocksForceOutputUpdate.push_back(block);
     }
 
 
@@ -444,6 +455,12 @@ namespace PySysLinkBase
 
     void SimulationManager::ProcessTimeHit(double currentTime, const std::vector<std::shared_ptr<SampleTime>>& sampleTimesToProcess)
     {
+        for (const auto& block : this->simulationBlocksForceOutputUpdate)
+        {
+            this->ProcessBlock(simulationModel, block, block->GetSampleTime(), currentTime, true);
+        }
+        this->simulationBlocksForceOutputUpdate.clear();
+
         if (sampleTimesToProcess.size() < 2)
         {
             for (const auto& sampleTime : sampleTimesToProcess)

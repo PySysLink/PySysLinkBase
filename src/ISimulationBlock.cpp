@@ -109,6 +109,27 @@ namespace PySysLinkBase
     {
         this->calculateOutputCallbacks.push_back(callback);
     }
+    
+    void ISimulationBlock::RegisterUpdateConfigurationValueCallbacks(std::function<void (const std::string, const std::string, const ConfigurationValue)> callback)
+
+    {
+        this->updateConfigurationValueCallbacks.push_back(callback);
+    }
+
+    bool ISimulationBlock::TryUpdateConfigurationValue(std::string keyName, ConfigurationValue value)
+    {
+        bool keyChanged = this->_TryUpdateConfigurationValue(keyName, value);
+        if (keyChanged)
+        {
+            for (const auto& callback : this->updateConfigurationValueCallbacks)
+            {
+                callback(this->id, keyName, value);
+            }
+        }
+        return keyChanged;
+    }
+
+
 
 
 

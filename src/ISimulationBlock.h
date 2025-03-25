@@ -24,6 +24,7 @@ namespace PySysLinkBase
 
         std::vector<std::function<void (const std::string, const std::vector<std::shared_ptr<PySysLinkBase::InputPort>>, std::shared_ptr<PySysLinkBase::SampleTime>, double)>> readInputCallbacks;
         std::vector<std::function<void (const std::string, const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>>, std::shared_ptr<PySysLinkBase::SampleTime>, double)>> calculateOutputCallbacks;
+        std::vector<std::function<void (const std::string, const std::string, const ConfigurationValue)>> updateConfigurationValueCallbacks;
     public:
         const std::string GetId() const;
         const std::string GetName() const;
@@ -44,12 +45,14 @@ namespace PySysLinkBase
         bool IsInputDirectBlockChainEnd(int inputIndex) const;
 
         void NotifyEvent(std::shared_ptr<PySysLinkBase::BlockEvent> blockEvent) const;
-        virtual bool TryUpdateConfigurationValue(std::string keyName, ConfigurationValue value) = 0;
+        bool TryUpdateConfigurationValue(std::string keyName, ConfigurationValue value);
+        virtual bool _TryUpdateConfigurationValue(std::string keyName, ConfigurationValue value) = 0;
 
         static std::shared_ptr<ISimulationBlock> FindBlockById(std::string id, const std::vector<std::shared_ptr<ISimulationBlock>>& blocksToFind);
 
         void RegisterReadInputsCallbacks(std::function<void (const std::string, const std::vector<std::shared_ptr<PySysLinkBase::InputPort>>, std::shared_ptr<PySysLinkBase::SampleTime>, double)> callback);
         void RegisterCalculateOutputCallbacks(std::function<void (const std::string, const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>>, std::shared_ptr<PySysLinkBase::SampleTime>, double)> callback);
+        void RegisterUpdateConfigurationValueCallbacks(std::function<void (const std::string, const std::string, const ConfigurationValue)> callback);
 
         virtual const std::vector<std::pair<double, double>> GetEvents(const std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double eventTime, std::vector<double> eventTimeStates, bool includeKnownEvents=false) const
         {
