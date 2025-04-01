@@ -11,6 +11,7 @@ add_library(PySysLinkBase STATIC
     BlockEventsHandler.cpp
     ContinuousAndOde/BasicOdeSolver.cpp
     ContinuousAndOde/EulerForwardStepSolver.cpp
+    ContinuousAndOde/EulerBackwardStepSolver.cpp
     ContinuousAndOde/SolverFactory.cpp
 
     PortsAndSignalValues/InputPort.cpp 

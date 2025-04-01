@@ -1,6 +1,7 @@
 # Add test executable
 add_executable(PySysLinkTests test_main.cpp)
 add_executable(Continuous test_continuous.cpp)
+add_executable(ContinuousImplicit test_continuous_implicit.cpp)
 add_executable(Multirate test_multirate.cpp)
 add_executable(Step test_step_continuous.cpp)
 
@@ -13,6 +14,7 @@ target_include_directories(PySysLinkTests PRIVATE
 # Link the main project (if necessary)
 target_link_libraries(PySysLinkTests PRIVATE PySysLinkBase)
 target_link_libraries(Continuous PRIVATE PySysLinkBase)
+target_link_libraries(ContinuousImplicit PRIVATE PySysLinkBase)
 target_link_libraries(Multirate PRIVATE PySysLinkBase)
 target_link_libraries(Step PRIVATE PySysLinkBase)
 

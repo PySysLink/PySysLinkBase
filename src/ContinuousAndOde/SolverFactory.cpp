@@ -1,6 +1,7 @@
 #include "SolverFactory.h"
 #include "OdeintStepSolver.h"
 #include "EulerForwardStepSolver.h"
+#include "EulerBackwardStepSolver.h"
 #include "spdlog/spdlog.h"
 
 namespace PySysLinkBase
@@ -69,6 +70,10 @@ namespace PySysLinkBase
         else if (solverType == "EulerForward")
         {
             return std::make_shared<EulerForwardStepSolver>();
+        }
+        else if (solverType == "EulerBackward")
+        {
+            return std::make_shared<EulerBackwardStepSolver>();
         }
         else
         {

@@ -108,6 +108,34 @@ namespace PySysLinkBase
         return derivatives;
     }
 
+    std::vector<std::vector<double>> BasicOdeSolver::GetJacobians(std::shared_ptr<SampleTime> sampleTime, double currentTime)
+    {
+        std::vector<std::vector<double>> jacobians(this->totalStates, std::vector<double>(this->totalStates, 0.0));
+
+        int i = 0;
+        int currentIndex = 0;
+        for (auto& block : this->simulationBlocks) // TODO: this makes no sense
+        {
+            std::shared_ptr<ISimulationBlockWithContinuousStates> blockWithContinuousStates = std::dynamic_pointer_cast<ISimulationBlockWithContinuousStates>(block);
+            if (blockWithContinuousStates)
+            {
+                std::vector<std::vector<double>> jacobians_i = blockWithContinuousStates->GetContinuousStateJacobians(sampleTime, currentTime);
+                for (int j = 0; j < jacobians_i.size(); j++)
+                {
+                    for (int k = 0; k < jacobians_i[j].size(); k++)
+                    {
+                        jacobians[currentIndex][k] = jacobians_i[j][k];
+                    }
+                    currentIndex++;
+                }
+            }
+
+            i += 1;
+        }
+
+        return jacobians;
+    }
+
     const std::vector<std::pair<double, double>> BasicOdeSolver::GetEvents(const std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double eventTime, std::vector<double> eventTimeStates) const
     {
         spdlog::get("default_pysyslink")->debug("Looking for events...");
@@ -172,6 +200,13 @@ namespace PySysLinkBase
         this->ComputeMinorOutputs(this->sampleTime, time);
         return this->GetDerivatives(this->sampleTime, time);
     }
+    
+    std::vector<std::vector<double>> BasicOdeSolver::SystemModelJacobian(std::vector<double> states, double time)
+    {
+        this->SetStates(states);
+        this->ComputeMinorOutputs(this->sampleTime, time);
+        return this->GetJacobians(this->sampleTime, time);
+    }
 
     void BasicOdeSolver::UpdateStatesToNextTimeHits()
     {
@@ -181,11 +216,33 @@ namespace PySysLinkBase
         }
     }
 
+    std::tuple<bool, std::vector<double>, double> BasicOdeSolver::OdeStepSolverStep(std::function<std::vector<double>(std::vector<double>, double)> systemLambda, 
+                                            std::function<std::vector<std::vector<double>>(std::vector<double>, double)> systemJacobianLambda,
+                                            std::vector<double> states_0, double currentTime, double timeStep)
+    {
+        std::tuple<bool, std::vector<double>, double> result;
+        if (this->odeStepSolver->IsJacobianNeeded())
+        {
+            spdlog::get("default_pysyslink")->debug("Jacobian needed");
+            result = this->odeStepSolver->SolveStep(systemLambda, systemJacobianLambda, this->GetStates(), currentTime, timeStep);
+        }
+        else
+        {
+            spdlog::get("default_pysyslink")->debug("Jacobian not needed");
+            result = this->odeStepSolver->SolveStep(systemLambda, this->GetStates(), currentTime, timeStep);
+        }
+        return result;
+    }
+
 
     void BasicOdeSolver::DoStep(double currentTime, double timeStep)
     {
         auto systemLambda = [this](std::vector<double> states, double time) {
             return this->SystemModel(states, time);
+        };
+
+        auto systemJacobianLambda = [this](std::vector<double> states, double time) {
+            return this->SystemModelJacobian(states, time);
         };
 
         this->UpdateStatesToNextTimeHits();
@@ -212,14 +269,15 @@ namespace PySysLinkBase
         std::vector<std::pair<double, double>> initialEvents = this->GetEvents(this->sampleTime, currentTime, this->GetStates());
         
         double appliedTimeStep = timeStep;
-        auto result = this->odeStepSolver->SolveStep(systemLambda, this->GetStates(), currentTime, timeStep);
+
+        std::tuple<bool, std::vector<double>, double> result = this->OdeStepSolverStep(systemLambda, systemJacobianLambda, this->GetStates(), currentTime, appliedTimeStep);
 
         double newSuggestedTimeStep = std::get<2>(result);
         while (!std::get<0>(result))
         {
             spdlog::get("default_pysyslink")->debug("Step with size: {} rejected, trying new suggested step size; {}", appliedTimeStep, newSuggestedTimeStep);
             appliedTimeStep = newSuggestedTimeStep;
-            result = this->odeStepSolver->SolveStep(systemLambda, this->GetStates(), currentTime, newSuggestedTimeStep);
+            result = this->OdeStepSolverStep(systemLambda, systemJacobianLambda, this->GetStates(), currentTime, newSuggestedTimeStep);
             newSuggestedTimeStep = std::get<2>(result);
         }
 
@@ -247,7 +305,7 @@ namespace PySysLinkBase
 
                 while ((t_2 - t_1) > this->eventTolerance)
                 {
-                    auto currentIntervalCenterResult = this->odeStepSolver->SolveStep(systemLambda, this->GetStates(), currentTime, (t_2+t_1)/2 - currentTime);
+                    auto currentIntervalCenterResult = this->OdeStepSolverStep(systemLambda, systemJacobianLambda, this->GetStates(), currentTime, (t_2+t_1)/2 - currentTime);
 
                     std::vector<std::pair<double, double>> currentIntervalCenterEvents = this->GetEvents(this->sampleTime, (t_2+t_1)/2, std::get<1>(currentIntervalCenterResult));
                     bool isThereEventInCurrentIntervalHalf = false;
@@ -271,7 +329,8 @@ namespace PySysLinkBase
                         t_1 += (t_2-t_1)/2;
                     }
                 }
-                auto eventResolutionTimeResult = this->odeStepSolver->SolveStep(systemLambda, this->GetStates(), currentTime, t_2 - currentTime);
+                auto eventResolutionTimeResult = this->OdeStepSolverStep(systemLambda, systemJacobianLambda, this->GetStates(), currentTime, t_2 - currentTime);
+
                 appliedTimeStep = t_2 - currentTime;
                 this->nextTimeHitStates = std::get<1>(eventResolutionTimeResult);
                 newSuggestedTimeStep = std::get<2>(eventResolutionTimeResult);

@@ -31,8 +31,13 @@ namespace PySysLinkBase
             void ComputeBlockOutputs(std::shared_ptr<ISimulationBlock> block, std::shared_ptr<SampleTime> sampleTime, double currentTime, bool isMinorStep=false);
             void ComputeMinorOutputs(std::shared_ptr<SampleTime> sampleTime, double currentTime);
             std::vector<double> GetDerivatives(std::shared_ptr<SampleTime> sampleTime, double currentTime);
+            std::vector<std::vector<double>> GetJacobians(std::shared_ptr<SampleTime> sampleTime, double currentTime);
             void SetStates(std::vector<double> newStates);
             std::vector<double> GetStates();
+
+            std::tuple<bool, std::vector<double>, double> OdeStepSolverStep(std::function<std::vector<double>(std::vector<double>, double)> systemLambda, 
+                                                    std::function<std::vector<std::vector<double>>(std::vector<double>, double)> systemJacobianLambda,
+                                                    std::vector<double> states_0, double currentTime, double timeStep);
 
             bool activateEvents;
             double eventTolerance;
@@ -41,6 +46,7 @@ namespace PySysLinkBase
             double firstTimeStep;
 
             std::vector<double> SystemModel(std::vector<double> states, double time);
+            std::vector<std::vector<double>> SystemModelJacobian(std::vector<double> states, double time);
 
             BasicOdeSolver(std::shared_ptr<IOdeStepSolver> odeStepSolver, std::shared_ptr<SimulationModel> simulationModel, 
                             std::vector<std::shared_ptr<ISimulationBlock>> simulationBlocks, std::shared_ptr<SampleTime> sampleTime, 
