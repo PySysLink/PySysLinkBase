@@ -32,6 +32,7 @@ namespace PySysLinkBase
             void ComputeMinorOutputs(std::shared_ptr<SampleTime> sampleTime, double currentTime);
             std::vector<double> GetDerivatives(std::shared_ptr<SampleTime> sampleTime, double currentTime);
             std::vector<std::vector<double>> GetJacobians(std::shared_ptr<SampleTime> sampleTime, double currentTime);
+            std::vector<std::vector<double>> GetBlockJacobian(std::shared_ptr<ISimulationBlock> block, std::shared_ptr<SampleTime> sampleTime, double currentTime);
             void SetStates(std::vector<double> newStates);
             std::vector<double> GetStates();
 
