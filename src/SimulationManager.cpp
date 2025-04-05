@@ -59,9 +59,29 @@ namespace PySysLinkBase
                 spdlog::get("default_pysyslink")->debug("First time step not found in configuration, using default value: {}", firstTimeStep);
             }
 
+            bool activateEvents = true;
+            try
+            {
+                activateEvents = ConfigurationValueManager::TryGetConfigurationValue<bool>("ActivateEvents", this->simulationOptions->solversConfiguration[selectedKey]);
+            }
+            catch (std::out_of_range const& ex)
+            {
+                spdlog::get("default_pysyslink")->debug("Activate events not found in configuration, using default value: {}", activateEvents);
+            }
+            
+            double eventTolerance = 1e-2;
+            try
+            {
+                eventTolerance = ConfigurationValueManager::TryGetConfigurationValue<double>("EventTolerance", this->simulationOptions->solversConfiguration[selectedKey]);
+            }
+            catch (std::out_of_range const& ex)
+            {
+                spdlog::get("default_pysyslink")->debug("Event tolerance not found in configuration, using default value: {}", eventTolerance);
+            }
+
             odeStepSolver = SolverFactory::CreateOdeStepSolver(this->simulationOptions->solversConfiguration[selectedKey]);
 
-            std::shared_ptr<BasicOdeSolver> odeSolver = std::make_shared<BasicOdeSolver>(odeStepSolver, this->simulationModel, iter->second, iter->first, this->simulationOptions, firstTimeStep);
+            std::shared_ptr<BasicOdeSolver> odeSolver = std::make_shared<BasicOdeSolver>(odeStepSolver, this->simulationModel, iter->second, iter->first, this->simulationOptions, firstTimeStep, activateEvents, eventTolerance);
             this->odeSolversForEachContinuousSampleTimeGroup.insert({iter->first, odeSolver});
         }
 
