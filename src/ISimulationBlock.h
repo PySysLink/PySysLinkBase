@@ -63,11 +63,6 @@ namespace PySysLinkBase
         {
             return {};
         }
-
-        virtual const std::vector<std::vector<double>> GetJacobian(const std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double currentTime) const
-        {
-            throw std::logic_error("Jacobian not implemented in block " + this->GetId() + ". This is the deffault behaviour.");
-        }
     };
 }
 

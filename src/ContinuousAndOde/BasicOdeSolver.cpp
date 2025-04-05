@@ -108,96 +108,40 @@ namespace PySysLinkBase
         return derivatives;
     }
 
-    std::vector<std::vector<double>> BasicOdeSolver::GetBlockJacobian(std::shared_ptr<ISimulationBlock> block, std::shared_ptr<SampleTime> sampleTime, double currentTime)
+
+
+    std::vector<std::vector<double>> BasicOdeSolver::GetJacobian(std::shared_ptr<SampleTime> sampleTime, double currentTime)
     {
-        std::vector<std::vector<double>> jacobian;
-        try
+        std::vector<std::vector<double>> jacobian(this->totalStates, std::vector<double>(this->totalStates, 0.0));
+
+        std::vector<double> originalDerivatives = this->GetDerivatives(sampleTime, currentTime);
+        std::vector<double> originalStates = this->GetStates();
+
+        for (int i = 0; i < this->totalStates; i++)
         {
-            jacobian = block->GetJacobian(sampleTime, currentTime);
-        }
-        catch(const std::logic_error& e)
-        {
-            const double epsilon = 1e-6; // Small perturbation value
-            std::shared_ptr<ISimulationBlockWithContinuousStates> blockWithContinuousStates = std::dynamic_pointer_cast<ISimulationBlockWithContinuousStates>(block);
-            std::vector<std::vector<double>> jacobianA;
-            std::vector<std::vector<double>> jacobianB;
-            if (blockWithContinuousStates)
+            std::vector<double> states = originalStates;
+            double insertedPerturbation;
+            if (states[i] == 0.0)
             {
-                std::vector<double> originalStates = blockWithContinuousStates->GetContinuousStates();
-                std::vector<double> originalDerivatives = blockWithContinuousStates->GetContinuousStateDerivatives(sampleTime, currentTime);
-                jacobianA = std::vector<std::vector<double>>(originalStates.size(), std::vector<double>(originalStates.size(), 0.0));
-
-                for (size_t i = 0; i < originalStates.size(); ++i)
-                {
-                    // Perturb the i-th state
-                    std::vector<double> perturbedStates = originalStates;
-                    perturbedStates[i] += epsilon;
-            
-                    // Set the perturbed states to the block
-
-                    blockWithContinuousStates->SetContinuousStates(perturbedStates);
-        
-                    // Compute the derivatives for the perturbed states
-                    std::vector<double> perturbedDerivatives = blockWithContinuousStates->GetContinuousStateDerivatives(sampleTime, currentTime);
-        
-                    // Compute the finite difference for the Jacobian column
-                    for (size_t j = 0; j < originalStates.size(); ++j)
-                    {
-                        jacobianA[j][i] = (perturbedDerivatives[j] - originalDerivatives[j]) / epsilon;
-                    }
-                }
-
-                blockWithContinuousStates->SetContinuousStates(originalStates);
-                
-                if (blockWithContinuousStates->GetInputPorts().size() != 0)
-                {
-                    jacobianB = std::vector<std::vector<double>>(blockWithContinuousStates->GetInputPorts().size(), std::vector<double>(this->totalStates, 0.0));
-                }
-                else
-                {
-                    jacobianB = {};
-                }
+                insertedPerturbation = 1e-6;
+                states[i] = insertedPerturbation;
             }
             else
             {
-                jacobianA = {};
-                jacobianB = {};
+                insertedPerturbation = states[i] * 0.01;
+                states[i] += insertedPerturbation;
             }
 
-        
-        
-            return jacobian;
-        }      
-    }
-
-
-    std::vector<std::vector<double>> BasicOdeSolver::GetJacobians(std::shared_ptr<SampleTime> sampleTime, double currentTime)
-    {
-        std::vector<std::vector<double>> jacobians(this->totalStates, std::vector<double>(this->totalStates, 0.0));
-
-        int i = 0;
-        int currentIndex = 0;
-        for (auto& block : this->simulationBlocks) // TODO: this makes no sense
-        {
-
-            std::shared_ptr<ISimulationBlockWithContinuousStates> blockWithContinuousStates = std::dynamic_pointer_cast<ISimulationBlockWithContinuousStates>(block);
-            if (blockWithContinuousStates)
+            this->SetStates(states);
+            std::vector<double> derivativesPerturbed = this->GetDerivatives(sampleTime, currentTime);
+            for (int j = 0; j < this->totalStates; j++)
             {
-                std::vector<std::vector<double>> jacobians_i = blockWithContinuousStates->GetContinuousStateJacobians(sampleTime, currentTime);
-                for (int j = 0; j < jacobians_i.size(); j++)
-                {
-                    for (int k = 0; k < jacobians_i[j].size(); k++)
-                    {
-                        jacobians[currentIndex][k] = jacobians_i[j][k];
-                    }
-                    currentIndex++;
-                }
+                jacobian[j][i] = (derivativesPerturbed[j] - originalDerivatives[j]) / insertedPerturbation;
             }
-
-            i += 1;
         }
+        this->SetStates(originalStates);
 
-        return jacobians;
+        return jacobian;
     }
 
     const std::vector<std::pair<double, double>> BasicOdeSolver::GetEvents(const std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double eventTime, std::vector<double> eventTimeStates) const
@@ -269,7 +213,7 @@ namespace PySysLinkBase
     {
         this->SetStates(states);
         this->ComputeMinorOutputs(this->sampleTime, time);
-        return this->GetJacobians(this->sampleTime, time);
+        return this->GetJacobian(this->sampleTime, time);
     }
 
     void BasicOdeSolver::UpdateStatesToNextTimeHits()
