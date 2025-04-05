@@ -16,6 +16,8 @@ namespace PySysLinkBase
         for (int i = 0; i < gradient.size(); i++)
         {
             newStates[i] = states_0[i] + gradient[i] * timeStep;
+            spdlog::get("default_pysyslink")->debug("New state {}: {}", i, newStates[i]);
+
         }
         return {true, newStates, timeStep};
     }
