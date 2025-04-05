@@ -48,6 +48,28 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(spdlog)
 
+FetchContent_Declare(
+  Eigen
+  GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+  GIT_TAG master
+  GIT_SHALLOW TRUE
+  GIT_PROGRESS TRUE)
+# note: To disable eigen tests,
+# you should put this code in a add_subdirectory to avoid to change
+# BUILD_TESTING for your own project too since variables are directory
+# scoped
+set(BUILD_TESTING OFF)
+set(EIGEN_BUILD_TESTING OFF)
+set(EIGEN_MPL2_ONLY ON)
+set(EIGEN_BUILD_PKGCONFIG OFF)
+set(EIGEN_BUILD_DOC OFF)
+FetchContent_MakeAvailable(Eigen)
+ 
+list(POP_BACK CMAKE_MESSAGE_INDENT)
+message(CHECK_PASS "fetched")
+
+target_link_libraries (PySysLinkBase PRIVATE Eigen3::Eigen)
+
 include(GNUInstallDirs)
 
 # Ensure spdlog is installed with your project
@@ -56,10 +78,20 @@ install(TARGETS spdlog
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
+install(TARGETS eigen
+    EXPORT EigenTargets
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
 # Ensure spdlog is part of your export
 install(EXPORT SpdlogTargets
     FILE SpdlogConfig.cmake
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/spdlog
+)
+
+install(EXPORT EigenTargets
+    FILE EigenConfig.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Eigen
 )
 
 add_dependencies(PySysLinkBase spdlog::spdlog)

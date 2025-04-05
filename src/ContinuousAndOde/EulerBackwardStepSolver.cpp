@@ -1,5 +1,7 @@
 #include "EulerBackwardStepSolver.h"
 #include <spdlog/spdlog.h>
+#include <Eigen/Dense>
+#include <iostream>
 
 namespace PySysLinkBase
 {
@@ -7,60 +9,116 @@ namespace PySysLinkBase
                                                                                 std::function<std::vector<std::vector<double>>(std::vector<double>, double)> systemJacobian,
                                                                                 std::vector<double> states_0, double currentTime, double timeStep)
     {
-        const double tol = 1e-6;
-        const int maxIter = 50;
-        double t_next = currentTime + timeStep;
-        int n = states_0.size();
-        std::vector<double> x = states_0;  // initial guess
+        std::vector<double> statesEnd = states_0;
 
-        // Newton-Raphson iteration
-        for (int iter = 0; iter < maxIter; ++iter) {
-            // Evaluate function f(x, t_next)
-            std::vector<double> f = systemDerivatives(x, t_next);
-            // Compute F(x) = x - states_0 - timeStep * f(x, t_next)
-            std::vector<double> F(n, 0.0);
-            for (int i = 0; i < n; i++) {
-                F[i] = x[i] - states_0[i] - timeStep * f[i];
+        for (int i = 0; i < this->maximumIterations; i++)
+        {
+            std::vector<double> statesEndOld = statesEnd;
+            std::vector<double> systemDerivativesEnd = systemDerivatives(statesEnd, currentTime + timeStep);
+            std::vector<std::vector<double>> systemJacobianEnd = systemJacobian(statesEnd, currentTime + timeStep);
+
+       
+            std::vector<double> delta = this->ComputeNewtonStep(systemJacobianEnd, systemDerivativesEnd, states_0, statesEnd, timeStep);
+            std::cout << "Delta " << i << " : ";
+            for (int i = 0; i < delta.size(); i++)
+            {
+                std::cout << delta[i] << " ";
             }
-            // Compute norm of F(x)
-            double normF = 0.0;
-            for (double val : F) {
-                normF += val * val;
+            std::cout << std::endl;
+            for (size_t j = 0; j < statesEnd.size(); j++) {
+                statesEnd[j] += delta[j];
             }
-            normF = std::sqrt(normF);
-            spdlog::get("default_pysyslink")->debug("Iteration {}: normF = {}", iter, normF);
-            if (normF < tol) {
-                return {true, x, timeStep};
+
+            // Check convergence
+            double maxError = 0.0;
+            for (size_t j = 0; j < statesEnd.size(); j++)
+            {
+                maxError = std::max(maxError, std::abs(statesEnd[j] - statesEndOld[j]));
             }
-            // Compute Jacobian J(x, t_next)
-            std::vector<std::vector<double>> J = systemJacobian(x, t_next);
-            // Form matrix A = I - timeStep * J
-            std::vector<std::vector<double>> A(n, std::vector<double>(n, 0.0));
-            for (int i = 0; i < n; i++) {
-                for (int j = 0; j < n; j++) {
-                    if (i == j) {
-                        A[i][j] = 1.0 - timeStep * J[i][j];
-                    } else {
-                        A[i][j] = - timeStep * J[i][j];
-                    }
+            
+            if (maxError < this->tolerance)
+            {
+                std::cout << "Original states: ";
+                for (int i = 0; i < states_0.size(); i++)
+                {
+                    std::cout << states_0[i] << " ";
                 }
-            }
-            // Solve linear system A * delta = F
-            std::vector<double> delta = this->SolveLinearSystem(A, F);
-            // Update x: x = x - delta
-            double normDelta = 0.0;
-            for (int i = 0; i < n; i++) {
-                x[i] -= delta[i];
-                normDelta += delta[i] * delta[i];
-            }
-            normDelta = std::sqrt(normDelta);
-            spdlog::get("default_pysyslink")->debug("Iteration {}: normDelta = {}", iter, normDelta);
-            if (normDelta < tol) {
-                return {true, x, timeStep};
+                std::cout << std::endl;
+
+                std::cout << "Integrated states: ";
+                for (int i = 0; i < statesEnd.size(); i++)
+                {
+                    std::cout << statesEnd[i] << " ";
+                }
+                std::cout << std::endl;
+                return {true, statesEnd, timeStep};
             }
         }
-        spdlog::get("default_pysyslink")->error("Newton-Raphson did not converge after {} iterations", maxIter);
-        return {false, x, timeStep};
+
+        std::cout << "Original states: ";
+        for (int i = 0; i < states_0.size(); i++)
+        {
+            std::cout << states_0[i] << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "Integrated states: ";
+        for (int i = 0; i < statesEnd.size(); i++)
+        {
+            std::cout << statesEnd[i] << " ";
+        }
+        std::cout << std::endl;
+        
+        return {true, statesEnd, timeStep};
+    }
+
+    std::vector<double> EulerBackwardStepSolver::ComputeNewtonStep(const std::vector<std::vector<double>>& systemJacobianEnd,
+        const std::vector<double>& systemDerivativesEnd, const std::vector<double>& states_0, const std::vector<double>& statesEnd,
+         double timeStep) 
+    {
+        int rows = systemJacobianEnd.size();
+        if (rows == 0 || systemJacobianEnd[0].size() != rows) {
+            throw std::runtime_error("Jacobian must be a non-empty square matrix.");
+        }
+
+        Eigen::MatrixXd eigenJacobian(rows, rows);
+        for (int i = 0; i < rows; i++) {
+            if (systemJacobianEnd[i].size() != rows) {
+                throw std::runtime_error("Jacobian must be a square matrix.");
+            }
+            for (int j = 0; j < rows; j++) {
+                eigenJacobian(i, j) = systemJacobianEnd[i][j];
+            }
+        }
+
+        Eigen::VectorXd eigenDerivatives(rows);
+        for (int i = 0; i < rows; i++) {
+            eigenDerivatives(i) = systemDerivativesEnd[i];
+        }
+
+        Eigen::VectorXd eigenStatesEnd(rows);
+        for (int i = 0; i < rows; i++) {
+            eigenStatesEnd(i) = statesEnd[i];
+        }
+        Eigen::VectorXd eigenStates_0(rows);
+        for (int i = 0; i < rows; i++) {
+            eigenStates_0(i) = states_0[i];
+        }
+
+
+
+        std::cout << "Jacobian: " << eigenJacobian << std::endl;
+        std::cout << "Inverse Jacobian: " << eigenJacobian.inverse() << std::endl;
+        std::cout << "Derivatives: " << eigenDerivatives.transpose() << std::endl;
+
+        Eigen::VectorXd F = eigenStatesEnd - eigenStates_0 - timeStep * eigenDerivatives;
+        Eigen::MatrixXd dF = Eigen::MatrixXd::Identity(rows, rows) - timeStep * eigenJacobian;
+
+        Eigen::VectorXd delta = -dF.inverse() * F;
+
+        // Convert the result back to std::vector<double>
+        std::vector<double> deltaStd(delta.data(), delta.data() + delta.size());
+        return deltaStd;
     }
 
 } // namespace PySysLinkBase

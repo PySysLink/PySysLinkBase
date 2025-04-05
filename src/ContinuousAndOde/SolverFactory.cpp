@@ -73,7 +73,25 @@ namespace PySysLinkBase
         }
         else if (solverType == "EulerBackward")
         {
-            return std::make_shared<EulerBackwardStepSolver>();
+            double maximumIterations = 50;
+            double tolerance = 1e-6;
+            try
+            {
+                maximumIterations = ConfigurationValueManager::TryGetConfigurationValue<double>("MaximumIterations", solverConfiguration);
+            }
+            catch (std::out_of_range const& ex)
+            {
+                spdlog::get("default_pysyslink")->debug("Maximum iterations not found in configuration, using default value: {}", maximumIterations);
+            }
+            try
+            {
+                tolerance = ConfigurationValueManager::TryGetConfigurationValue<double>("Tolerance", solverConfiguration);
+            }
+            catch (std::out_of_range const& ex)
+            {
+                spdlog::get("default_pysyslink")->debug("Tolerance not found in configuration, using default value: {}", tolerance);
+            }
+            return std::make_shared<EulerBackwardStepSolver>(maximumIterations, tolerance);
         }
         else
         {

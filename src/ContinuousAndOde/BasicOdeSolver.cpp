@@ -2,6 +2,8 @@
 #include <limits>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
+#include <iostream> 
+#include <iomanip>
 
 namespace PySysLinkBase
 {
@@ -117,6 +119,20 @@ namespace PySysLinkBase
         std::vector<double> originalDerivatives = this->GetDerivatives(sampleTime, currentTime);
         std::vector<double> originalStates = this->GetStates();
 
+        std::cout << "Original states: ";
+        for (int i = 0; i < originalStates.size(); i++)
+        {
+            std::cout << originalStates[i] << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "Original derivatives: ";
+        for (int i = 0; i < originalDerivatives.size(); i++)
+        {
+            std::cout << std::setprecision (15) << originalDerivatives[i] << " ";
+        }
+        std::cout << std::endl;
+
         for (int i = 0; i < this->totalStates; i++)
         {
             std::vector<double> states = originalStates;
@@ -133,14 +149,40 @@ namespace PySysLinkBase
             }
 
             this->SetStates(states);
+            this->ComputeMinorOutputs(sampleTime, currentTime);
             std::vector<double> derivativesPerturbed = this->GetDerivatives(sampleTime, currentTime);
+
+            std::cout << "Perturbed states " << i << ": ";
+            for (int i = 0; i < states.size(); i++)
+            {
+                std::cout << states[i] << " ";
+            }
+            std::cout << std::endl;
+
+            std::cout << "Perturbed derivatives " << i << ": ";
+            for (int i = 0; i < derivativesPerturbed.size(); i++)
+            {
+                std::cout << std::setprecision (15) << derivativesPerturbed[i] << " ";
+            }
+            std::cout << std::endl;
+
+            std::cout << "Inserted perturbation: " << insertedPerturbation << std::endl;
+
             for (int j = 0; j < this->totalStates; j++)
             {
                 jacobian[j][i] = (derivativesPerturbed[j] - originalDerivatives[j]) / insertedPerturbation;
             }
         }
         this->SetStates(originalStates);
-
+        std::cout << "Jacobian: " << std::endl;
+        for (int i = 0; i < jacobian.size(); i++)
+{
+            for (int j = 0; j < jacobian[i].size(); j++)
+            {
+                std::cout << jacobian[i][j] << " ";
+            }
+            std::cout << std::endl;
+        }
         return jacobian;
     }
 
@@ -211,8 +253,6 @@ namespace PySysLinkBase
     
     std::vector<std::vector<double>> BasicOdeSolver::SystemModelJacobian(std::vector<double> states, double time)
     {
-        this->SetStates(states);
-        this->ComputeMinorOutputs(this->sampleTime, time);
         return this->GetJacobian(this->sampleTime, time);
     }
 
