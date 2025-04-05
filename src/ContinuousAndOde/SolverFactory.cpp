@@ -54,7 +54,7 @@ namespace PySysLinkBase
             }
             else if (controlledSolver == "rosenbrock4_controller") // TODO: this does not seem to work
             {
-                auto controlledStepper = std::make_shared<boost::numeric::odeint::rosenbrock4_controller<boost::numeric::odeint::rosenbrock4<double>>>();
+                auto controlledStepper = std::make_shared<boost::numeric::odeint::rosenbrock4_controller<boost::numeric::odeint::rosenbrock4<double>>>(absoluteTolerance, relativeTolerance);
                 using controlledStepperType = decltype(boost::numeric::odeint::rosenbrock4_controller<boost::numeric::odeint::rosenbrock4<double>>());
                 return std::make_shared<OdeintImplicitStepSolver<controlledStepperType>>(controlledStepper);
             }
