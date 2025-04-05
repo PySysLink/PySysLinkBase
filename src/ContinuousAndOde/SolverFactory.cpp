@@ -2,6 +2,7 @@
 #include "OdeintStepSolver.h"
 #include "EulerForwardStepSolver.h"
 #include "EulerBackwardStepSolver.h"
+#include "OdeintImplicitStepSolver.h"
 #include "spdlog/spdlog.h"
 
 namespace PySysLinkBase
@@ -51,11 +52,12 @@ namespace PySysLinkBase
                 using controlledStepperType = decltype(boost::numeric::odeint::make_controlled(absoluteTolerance, relativeTolerance, boost::numeric::odeint::runge_kutta_fehlberg78<std::vector<double>>()));
                 return std::make_shared<OdeintStepSolver<controlledStepperType>>(controlledStepper);
             }
-            // else if (controlledSolver == "rosenbrock4_controller") // TODO: this does not seem to work
-            // {
-            //     using rosenbrock_stepper = boost::numeric::odeint::rosenbrock4<std::vector<double>>;
-            //     return std::make_shared<OdeintStepSolver<boost::numeric::odeint::rosenbrock4_controller<rosenbrock_stepper>>>();
-            // }
+            else if (controlledSolver == "rosenbrock4_controller") // TODO: this does not seem to work
+            {
+                auto controlledStepper = std::make_shared<boost::numeric::odeint::rosenbrock4_controller<boost::numeric::odeint::rosenbrock4<double>>>();
+                using controlledStepperType = decltype(boost::numeric::odeint::rosenbrock4_controller<boost::numeric::odeint::rosenbrock4<double>>());
+                return std::make_shared<OdeintImplicitStepSolver<controlledStepperType>>(controlledStepper);
+            }
             // else if (controlledSolver == "bulirsch_stoer")
             // {
             //     auto controlledStepper = boost::numeric::odeint::make_controlled(absoluteTolerance, relativeTolerance, boost::numeric::odeint::bulirsch_stoer<std::vector<double>>());
