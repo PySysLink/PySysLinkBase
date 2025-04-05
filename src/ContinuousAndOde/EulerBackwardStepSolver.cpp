@@ -1,7 +1,6 @@
 #include "EulerBackwardStepSolver.h"
 #include <spdlog/spdlog.h>
 #include <Eigen/Dense>
-#include <iostream>
 
 namespace PySysLinkBase
 {
@@ -19,12 +18,7 @@ namespace PySysLinkBase
 
        
             std::vector<double> delta = this->ComputeNewtonStep(systemJacobianEnd, systemDerivativesEnd, states_0, statesEnd, timeStep);
-            std::cout << "Delta " << i << " : ";
-            for (int i = 0; i < delta.size(); i++)
-            {
-                std::cout << delta[i] << " ";
-            }
-            std::cout << std::endl;
+
             for (size_t j = 0; j < statesEnd.size(); j++) {
                 statesEnd[j] += delta[j];
             }
@@ -38,37 +32,12 @@ namespace PySysLinkBase
             
             if (maxError < this->tolerance)
             {
-                std::cout << "Original states: ";
-                for (int i = 0; i < states_0.size(); i++)
-                {
-                    std::cout << states_0[i] << " ";
-                }
-                std::cout << std::endl;
-
-                std::cout << "Integrated states: ";
-                for (int i = 0; i < statesEnd.size(); i++)
-                {
-                    std::cout << statesEnd[i] << " ";
-                }
-                std::cout << std::endl;
+                systemDerivatives(states_0, currentTime);
                 return {true, statesEnd, timeStep};
             }
         }
 
-        std::cout << "Original states: ";
-        for (int i = 0; i < states_0.size(); i++)
-        {
-            std::cout << states_0[i] << " ";
-        }
-        std::cout << std::endl;
-
-        std::cout << "Integrated states: ";
-        for (int i = 0; i < statesEnd.size(); i++)
-        {
-            std::cout << statesEnd[i] << " ";
-        }
-        std::cout << std::endl;
-        
+        systemDerivatives(states_0, currentTime);
         return {true, statesEnd, timeStep};
     }
 
@@ -104,12 +73,6 @@ namespace PySysLinkBase
         for (int i = 0; i < rows; i++) {
             eigenStates_0(i) = states_0[i];
         }
-
-
-
-        std::cout << "Jacobian: " << eigenJacobian << std::endl;
-        std::cout << "Inverse Jacobian: " << eigenJacobian.inverse() << std::endl;
-        std::cout << "Derivatives: " << eigenDerivatives.transpose() << std::endl;
 
         Eigen::VectorXd F = eigenStatesEnd - eigenStates_0 - timeStep * eigenDerivatives;
         Eigen::MatrixXd dF = Eigen::MatrixXd::Identity(rows, rows) - timeStep * eigenJacobian;
