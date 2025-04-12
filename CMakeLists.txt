@@ -33,6 +33,7 @@ option(ENABLE_TESTS "Enable building tests" OFF)
 
 if(ENABLE_TESTS)
     add_subdirectory(Tests)
+    add_subdirectory(Examples)
 endif()
 
 set(PY_SYS_LINK_BASE_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")

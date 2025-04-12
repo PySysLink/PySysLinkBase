@@ -1,0 +1,66 @@
+Blocks:
+  - Id: const1
+    Name: Operand 1
+    BlockType: BasicCpp
+    BlockClass: BasicBlocks/Constant
+    Value: 5.0
+  - Id: display1
+    Name: Result
+    BlockType: BasicCpp
+    BlockClass: BasicBlocks/Display
+  - Id: integrator1
+    Name: Main integrator
+    BlockType: BasicCpp
+    BlockClass: BasicBlocks/Integrator
+  - Id: integrator2
+    Name: Main integrator
+    BlockType: BasicCpp
+    BlockClass: BasicBlocks/Integrator
+  - Id: sum1
+    Name: Main Adder
+    BlockType: BasicCpp
+    BlockClass: BasicBlocks/Adder
+    Gains:
+      - 1.0
+      - -1.0
+      - -1.0
+
+Links:
+  - Id: link1
+    Name: link1
+    SourceBlockId: const1
+    SourcePortIdx: 0
+    DestinationBlockId: sum1
+    DestinationPortIdx: 0
+  - Id: link2
+    Name: link2
+    SourceBlockId: sum1
+    SourcePortIdx: 0
+    DestinationBlockId: integrator1
+    DestinationPortIdx: 0
+  - Id: link3
+    Name: link3
+    SourceBlockId: integrator1
+    SourcePortIdx: 0
+    DestinationBlockId: integrator2
+    DestinationPortIdx: 0
+  - Id: link4
+    Name: link4
+    SourceBlockId: integrator2
+    SourcePortIdx: 0
+    DestinationBlockId: display1
+    DestinationPortIdx: 0
+  - Id: link5
+    Name: link5
+    SourceBlockId: integrator1
+    SourcePortIdx: 0
+    DestinationBlockId: sum1
+    DestinationPortIdx: 1
+  - Id: link4
+    Name: link4
+    SourceBlockId: integrator2
+    SourcePortIdx: 0
+    DestinationBlockId: sum1
+    DestinationPortIdx: 2
+    
+  

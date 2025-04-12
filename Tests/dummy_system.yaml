@@ -1,0 +1,26 @@
+Blocks:
+  - Id: dummy1
+    Name: Dummy Block 1
+    BlockType: dummy
+    BlockClass: dummy/Initial
+  - Id: dummy2
+    Name: Dummy Block 2
+    BlockType: dummy
+    BlockClass: dummy/Intermediate
+  - Id: dummy3
+    Name: Dummy Block 3
+    BlockType: dummy
+    BlockClass: dummy/Final
+Links:
+  - Id: link1
+    Name: link1
+    SourceBlockId: dummy1
+    SourcePortIdx: 0
+    DestinationBlockId: dummy2
+    DestinationPortIdx: 0
+  - Id: link2
+    Name: link2
+    SourceBlockId: dummy2
+    SourcePortIdx: 0
+    DestinationBlockId: dummy3
+    DestinationPortIdx: 0
