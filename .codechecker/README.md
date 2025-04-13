@@ -13,7 +13,7 @@ cmake -DENABLE_TESTS=ON ..
 Which generates the file compile_commands.json. Then run:
 
 ```console
-CodeChecker analyze compile_commands.json -o reports
+CodeChecker analyze compile_commands.json --ignore SKIPFILE -o reports
 ```
 
 To generate the reports on the reports/ folder.
