@@ -8,6 +8,11 @@ project(PySysLinkBase VERSION 0.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+option(ENABLE_TESTS "Enable building tests" OFF)
+
+if(ENABLE_TESTS)
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+endif()
 
 # Check if the user has already set CMAKE_INSTALL_PREFIX
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
@@ -29,7 +34,6 @@ message(STATUS "Default install path: ${CMAKE_INSTALL_PREFIX}")
 # Add subdirectories
 add_subdirectory(src)
 
-option(ENABLE_TESTS "Enable building tests" OFF)
 
 if(ENABLE_TESTS)
     add_subdirectory(Tests)

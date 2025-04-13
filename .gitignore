@@ -6,6 +6,12 @@ ehthumbs.db
 ehthumbs_vista.db
 
 .VSCodeCounter
+venv/
+
+!.codechecker/
+
+.codechecker/*
+!.codechecker/report_git/
 
 # Dump file
 *.stackdump
