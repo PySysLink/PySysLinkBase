@@ -12,6 +12,7 @@ venv/
 
 .codechecker/*
 !.codechecker/report_git/
+!.codechecker/README.md
 
 # Dump file
 *.stackdump
