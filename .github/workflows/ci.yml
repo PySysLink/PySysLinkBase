@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [ '**' ]
+  pull_request:
+    branches: [ '**' ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the repository
+      - uses: actions/checkout@v3
+
+      # Install required packages. Adjust the list according to your project requirements.
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install build-essential
+          sudo apt-get install libboost-all-dev
+
+      # Configure the project with tests enabled
+      - name: Configure CMake
+        run: |
+          mkdir build
+          cd build
+          cmake -DENABLE_TESTS=ON ..
+
+      # Build the project using make
+      - name: Build
+        run: |
+          cd build
+          make
+
+      # Run tests using ctest
+      - name: Run tests
+        run: |
+          cd build/Tests
+          ctest --output-on-failure
+
+      # Optional: Upload coverage report to a service like Codecov
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v3
