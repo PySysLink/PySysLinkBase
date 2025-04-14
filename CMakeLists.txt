@@ -93,3 +93,37 @@ install(TARGETS PySysLinkBase
 if(UNIX AND NOT APPLE) # Linux-specific
     install(CODE "execute_process(COMMAND ldconfig)")
 endif()
+
+
+# --- CPack configuration begin ---
+include(InstallRequiredSystemLibraries)
+
+# Basic package settings.
+set(CPACK_PACKAGE_NAME "PySysLinkBase")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_CONTACT "pellousabiaga@gmail.com")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "PySysLinkBase: A C++ Library for dynamic system simulation")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")  # Optional if you have a LICENSE file.
+
+# Set the prefix directory for the files installed by your installer.
+set(CPACK_PACKAGING_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
+
+# Specify the supported generators for Linux.
+# This example will create DEB, TGZ, and RPM packages.
+set(CPACK_GENERATOR "DEB;TGZ;RPM")
+
+# DEB-specific settings.
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Pello Usabiaga")  # Required field.
+# Optionally, add dependency list in a comma-separated string (example below):
+# set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-all-dev, other-dependency")
+
+# RPM-specific settings (if applicable).
+set(CPACK_RPM_PACKAGE_LICENSE "Apache v2.0")  # Use your license type.
+set(CPACK_RPM_PACKAGE_RELEASE 1)
+
+# TGZ options if necessary; these are usually minimal.
+# (CPack will generate a compressed archive in TGZ format.)
+
+# Tell CPack to generate the packages.
+include(CPack)
+# --- CPack configuration end ---
