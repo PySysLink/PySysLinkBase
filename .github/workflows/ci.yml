@@ -22,16 +22,23 @@ jobs:
           sudo apt-get install libboost-all-dev
 
       # Configure the project with tests enabled
-      - name: Configure CMake
+      - name: Configure CMake no tests
         run: |
           mkdir build
           cd build
-          cmake -DENABLE_TESTS=ON ..
+          cmake ..
 
       # Build the project using make
       - name: Build
         run: |
           cd build
+          make
+          sudo make install
+      
+      - name: Configure CMake with tests and build
+        run: |
+          cd build
+          cmake -DBUILD_TESTS=ON ..
           make
 
       # Run tests using ctest
