@@ -17,7 +17,7 @@ namespace PySysLinkBase
         {
             config = YAML::LoadFile(filename);
         }
-        catch (YAML::BadFile)
+        catch (YAML::BadFile& e)
         {
             throw std::runtime_error("Could not read file: " + filename);
         }

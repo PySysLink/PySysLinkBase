@@ -348,8 +348,10 @@ namespace PySysLinkBase
         for (std::map<std::shared_ptr<SampleTime>, std::vector<std::shared_ptr<ISimulationBlock>>>::iterator iter = blocksForEachDiscreteSampleTime.begin(); iter != blocksForEachDiscreteSampleTime.end(); ++iter)
         {
             double samplePeriod = iter->first->GetDiscreteSampleTime();
-            for (double t = simulationOptions->startTime; t <= simulationOptions->stopTime; t += samplePeriod)
+            int numberOfSamples = (simulationOptions->stopTime - simulationOptions->startTime) / samplePeriod;
+            for (int i = 0; i < numberOfSamples; i++)
             {
+                double t = simulationOptions->startTime + i * samplePeriod;
                 if (timeHitsToSampleTimes.find(t) == timeHitsToSampleTimes.end()) 
                 {
                     timeHitsToSampleTimes.insert({t, std::vector<std::shared_ptr<SampleTime>>({iter->first})});
