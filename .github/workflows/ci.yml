@@ -48,6 +48,18 @@ jobs:
           cd build/Tests
           ctest --output-on-failure
 
-      # Optional: Upload coverage report to a service like Codecov
-      - name: Upload Coverage
-        uses: codecov/codecov-action@v3
+      - name: Package with CPack
+        run: |
+          cd build
+          sudo cpack
+      
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: PySysLinkBase-packages
+          path: |
+            build/*.deb
+            build/*.rpm
+            build/*.tar.gz
+
+            Artifact upload introduced on ci cd to save packages

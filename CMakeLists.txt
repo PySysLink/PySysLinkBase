@@ -112,6 +112,8 @@ set(CPACK_PACKAGING_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 # This example will create DEB, TGZ, and RPM packages.
 set(CPACK_GENERATOR "DEB;TGZ;RPM")
 
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+
 # DEB-specific settings.
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Pello Usabiaga")  # Required field.
 # Optionally, add dependency list in a comma-separated string (example below):
