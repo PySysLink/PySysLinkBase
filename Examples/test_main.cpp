@@ -9,6 +9,8 @@
 #include "PySysLinkBase/BlockEventsHandler.h"
 #include "PySysLinkBase/SimulationOptions.h"
 #include <map>
+#include <iostream>
+
 
 int main() {
 
@@ -24,7 +26,7 @@ int main() {
     
     PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::debug);
 
-    std::shared_ptr<PySysLinkBase::SimulationModel> simulationModel = PySysLinkBase::ModelParser::ParseFromYaml("../Tests/system1_complex.yaml", blockFactories, blockEventsHandler);
+    std::shared_ptr<PySysLinkBase::SimulationModel> simulationModel = PySysLinkBase::ModelParser::ParseFromYaml("../Tests/system1.yaml", blockFactories, blockEventsHandler);
 
     std::vector<std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>>> blockChains = simulationModel->GetDirectBlockChains();
     
@@ -39,13 +41,29 @@ int main() {
     std::shared_ptr<PySysLinkBase::SimulationOptions> simulationOptions = std::make_shared<PySysLinkBase::SimulationOptions>();
     simulationOptions->startTime = 0.0;
     simulationOptions->stopTime = 10.0;
-    simulationOptions->runInNaturalTime = true;
+    simulationOptions->runInNaturalTime = false;
     simulationOptions->naturalTimeSpeedMultiplier = 1;
+    simulationOptions->blockIdsInputOrOutputAndIndexesToLog = {{"const1", "output", 0}, {"accumulator1", "output", 0}, {"display1", "input", 0}};
 
     std::unique_ptr<PySysLinkBase::SimulationManager> simulationManager = std::make_unique<PySysLinkBase::SimulationManager>(simulationModel, simulationOptions);
 
-    simulationManager->RunSimulation();
+    std::shared_ptr<PySysLinkBase::SimulationOutput> simulationOutput = simulationManager->RunSimulation();
+
+    std::vector<double> continuousValues = simulationOutput->signals["LoggedSignals"]["accumulator1/output/0"]->TryCastToTyped<double>()->values;
+    std::vector<double> continuousTimes = simulationOutput->signals["LoggedSignals"]["accumulator1/output/0"]->TryCastToTyped<double>()->times;
+    for (int i = 0; i < continuousValues.size(); i++)
+    {
+        std::cout << continuousTimes[i] << ": " << continuousValues[i] << std::endl;
+    }
+    
+    std::vector<double> continuousValuesLog = simulationOutput->signals["LoggedSignals"]["display1/input/0"]->TryCastToTyped<double>()->values;
+    std::vector<double> continuousTimesLog = simulationOutput->signals["LoggedSignals"]["display1/input/0"]->TryCastToTyped<double>()->times;
+    for (int i = 0; i < continuousValuesLog.size(); i++)
+    {
+        std::cout << continuousTimesLog[i] << ": " << continuousValuesLog[i] << std::endl;
+    }
 
     return 0;
+
 }
 

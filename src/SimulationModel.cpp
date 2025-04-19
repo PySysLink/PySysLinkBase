@@ -332,9 +332,9 @@ namespace PySysLinkBase
                 return st1; // Continuous resolves to continuous
             }
             if (st1->GetSampleTimeType() == SampleTimeType::discrete && st2->GetSampleTimeType() == SampleTimeType::discrete) {
-                double gcdSampleTimeMs = std::gcd(static_cast<int>(st1->GetDiscreteSampleTime()*1000), static_cast<int>(st2->GetDiscreteSampleTime()*1000));
+                double gcdSampleTimeMs = std::gcd(static_cast<int64_t>(st1->GetDiscreteSampleTime()*1e9), static_cast<int64_t>(st2->GetDiscreteSampleTime()*1e9));
                 if (gcdSampleTimeMs > 0) {
-                    return std::make_shared<SampleTime>(SampleTimeType::discrete, gcdSampleTimeMs/1000);
+                    return std::make_shared<SampleTime>(SampleTimeType::discrete, gcdSampleTimeMs/1e9);
                 } else {
                     throw std::runtime_error("Discrete sample times are incompatible: No common multiple found.");
                 }

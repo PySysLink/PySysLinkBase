@@ -15,16 +15,16 @@
 int main() {
 
     PySysLinkBase::SpdlogManager::ConfigureDefaultLogger();
-    PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::debug);
+    PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::off);
     
     std::shared_ptr<PySysLinkBase::IBlockEventsHandler> blockEventsHandler = std::make_shared<PySysLinkBase::BlockEventsHandler>();
 
     std::unique_ptr<PySysLinkBase::BlockTypeSupportPluginLoader> pluginLoader = std::make_unique<PySysLinkBase::BlockTypeSupportPluginLoader>();
-    PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::debug);
+    PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::off);
 
     std::map<std::string, std::shared_ptr<PySysLinkBase::IBlockFactory>> blockFactories = pluginLoader->LoadPlugins("/usr/local/lib");
     
-    PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::debug);
+    PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::off);
 
     std::shared_ptr<PySysLinkBase::SimulationModel> simulationModel = PySysLinkBase::ModelParser::ParseFromYaml("../Tests/system1_continuous.yaml", blockFactories, blockEventsHandler);
 
@@ -36,18 +36,20 @@ int main() {
 
     simulationModel->PropagateSampleTimes();
 
-    PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::debug);
+    PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::off);
 
     std::shared_ptr<PySysLinkBase::SimulationOptions> simulationOptions = std::make_shared<PySysLinkBase::SimulationOptions>();
     simulationOptions->startTime = 0.0;
-    simulationOptions->stopTime = 10.0;
-    simulationOptions->runInNaturalTime = true;
+    simulationOptions->stopTime = 1000.0;
+    simulationOptions->runInNaturalTime = false;
     simulationOptions->naturalTimeSpeedMultiplier = 1;
     simulationOptions->blockIdsInputOrOutputAndIndexesToLog = {{"const1", "output", 0}, {"integrator1", "output", 0}};
     simulationOptions->solversConfiguration = {
             { "default", {
                 { "Type", PySysLinkBase::ConfigurationValue(std::string("odeint")) },
-                { "ControlledSolver", PySysLinkBase::ConfigurationValue(std::string("runge_kutta_fehlberg78")) }
+                { "ControlledSolver", PySysLinkBase::ConfigurationValue(std::string("rosenbrock4_controller")) },
+                { "AbsoluteTolerance", PySysLinkBase::ConfigurationValue(1e-12) },
+                { "RelativeTolerance", PySysLinkBase::ConfigurationValue(1e-12) }
             }}
         };
 
