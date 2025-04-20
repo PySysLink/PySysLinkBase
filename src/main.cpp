@@ -123,6 +123,25 @@ int main(int argc, char* argv[]) {
             }
             simOpts->solversConfiguration[outer.first.as<std::string>()] = inner;
         }
+
+        if (opts["HDF5FileName"]) {
+            simOpts->hdf5FileName = opts["HDF5FileName"].as<std::string>();
+        }
+        else {
+            simOpts->hdf5FileName = "";
+        }
+        if (opts["SaveToFileContinuously"]) {
+            simOpts->saveToFileContinuously = opts["SaveToFileContinuously"].as<bool>();
+        }
+        else {
+            simOpts->saveToFileContinuously = false;
+        }
+        if (opts["SaveToVectors"]) {
+            simOpts->saveToVectors = opts["SaveToVectors"].as<bool>();
+        }
+        else {
+            simOpts->saveToVectors = true;
+        }
     }
     catch (const YAML::Exception &e)
     {
@@ -136,18 +155,18 @@ int main(int argc, char* argv[]) {
     auto output = mgr.RunSimulation();
 
     // 7) Write CSV: one file per logged signal
-    std::ofstream out(program.get<std::string>("output_csv"));
-    out << "time,signal_name,value\n";
-    for (auto &cat : output->signals) {
-        for (auto &sig_pair : cat.second) {
-            auto hist = sig_pair.second->TryCastToTyped<std::complex<double>>();
-            for (size_t i = 0; i < hist->times.size(); ++i) {
-                out << hist->times[i] << ","
-                    << cat.first << "/" << sig_pair.first << ","
-                    << hist->values[i] << "\n";
-            }
-        }
-    }
+    // std::ofstream out(program.get<std::string>("output_csv"));
+    // out << "time,signal_name,value\n";
+    // for (auto &cat : output->signals) {
+    //     for (auto &sig_pair : cat.second) {
+    //         auto hist = sig_pair.second->TryCastToTyped<double>();
+    //         for (size_t i = 0; i < hist->times.size(); ++i) {
+    //             out << hist->times[i] << ","
+    //                 << cat.first << "/" << sig_pair.first << ","
+    //                 << hist->values[i] << "\n";
+    //         }
+    //     }
+    // }
 
     std::cout << "Simulation complete, output written to "
               << program.get<std::string>("output_csv") << "\n";

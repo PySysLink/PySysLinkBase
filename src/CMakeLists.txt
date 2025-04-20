@@ -24,6 +24,7 @@ set_target_properties(PySysLinkBase PROPERTIES POSITION_INDEPENDENT_CODE ON)
 add_executable(PySysLinkBase_exe main.cpp)
 set_property(TARGET PySysLinkBase_exe PROPERTY OUTPUT_NAME PySysLinkBase)
 
+
 include(FetchContent)
 
 FetchContent_Declare(
@@ -72,6 +73,7 @@ message(CHECK_PASS "fetched")
 
 target_link_libraries (PySysLinkBase PRIVATE Eigen3::Eigen)
 
+find_package(HDF5 REQUIRED)
 
 FetchContent_Declare(
   highfive
@@ -82,8 +84,18 @@ FetchContent_Declare(
 
 FetchContent_GetProperties(highfive)
 FetchContent_MakeAvailable(highfive)
+target_include_directories(PySysLinkBase PRIVATE ${HDF5_INCLUDE_DIRS})
 include_directories(BEFORE SYSTEM ${highfive_SOURCE_DIR} ${highfive_BINARY_DIR}/include)
+include_directories(BEFORE SYSTEM ${HDF5_INCLUDE_DIRS})
 target_link_libraries(PySysLinkBase PRIVATE HighFive)
+target_link_libraries(PySysLinkBase PRIVATE HDF5::HDF5)
+target_link_libraries(PySysLinkBase PRIVATE ${HDF5_LIBRARIES})
+target_link_libraries(PySysLinkBase_exe PRIVATE HighFive)
+target_link_libraries(PySysLinkBase_exe PRIVATE HDF5::HDF5)
+target_link_libraries(PySysLinkBase_exe PRIVATE ${HDF5_LIBRARIES})
+
+message(STATUS "HDF5_INCLUDE_DIRS: ${HDF5_INCLUDE_DIRS}")
+message(STATUS "HDF5_LIBRARIES: ${HDF5_LIBRARIES}")
 
 FetchContent_Declare(
     argparse
@@ -91,8 +103,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(argparse)
 
-target_link_libraries(PySysLinkBase_exe argparse)
-target_link_libraries(PySysLinkBase_exe PySysLinkBase)
+target_link_libraries(PySysLinkBase_exe PRIVATE argparse)
+target_link_libraries(PySysLinkBase_exe PRIVATE PySysLinkBase)
 
 
 include(GNUInstallDirs)

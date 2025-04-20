@@ -11,6 +11,10 @@ target_include_directories(PySysLinkExamples PRIVATE
     ${CMAKE_SOURCE_DIR}/Examples # Test-specific headers
 )
 
+find_package(HDF5 REQUIRED)
+include_directories(${HDF5_INCLUDE_DIRS})
+
+
 # Link the main project (if necessary)
 target_link_libraries(PySysLinkExamples PRIVATE PySysLinkBase)
 target_link_libraries(Continuous PRIVATE PySysLinkBase)

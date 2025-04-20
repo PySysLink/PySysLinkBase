@@ -1,0 +1,16 @@
+StartTime: 0.0
+StopTime: 10.0
+
+RunInNaturalTime: false
+NaturalTimeSpeedMultiplier: 1.0
+
+BlockIdsInputOrOutputAndIndexesToLog:
+  - signal1:
+      - display1
+      - Input
+      - 0
+  - signal2:
+      - sum1
+      - Output
+      - 0
+

@@ -87,7 +87,7 @@ namespace PySysLinkBase
 
         this->GetTimeHitsToSampleTimes(simulationOptions, blocksForEachDiscreteSampleTime);
 
-        this->simulationOutput = std::make_shared<SimulationOutput>();
+        this->simulationOutput = std::make_shared<SimulationOutput>(simulationOptions->saveToVectors, simulationOptions->saveToFileContinuously, simulationOptions->hdf5FileName);
         this->simulationModel->blockEventsHandler->RegisterValueUpdateBlockEventCallback(std::bind(&SimulationManager::ValueUpdateBlockEventCallback, this, std::placeholders::_1));
 
         for (const auto& blockIdInputOrOutputAndIndexToLog : simulationOptions->blockIdsInputOrOutputAndIndexesToLog)
