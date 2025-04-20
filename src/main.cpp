@@ -24,14 +24,8 @@ int main(int argc, char* argv[]) {
     program.add_argument("model_yaml")
         .help("Path to the simulation model (YAML)");
 
-    program.add_argument("plugin_dirs_file")
-        .help("Text file listing plugin directories, one per line");
-
     program.add_argument("options_yaml")
-        .help("Path to the simulation options file (YAML)");
-
-    program.add_argument("output_csv")
-        .help("Path to write the simulation output (CSV)");
+        .help("Path to the options file (YAML), containing the plugin paths, simulation options and output options");
     
     program.add_argument("--verbose")
         .help("increase output verbosity")
@@ -47,7 +41,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // 1) Setup logging
     PySysLinkBase::SpdlogManager::ConfigureDefaultLogger();
     if (program["--verbose"] == true) 
     {
@@ -58,15 +51,19 @@ int main(int argc, char* argv[]) {
         PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::warning);
     }
 
-    // 2) Read plugin directories
-    std::ifstream dirs_in(program.get<std::string>("plugin_dirs_file"));
-    if (!dirs_in) {
-        std::cerr << "Cannot open plugin dirs file\n";
+    YAML::Node opts;
+    try
+    {
+        opts = YAML::LoadFile(program.get<std::string>("options_yaml"));
+    }
+    catch (const YAML::BadFile &e)
+    {
+        std::cerr << "Could not read file: " << program.get<std::string>("options_yaml") << "\n";
         return 1;
     }
-    std::vector<std::string> plugin_dirs;
-    for (std::string line; std::getline(dirs_in, line); )
-        if (!line.empty()) plugin_dirs.push_back(line);
+
+
+    std::vector<std::string> plugin_dirs = opts["PluginDirs"].as<std::vector<std::string>>();
 
     // 3) Load all block‐factory plugins
     auto blockEventsHandler = std::make_shared<PySysLinkBase::BlockEventsHandler>();
@@ -87,17 +84,7 @@ int main(int argc, char* argv[]) {
     std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>> orderedBlocks = model->OrderBlockChainsOntoFreeOrder(blockChains);
     model->PropagateSampleTimes();
 
-    // 5) Read simulation options from YAML
-    YAML::Node opts;
-    try
-    {
-        opts = YAML::LoadFile(program.get<std::string>("options_yaml"));
-    }
-    catch (const YAML::BadFile &e)
-    {
-        std::cerr << "Could not read file: " << program.get<std::string>("options_yaml") << "\n";
-        return 1;
-    }
+    
     
     auto simOpts = std::make_shared<PySysLinkBase::SimulationOptions>();
     try
@@ -150,16 +137,15 @@ int main(int argc, char* argv[]) {
     }
     
 
-    // 6) Run the simulation
     PySysLinkBase::SimulationManager mgr(model, simOpts);
     auto output = mgr.RunSimulation();
 
-    // 7) Write CSV: one file per logged signal
-    output->WriteJson(program.get<std::string>("output_csv"));
+    if (opts["SaveToJson"].as<bool>()) {
+        output->WriteJson(opts["OutputJsonFile"].as<std::string>());
 
-   
+        std::cout << "Simulation complete, output written to "
+              << opts["OutputJsonFile"].as<std::string>() << "\n";
+    }
 
-    std::cout << "Simulation complete, output written to "
-              << program.get<std::string>("output_csv") << "\n";
     return 0;
 }
