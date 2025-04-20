@@ -145,6 +145,7 @@ namespace PySysLinkBase
             this->simulationOutput->signals["LoggedSignals"][signalId]->TryInsertValue<std::complex<double>>(this->currentTime, valueComplex);
         }
     }
+    
     void SimulationManager::LogSignalInputReadCallback(const std::string blockId, const std::vector<std::shared_ptr<PySysLinkBase::InputPort>> inputPorts, int inputPortIndex, std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double currentTime)
     {
         std::string signalId = blockId + "/input/" + std::to_string(inputPortIndex);

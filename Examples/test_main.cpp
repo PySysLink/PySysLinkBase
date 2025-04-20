@@ -36,7 +36,7 @@ int main() {
 
     simulationModel->PropagateSampleTimes();
 
-    PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::debug);
+    PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::off);
 
     std::shared_ptr<PySysLinkBase::SimulationOptions> simulationOptions = std::make_shared<PySysLinkBase::SimulationOptions>();
     simulationOptions->startTime = 0.0;

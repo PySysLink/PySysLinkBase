@@ -13,7 +13,6 @@ add_library(PySysLinkBase STATIC
     ContinuousAndOde/EulerForwardStepSolver.cpp
     ContinuousAndOde/EulerBackwardStepSolver.cpp
     ContinuousAndOde/SolverFactory.cpp
-
     PortsAndSignalValues/InputPort.cpp 
     PortsAndSignalValues/OutputPort.cpp 
     PortsAndSignalValues/Port.cpp 
@@ -21,6 +20,8 @@ add_library(PySysLinkBase STATIC
 
 set_target_properties(PySysLinkBase PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+add_executable(PySysLinkBase_exe main.cpp)
+set_property(TARGET PySysLinkBase_exe PROPERTY OUTPUT_NAME PySysLinkBase)
 
 include(FetchContent)
 
@@ -69,6 +70,27 @@ list(POP_BACK CMAKE_MESSAGE_INDENT)
 message(CHECK_PASS "fetched")
 
 target_link_libraries (PySysLinkBase PRIVATE Eigen3::Eigen)
+
+
+FetchContent_Declare(
+  highfive
+  GIT_REPOSITORY https://github.com/highfive-devs/highfive.git
+  GIT_TAG        v2.10.1           
+  GIT_SHALLOW    TRUE
+)
+
+FetchContent_MakeAvailable(highfive)
+target_link_libraries(PySysLinkBase PRIVATE highfive::highfive)
+
+FetchContent_Declare(
+    argparse
+    GIT_REPOSITORY https://github.com/p-ranav/argparse.git
+)
+FetchContent_MakeAvailable(argparse)
+
+target_link_libraries(PySysLinkBase_exe argparse)
+target_link_libraries(PySysLinkBase_exe PySysLinkBase)
+
 
 include(GNUInstallDirs)
 

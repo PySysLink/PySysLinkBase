@@ -6,6 +6,9 @@
 #include <map>
 #include <string>
 
+#include "PortsAndSignalValues/UnknownTypeSignalValue.h"
+#include "FullySupportedSignalValue.h"
+
 namespace PySysLinkBase
 {
     template <typename T> 
@@ -56,6 +59,36 @@ namespace PySysLinkBase
     struct SimulationOutput
     {
         std::map<std::string, std::map<std::string, std::shared_ptr<UnknownTypeSignal>>> signals;
+
+        void AddValue(const std::string signalType, const std::string signalId, const std::shared_ptr<UnknownTypeSignalValue> value, double currentTime)
+        {
+            if (this->signals.find(signalType) == this->signals.end())
+            {
+                this->signals.insert({signalType, std::map<std::string, std::shared_ptr<UnknownTypeSignal>>()});
+            }
+            
+            try
+            {
+                double valueDouble = value->TryCastToTyped<double>()->GetPayload();
+
+                if (this->signals[signalType].find(signalId) == this->signals[signalType].end())
+                {
+                    this->signals[signalType].insert({signalId, std::make_shared<Signal<double>>()});
+                }
+                this->signals[signalType][signalId]->TryInsertValue<double>(currentTime, valueDouble);
+            }
+            catch(const std::bad_variant_access& e)
+            {
+                std::complex<double> valueComplex = value->TryCastToTyped<std::complex<double>>()->GetPayload();
+
+                if (this->signals[signalType].find(signalId) == this->signals[signalType].end())
+                {
+                    this->signals[signalType].insert({signalId, std::make_shared<Signal<std::complex<double>>>()});
+                }
+                this->signals[signalType][signalId]->TryInsertValue<std::complex<double>>(currentTime, valueComplex);
+            }
+        }
+        
     };
 } // namespace PySysLinkBase
 
