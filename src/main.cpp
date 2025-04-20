@@ -155,18 +155,9 @@ int main(int argc, char* argv[]) {
     auto output = mgr.RunSimulation();
 
     // 7) Write CSV: one file per logged signal
-    // std::ofstream out(program.get<std::string>("output_csv"));
-    // out << "time,signal_name,value\n";
-    // for (auto &cat : output->signals) {
-    //     for (auto &sig_pair : cat.second) {
-    //         auto hist = sig_pair.second->TryCastToTyped<double>();
-    //         for (size_t i = 0; i < hist->times.size(); ++i) {
-    //             out << hist->times[i] << ","
-    //                 << cat.first << "/" << sig_pair.first << ","
-    //                 << hist->values[i] << "\n";
-    //         }
-    //     }
-    // }
+    output->WriteJson(program.get<std::string>("output_csv"));
+
+   
 
     std::cout << "Simulation complete, output written to "
               << program.get<std::string>("output_csv") << "\n";

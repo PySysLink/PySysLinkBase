@@ -10,14 +10,41 @@
 #include <mutex>
 #include <thread>
 #include <condition_variable>
-
+#include <iomanip>  
+#include <sstream>
 #include <highfive/H5Easy.hpp>
+#include <fstream>
 
 #include "PortsAndSignalValues/UnknownTypeSignalValue.h"
 #include "FullySupportedSignalValue.h"
 
 namespace PySysLinkBase
 {
+    static std::string escapeJson(const std::string& s) {
+        std::ostringstream o;
+        for (char c : s) {
+            switch (c) {
+                case '\"': o << "\\\""; break;
+                case '\\': o << "\\\\"; break;
+                case '\b': o << "\\b";  break;
+                case '\f': o << "\\f";  break;
+                case '\n': o << "\\n";  break;
+                case '\r': o << "\\r";  break;
+                case '\t': o << "\\t";  break;
+                default:
+                    if (static_cast<unsigned char>(c) < 0x20) {
+                        // control characters → \u00XX
+                        o << "\\u"
+                          << std::hex << std::setw(4) << std::setfill('0')
+                          << (int)(unsigned char)c;
+                    } else {
+                        o << c;
+                    }
+            }
+        }
+        return o.str();
+    }
+
     template <typename T> 
     class Signal; // Forward declaration
 
@@ -220,7 +247,7 @@ namespace PySysLinkBase
         template<typename T>
         void InsertValueTyped(const std::string& signalType, const std::string& signalId, T value, double currentTime)
         {
-            if (!this->saveToVectors)
+            if (this->saveToVectors)
             {   
                 if (!signals.count(signalType))
                 {
@@ -277,6 +304,88 @@ namespace PySysLinkBase
                     this->InsertValueTyped<T>(signalType, signalId, arg, currentTime);
                 },
                 value);
+        }
+
+        void WriteJson(const std::string& filename) const {
+            std::ofstream out(filename);  // ofstream for file I/O :contentReference[oaicite:0]{index=0}
+            out << "{";
+
+            bool firstType = true;
+            for (const auto& [signalType, innerMap] : signals) {
+                if (!firstType) out << ",";
+                firstType = false;
+
+                out << "\n  \"" << escapeJson(signalType) << "\": {";
+
+                bool firstSig = true;
+                for (const auto& [signalId, unkPtr] : innerMap) {
+                    if (!firstSig) out << ",";
+                    firstSig = false;
+
+                    out << "\n    \"" << escapeJson(signalId) << "\": {";
+
+                    // 1) Write times array
+                    out << "\n      \"times\": [";
+                    const auto& times = unkPtr->times;               // vector<double> :contentReference[oaicite:1]{index=1}
+                    for (size_t i = 0; i < times.size(); ++i) {
+                        if (i) out << ", ";
+                        out << times[i];
+                    }
+                    out << "],";
+
+                    // 2) Write values array, dynamic dispatch
+                    out << "\n      \"values\": [";
+                    bool firstV = true;
+                    // Try each possible type
+                    if (auto p = dynamic_cast<Signal<double>*>(unkPtr.get())) {
+                        for (double v : p->values) {
+                            if (!firstV) out << ", ";
+                            firstV = false;
+                            out << v;
+                        }
+                    }
+                    else if (auto p = dynamic_cast<Signal<int>*>(unkPtr.get())) {
+                        for (int v : p->values) {
+                            if (!firstV) out << ", ";
+                            firstV = false;
+                            out << v;
+                        }
+                    }
+                    else if (auto p = dynamic_cast<Signal<bool>*>(unkPtr.get())) {
+                        for (bool v : p->values) {
+                            if (!firstV) out << ", ";
+                            firstV = false;
+                            out << (v ? "true" : "false");
+                        }
+                    }
+                    else if (auto p = dynamic_cast<Signal<std::string>*>(unkPtr.get())) {
+                        for (const auto& v : p->values) {
+                            if (!firstV) out << ", ";
+                            firstV = false;
+                            out << "\"" << escapeJson(v) << "\"";
+                        }
+                    }
+                    else if (auto p = dynamic_cast<Signal<std::complex<double>>*>(unkPtr.get())) {
+                        // represent complex as {"real":..., "imag":...}
+                        for (const auto& cval : p->values) {
+                            if (!firstV) out << ", ";
+                            firstV = false;
+                            out << "{"
+                                << "\"real\":" << cval.real() << ", "
+                                << "\"imag\":" << cval.imag()
+                                << "}";
+                        }
+                    }
+                    out << "]";  // end values
+
+                    out << "\n    }";  // end signalId object
+                }
+
+                out << "\n  }";  // end signalType object
+            }
+
+            out << "\n}\n";  // end root object
+            // file closed on destructor
         }
     };
 } // namespace PySysLinkBase
