@@ -119,61 +119,13 @@ namespace PySysLinkBase
     void SimulationManager::LogSignalOutputUpdateCallback(const std::string blockId, const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>> outputPorts, int outputPortIndex, std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double currentTime)
     {
         std::string signalId = blockId + "/output/" + std::to_string(outputPortIndex);
-        if (this->simulationOutput->signals.find("LoggedSignals") == this->simulationOutput->signals.end())
-        {
-            this->simulationOutput->signals.insert({"LoggedSignals", std::map<std::string, std::shared_ptr<UnknownTypeSignal>>()});
-        }
-        
-        try
-        {
-            double valueDouble = outputPorts[outputPortIndex]->GetValue()->TryCastToTyped<double>()->GetPayload();
-
-            if (this->simulationOutput->signals["LoggedSignals"].find(signalId) == this->simulationOutput->signals["LoggedSignals"].end())
-            {
-                this->simulationOutput->signals["LoggedSignals"].insert({signalId, std::make_shared<Signal<double>>()});
-            }
-            this->simulationOutput->signals["LoggedSignals"][signalId]->TryInsertValue<double>(this->currentTime, valueDouble);
-        }
-        catch(const std::bad_variant_access& e)
-        {
-            std::complex<double> valueComplex = outputPorts[outputPortIndex]->GetValue()->TryCastToTyped<std::complex<double>>()->GetPayload();
-
-            if (this->simulationOutput->signals["LoggedSignals"].find(signalId) == this->simulationOutput->signals["LoggedSignals"].end())
-            {
-                this->simulationOutput->signals["LoggedSignals"].insert({signalId, std::make_shared<Signal<std::complex<double>>>()});
-            }
-            this->simulationOutput->signals["LoggedSignals"][signalId]->TryInsertValue<std::complex<double>>(this->currentTime, valueComplex);
-        }
+        this->simulationOutput->InsertUnknownValue("LoggedSignals", signalId, outputPorts[outputPortIndex]->GetValue(), currentTime);
     }
-    
+
     void SimulationManager::LogSignalInputReadCallback(const std::string blockId, const std::vector<std::shared_ptr<PySysLinkBase::InputPort>> inputPorts, int inputPortIndex, std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double currentTime)
     {
         std::string signalId = blockId + "/input/" + std::to_string(inputPortIndex);
-        if (this->simulationOutput->signals.find("LoggedSignals") == this->simulationOutput->signals.end())
-        {
-            this->simulationOutput->signals.insert({"LoggedSignals", std::map<std::string, std::shared_ptr<UnknownTypeSignal>>()});
-        }
-        
-        try
-        {
-            double valueDouble = inputPorts[inputPortIndex]->GetValue()->TryCastToTyped<double>()->GetPayload();
-
-            if (this->simulationOutput->signals["LoggedSignals"].find(signalId) == this->simulationOutput->signals["LoggedSignals"].end())
-            {
-                this->simulationOutput->signals["LoggedSignals"].insert({signalId, std::make_shared<Signal<double>>()});
-            }
-            this->simulationOutput->signals["LoggedSignals"][signalId]->TryInsertValue<double>(this->currentTime, valueDouble);
-        }
-        catch(const std::bad_variant_access& e)
-        {
-            std::complex<double> valueComplex = inputPorts[inputPortIndex]->GetValue()->TryCastToTyped<std::complex<double>>()->GetPayload();
-
-            if (this->simulationOutput->signals["LoggedSignals"].find(signalId) == this->simulationOutput->signals["LoggedSignals"].end())
-            {
-                this->simulationOutput->signals["LoggedSignals"].insert({signalId, std::make_shared<Signal<std::complex<double>>>()});
-            }
-            this->simulationOutput->signals["LoggedSignals"][signalId]->TryInsertValue<std::complex<double>>(this->currentTime, valueComplex);
-        }
+        this->simulationOutput->InsertUnknownValue("LoggedSignals", signalId, inputPorts[inputPortIndex]->GetValue(), currentTime);
     }
 
     void SimulationManager::ValueUpdateBlockEventCallback(const std::shared_ptr<ValueUpdateBlockEvent> blockEvent)
@@ -186,32 +138,7 @@ namespace PySysLinkBase
         spdlog::get("default_pysyslink")->debug("Value update event type: {}", valueEventType);
         spdlog::get("default_pysyslink")->debug("Display id: {}", displayId);
 
-        if (valueEventType == "DisplayValue")
-        {
-            if (this->simulationOutput->signals.find("Displays") == this->simulationOutput->signals.end())
-            {
-                this->simulationOutput->signals.insert({"Displays", std::map<std::string, std::shared_ptr<UnknownTypeSignal>>()});
-            }
-            
-            try
-            {
-                double value = std::get<double>(blockEvent->value);
-                if (this->simulationOutput->signals["Displays"].find(displayId) == this->simulationOutput->signals["Displays"].end())
-                {
-                    this->simulationOutput->signals["Displays"].insert({displayId, std::make_shared<Signal<double>>()});
-                }
-                this->simulationOutput->signals["Displays"][displayId]->TryInsertValue<double>(blockEvent->simulationTime, value);
-            }
-            catch(const std::bad_variant_access& e)
-            {
-                std::complex<double> value = std::get<std::complex<double>>(blockEvent->value);
-                if (this->simulationOutput->signals["Displays"].find(displayId) == this->simulationOutput->signals["Displays"].end())
-                {
-                    this->simulationOutput->signals["Displays"].insert({displayId, std::make_shared<Signal<std::complex<double>>>()});
-                }
-                this->simulationOutput->signals["Displays"][displayId]->TryInsertValue<std::complex<double>>(blockEvent->simulationTime, std::get<std::complex<double>>(blockEvent->value));
-            }
-        }
+        this->simulationOutput->InsertFullySupportedValue("Displays", displayId, blockEvent->value, currentTime);
     }
 
     void SimulationManager::UpdateConfigurationValueCallback(const std::string blockId, const std::string keyName, ConfigurationValue value)

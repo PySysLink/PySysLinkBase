@@ -56,39 +56,50 @@ namespace PySysLinkBase
         }
     };
 
-    struct SimulationOutput
+    class SimulationOutput
     {
+        public:
         std::map<std::string, std::map<std::string, std::shared_ptr<UnknownTypeSignal>>> signals;
-
-        void AddValue(const std::string signalType, const std::string signalId, const std::shared_ptr<UnknownTypeSignalValue> value, double currentTime)
+    
+        template<typename T>
+        void InsertValueTyped(const std::string& signalType, const std::string& signalId, T value, double currentTime)
         {
             if (this->signals.find(signalType) == this->signals.end())
             {
                 this->signals.insert({signalType, std::map<std::string, std::shared_ptr<UnknownTypeSignal>>()});
             }
             
-            try
+            if (this->signals[signalType].find(signalId) == this->signals[signalType].end())
             {
-                double valueDouble = value->TryCastToTyped<double>()->GetPayload();
-
-                if (this->signals[signalType].find(signalId) == this->signals[signalType].end())
-                {
-                    this->signals[signalType].insert({signalId, std::make_shared<Signal<double>>()});
-                }
-                this->signals[signalType][signalId]->TryInsertValue<double>(currentTime, valueDouble);
+                this->signals[signalType].insert({signalId, std::make_shared<Signal<T>>()});
             }
-            catch(const std::bad_variant_access& e)
-            {
-                std::complex<double> valueComplex = value->TryCastToTyped<std::complex<double>>()->GetPayload();
-
-                if (this->signals[signalType].find(signalId) == this->signals[signalType].end())
-                {
-                    this->signals[signalType].insert({signalId, std::make_shared<Signal<std::complex<double>>>()});
-                }
-                this->signals[signalType][signalId]->TryInsertValue<std::complex<double>>(currentTime, valueComplex);
-            }
-        }
+            this->signals[signalType][signalId]->TryInsertValue<T>(currentTime, value);
+        }  
         
+        void InsertUnknownValue(
+            const std::string& signalType,
+            const std::string& signalId,
+            const std::shared_ptr<PySysLinkBase::UnknownTypeSignalValue>& value,
+            double currentTime)
+        {
+            FullySupportedSignalValue fullySupportedValue = ConvertToFullySupportedSignalValue(value);
+            this->InsertFullySupportedValue(signalType, signalId, fullySupportedValue, currentTime);
+        }
+
+        void InsertFullySupportedValue(
+            const std::string& signalType,
+            const std::string& signalId,
+            const FullySupportedSignalValue& value,
+            double currentTime)
+        {
+
+            std::visit(
+                [&](auto&& arg) {
+                    using T = std::decay_t<decltype(arg)>;
+                    this->InsertValueTyped<T>(signalType, signalId, arg, currentTime);
+                },
+                value);
+        }
     };
 } // namespace PySysLinkBase
 

@@ -10,15 +10,20 @@
 #include <stdexcept>
 #include <complex>
 
+#include "PortsAndSignalValues/UnknownTypeSignalValue.h"
+#include "PortsAndSignalValues/SignalValue.h"
+
 namespace PySysLinkBase
 {    
     using FullySupportedSignalValue = std::variant<
-        int,
-        double,
-        bool,
-        std::complex<double>,
-        std::string>;
+    int,
+    double,
+    bool,
+    std::complex<double>,
+    std::string
+>;
 
+FullySupportedSignalValue ConvertToFullySupportedSignalValue(const std::shared_ptr<UnknownTypeSignalValue>& unknownValue);
 
 } // namespace PySysLinkBase
 

@@ -9,6 +9,7 @@ add_library(PySysLinkBase STATIC
     PortLink.cpp
     SpdlogManager.cpp
     BlockEventsHandler.cpp
+    FullySupportedSignalValue.cpp
     ContinuousAndOde/BasicOdeSolver.cpp
     ContinuousAndOde/EulerForwardStepSolver.cpp
     ContinuousAndOde/EulerBackwardStepSolver.cpp
@@ -72,15 +73,15 @@ message(CHECK_PASS "fetched")
 target_link_libraries (PySysLinkBase PRIVATE Eigen3::Eigen)
 
 
-FetchContent_Declare(
-  highfive
-  GIT_REPOSITORY https://github.com/highfive-devs/highfive.git
-  GIT_TAG        v2.10.1           
-  GIT_SHALLOW    TRUE
-)
+# FetchContent_Declare(
+#   highfive
+#   GIT_REPOSITORY https://github.com/highfive-devs/highfive.git
+#   GIT_TAG        v2.10.1           
+#   GIT_SHALLOW    TRUE
+# )
 
-FetchContent_MakeAvailable(highfive)
-target_link_libraries(PySysLinkBase PRIVATE highfive::highfive)
+# FetchContent_MakeAvailable(highfive)
+# target_link_libraries(PySysLinkBase PRIVATE highfive::highfive)
 
 FetchContent_Declare(
     argparse

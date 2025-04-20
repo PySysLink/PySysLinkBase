@@ -140,7 +140,7 @@ int main(int argc, char* argv[]) {
     out << "time,signal_name,value\n";
     for (auto &cat : output->signals) {
         for (auto &sig_pair : cat.second) {
-            auto hist = sig_pair.second->TryCastToTyped<double>();
+            auto hist = sig_pair.second->TryCastToTyped<std::complex<double>>();
             for (size_t i = 0; i < hist->times.size(); ++i) {
                 out << hist->times[i] << ","
                     << cat.first << "/" << sig_pair.first << ","
