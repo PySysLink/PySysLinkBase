@@ -21,6 +21,8 @@ jobs:
           sudo apt-get install build-essential
           sudo apt-get install libboost-all-dev
           sudo apt-get install rpm
+          sudo apt-get install libhdf5-dev
+
 
       # Configure the project with tests enabled
       - name: Configure CMake no tests
