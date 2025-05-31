@@ -94,7 +94,13 @@ namespace PySysLinkBase
                 ioThread.join();
             }
         }
-        if (dumpOptions) delete static_cast<H5Easy::DumpOptions*>(dumpOptions);
+        signals.clear();
+        
+        // Fix 2: Properly delete dumpOptions
+        if (dumpOptions) {
+            delete static_cast<H5Easy::DumpOptions*>(dumpOptions);
+            dumpOptions = nullptr;
+        }
     }
 
     void SimulationOutput::InsertUnknownValue(
@@ -139,6 +145,7 @@ namespace PySysLinkBase
 
                 out << "\n    \"" << escapeJson(signalId) << "\": {";
 
+                // Times array
                 out << "\n      \"times\": [";
                 const auto& times = unkPtr->times;
                 for (size_t i = 0; i < times.size(); ++i) {
@@ -147,44 +154,55 @@ namespace PySysLinkBase
                 }
                 out << "],";
 
+                // Values array
                 out << "\n      \"values\": [";
                 bool firstV = true;
-                if (auto p = dynamic_cast<Signal<double>*>(unkPtr.get())) {
+                
+                // Use static type information instead of expensive dynamic_cast
+                const std::string& typeId = unkPtr->GetTypeId();
+                
+                // Fix 3: Optimized type handling
+                if (typeId.find("double") != std::string::npos) {
+                    auto p = static_cast<const Signal<double>*>(unkPtr.get());
                     for (double v : p->values) {
                         if (!firstV) out << ", ";
-                        firstV = false;
                         out << v;
+                        firstV = false;
                     }
                 }
-                else if (auto p = dynamic_cast<Signal<int>*>(unkPtr.get())) {
+                else if (typeId.find("int") != std::string::npos) {
+                    auto p = static_cast<const Signal<int>*>(unkPtr.get());
                     for (int v : p->values) {
                         if (!firstV) out << ", ";
-                        firstV = false;
                         out << v;
+                        firstV = false;
                     }
                 }
-                else if (auto p = dynamic_cast<Signal<bool>*>(unkPtr.get())) {
+                else if (typeId.find("bool") != std::string::npos) {
+                    auto p = static_cast<const Signal<bool>*>(unkPtr.get());
                     for (bool v : p->values) {
                         if (!firstV) out << ", ";
-                        firstV = false;
                         out << (v ? "true" : "false");
+                        firstV = false;
                     }
                 }
-                else if (auto p = dynamic_cast<Signal<std::string>*>(unkPtr.get())) {
+                else if (typeId.find("string") != std::string::npos) {
+                    auto p = static_cast<const Signal<std::string>*>(unkPtr.get());
                     for (const auto& v : p->values) {
                         if (!firstV) out << ", ";
-                        firstV = false;
                         out << "\"" << escapeJson(v) << "\"";
+                        firstV = false;
                     }
                 }
-                else if (auto p = dynamic_cast<Signal<std::complex<double>>*>(unkPtr.get())) {
+                else if (typeId.find("complex") != std::string::npos) {
+                    auto p = static_cast<const Signal<std::complex<double>>*>(unkPtr.get());
                     for (const auto& cval : p->values) {
                         if (!firstV) out << ", ";
-                        firstV = false;
                         out << "{"
                             << "\"real\":" << cval.real() << ", "
                             << "\"imag\":" << cval.imag()
                             << "}";
+                        firstV = false;
                     }
                 }
                 out << "]";

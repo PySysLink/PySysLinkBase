@@ -13,6 +13,8 @@
 #include <iomanip>  
 #include <sstream>
 #include <fstream>
+#include <typeinfo>  
+#include <typeindex> 
 
 #include "PortsAndSignalValues/UnknownTypeSignalValue.h"
 #include "FullySupportedSignalValue.h"
@@ -47,22 +49,28 @@ namespace PySysLinkBase
     template <typename T> 
     class Signal; // Forward declaration
 
+    template <typename T> 
+    class Signal; // Forward declaration
+
     class UnknownTypeSignal
     {
-        public:
+    public:
         virtual ~UnknownTypeSignal() = default;
         std::string id;
         std::vector<double> times;
         
-        virtual const std::string GetTypeId() const = 0;
+        // Reserve capacity upfront
+        UnknownTypeSignal() {
+            times.reserve(4096); // Pre-allocate memory
+        }
+
+        virtual const std::string& GetTypeId() const = 0; // Return by reference
 
         template <typename T>
         std::unique_ptr<Signal<T>> TryCastToTyped()
         {
             Signal<T>* typedPtr = dynamic_cast<Signal<T>*>(this);
-            
             if (!typedPtr) throw std::bad_cast();
-
             return std::make_unique<Signal<T>>(*typedPtr);
         }
 
@@ -70,23 +78,28 @@ namespace PySysLinkBase
         void TryInsertValue(double time, T value)
         {
             Signal<T>* typedPtr = dynamic_cast<Signal<T>*>(this);
-            
             if (!typedPtr) throw std::bad_cast();
-
+            
             typedPtr->times.push_back(time);
-            typedPtr->values.push_back(value);
+            typedPtr->values.push_back(std::move(value)); // Use move semantics
         }
     };
 
     template <typename T> 
     class Signal : public UnknownTypeSignal
     {
-        public:
+    public:
         std::vector<T> values;
+        
+        Signal() {
+            values.reserve(4096); // Pre-allocate memory
+        }
 
-        const std::string GetTypeId() const
-        {
-            return std::to_string(typeid(T).hash_code()) + typeid(T).name();
+        // Cache type ID to avoid repeated allocations
+        const std::string& GetTypeId() const override {
+            static const std::string typeId = 
+                std::to_string(typeid(T).hash_code()) + typeid(T).name();
+            return typeId;
         }
     };
 
@@ -172,15 +185,18 @@ namespace PySysLinkBase
     template<typename T>
     void SimulationOutput::InsertValueTyped(const std::string& signalType, const std::string& signalId, T value, double currentTime)
     {
-        // Your implementation here
-        // Example:
         auto& signalMap = signals[signalType];
-        std::shared_ptr<UnknownTypeSignal>& signalPtr = signalMap[signalId];
+        auto& signalPtr = signalMap[signalId];
+        
         if (!signalPtr) {
+            // Use make_shared directly with concrete type
             signalPtr = std::make_shared<Signal<T>>();
             signalPtr->id = signalId;
         }
-        signalPtr->TryInsertValue<T>(currentTime, value);
+        
+        // Add the value
+        signalPtr->times.push_back(currentTime);
+        static_cast<Signal<T>*>(signalPtr.get())->values.push_back(std::move(value));
     }
 } // namespace PySysLinkBase
 
