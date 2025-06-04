@@ -15,6 +15,15 @@ namespace PySysLinkBase
             {
                 throw std::invalid_argument("You must specify discreteSampleTime for discrete sample time type.");
             }
+            if (discreteSampleTime == -1) {
+                this->sampleTimeType = SampleTimeType::inherited;
+                this->supportedSampleTimeTypesForInheritance = std::vector<SampleTimeType>{SampleTimeType::discrete};
+            } else if (discreteSampleTime > 0) {
+                this->discreteSampleTime = discreteSampleTime;
+            }
+            else {
+                throw std::out_of_range("Discrete sample time value of: " + std::to_string(discreteSampleTime) + " not supported. Only positive values or -1 are supported");
+            }
             this->discreteSampleTime = discreteSampleTime;
         }
         else if (sampleTimeType == SampleTimeType::continuous)
