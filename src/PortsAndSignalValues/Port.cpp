@@ -1,7 +1,6 @@
 #include "Port.h"
 #include <typeinfo>
 #include <stdexcept>
-#include "ISimulationBlock.h"
 
 namespace PySysLinkBase
 {

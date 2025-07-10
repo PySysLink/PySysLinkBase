@@ -1,5 +1,4 @@
 #include "InputPort.h"
-#include "ISimulationBlock.h"
 
 namespace PySysLinkBase
 {
