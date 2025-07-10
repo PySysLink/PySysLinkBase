@@ -287,6 +287,16 @@ namespace PySysLinkBase
                     timeHitsToSampleTimes[t].push_back(iter->first);
                 }
             }
+            if ((simulationOptions->startTime + i * samplePeriod) < simulationOptions->stopTime) 
+            {
+                double t = simulationOptions->stopTime;
+                if (timeHitsToSampleTimes.find(t) == timeHitsToSampleTimes.end()) 
+                {
+                    timeHitsToSampleTimes.insert({t, std::vector<std::shared_ptr<SampleTime>>({iter->first})});
+                } else {
+                    timeHitsToSampleTimes[t].push_back(iter->first);
+                }
+            }
         }
 
         this->timeHitsToSampleTimes = timeHitsToSampleTimes;
@@ -539,6 +549,10 @@ namespace PySysLinkBase
             spdlog::get("default_pysyslink")->debug("Looking on continuous sample time...");
 
             double nextTimeHit_i = iter->second->GetNextTimeHit();
+            if (nextTimeHit_i > this->simulationOptions->stopTime) {
+                spdlog::get("default_pysyslink")->debug("Continuous sample time hit is after simulation stop time, last step.");
+                nextTimeHit_i = this->simulationOptions->stopTime;
+            }
             
             if (std::isnan(nearestTimeHit))
             {

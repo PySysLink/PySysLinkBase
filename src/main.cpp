@@ -1,4 +1,4 @@
-// src/cli.cpp
+// src/main.cpp
 
 #include <argparse/argparse.hpp>
 #include <yaml-cpp/yaml.h>
