@@ -7,3 +7,5 @@ set_and_check(PY_SYS_LINK_BASE_LIBRARIES "@PACKAGE_LIBRARIES@")
 # Set include directories for PySysLinkBase
 set(PySysLinkBase_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
 set(PySysLinkBase_LIBRARIES "@PACKAGE_LIBRARIES@")
+
+include("${CMAKE_CURRENT_LIST_DIR}/PySysLinkBaseTargets.cmake")

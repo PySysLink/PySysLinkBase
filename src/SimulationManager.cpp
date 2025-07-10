@@ -363,7 +363,7 @@ namespace PySysLinkBase
         int nextDiscreteTimeHitToProcessIndex = 0;
 
         spdlog::get("default_pysyslink")->debug("Main simulation loop start");
-        while (currentTime <= simulationOptions->stopTime)
+        while (currentTime < simulationOptions->stopTime)
         {
             std::tuple<double, int, std::vector<std::shared_ptr<SampleTime>>> timeIndexAndSampleTimes = this->GetNearestTimeHit(nextDiscreteTimeHitToProcessIndex);
             double nearestTimeHit = std::get<0>(timeIndexAndSampleTimes);
@@ -373,6 +373,11 @@ namespace PySysLinkBase
             if (nextDiscreteTimeHitToProcessIndex == -1)
             {
                 break;
+            }
+
+            if (nearestTimeHit > simulationOptions->stopTime) 
+            {
+                nearestTimeHit = simulationOptions->stopTime;
             }
 
             currentTime = nearestTimeHit;

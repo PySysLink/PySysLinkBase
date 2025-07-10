@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.11)
 
+set(PROJECT_VERSION "0.1.0")
+
 # Project name and version
-project(PySysLinkBase VERSION 0.0)
+project(PySysLinkBase VERSION ${PROJECT_VERSION})
+
+set(INSTALLED_STATIC_LIB_NAME "PySysLinkBase-${PROJECT_VERSION}")
 
 
 # Set C++ standard
@@ -41,7 +45,7 @@ if(ENABLE_TESTS)
 endif()
 
 set(PY_SYS_LINK_BASE_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
-set(PY_SYS_LINK_BASE_LIBRARIES "${CMAKE_INSTALL_PREFIX}/lib/libPySysLinkBase.a")
+set(PY_SYS_LINK_BASE_LIBRARIES "${CMAKE_INSTALL_PREFIX}/lib${INSTALLED_STATIC_LIB_NAME}.a")
 
 message("CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
 
@@ -72,6 +76,11 @@ install(EXPORT PySysLinkBaseTargets
 set(PACKAGE_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
 set(PACKAGE_LIBRARIES "${CMAKE_INSTALL_PREFIX}/lib")
 
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/PySysLinkBaseConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY AnyNewerVersion
+)
 
 # Create and install the config file
 configure_package_config_file(
@@ -79,7 +88,9 @@ configure_package_config_file(
     ${CMAKE_CURRENT_BINARY_DIR}/PySysLinkBaseConfig.cmake
     INSTALL_DESTINATION lib/cmake/PySysLinkBase
 )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/PySysLinkBaseConfig.cmake
+install(FILES 
+    ${CMAKE_CURRENT_BINARY_DIR}/PySysLinkBaseConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/PySysLinkBaseConfigVersion.cmake
     DESTINATION lib/cmake/PySysLinkBase
 )
 
