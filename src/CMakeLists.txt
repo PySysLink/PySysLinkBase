@@ -10,6 +10,7 @@ add_library(PySysLinkBase STATIC
     SpdlogManager.cpp
     BlockEventsHandler.cpp
     FullySupportedSignalValue.cpp
+    SimulationOutput.cpp
     ContinuousAndOde/BasicOdeSolver.cpp
     ContinuousAndOde/EulerForwardStepSolver.cpp
     ContinuousAndOde/EulerBackwardStepSolver.cpp
@@ -73,7 +74,7 @@ message(CHECK_PASS "fetched")
 
 target_link_libraries (PySysLinkBase PRIVATE Eigen3::Eigen)
 
-find_package(HDF5 REQUIRED)
+find_package(HDF5 REQUIRED COMPONENTS C CXX)
 
 FetchContent_Declare(
   highfive
