@@ -64,7 +64,7 @@ namespace PySysLinkBase
             times.reserve(4096); // Pre-allocate memory
         }
 
-        virtual const std::string& GetTypeId() const = 0; // Return by reference
+        virtual const std::string GetTypeId() const = 0;
 
         template <typename T>
         std::unique_ptr<Signal<T>> TryCastToTyped()
@@ -96,8 +96,8 @@ namespace PySysLinkBase
         }
 
         // Cache type ID to avoid repeated allocations
-        const std::string& GetTypeId() const override {
-            static const std::string typeId = 
+        const std::string GetTypeId() const override {
+            const std::string typeId = 
                 std::to_string(typeid(T).hash_code()) + typeid(T).name();
             return typeId;
         }

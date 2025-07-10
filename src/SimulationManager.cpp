@@ -287,7 +287,7 @@ namespace PySysLinkBase
                     timeHitsToSampleTimes[t].push_back(iter->first);
                 }
             }
-            if ((simulationOptions->startTime + i * samplePeriod) < simulationOptions->stopTime) 
+            if ((simulationOptions->startTime + (numberOfSamples - 1) * samplePeriod) < simulationOptions->stopTime) 
             {
                 double t = simulationOptions->stopTime;
                 if (timeHitsToSampleTimes.find(t) == timeHitsToSampleTimes.end()) 
