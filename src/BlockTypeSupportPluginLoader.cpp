@@ -55,15 +55,13 @@ namespace PySysLinkBase
         std::vector<std::string> sharedLibraries;
 
         try {
-            // Iterate over the contents of the search directory
-            for (const auto& entry : std::filesystem::directory_iterator(searchDirectory)) {
-                if (entry.is_regular_file()) {
-                    // Get the filename
-                    const std::string filename = entry.path().filename().string();
-
-                    // Check if the filename matches the desired pattern
+            // Use recursive_directory_iterator to look in subfolders (depth 1)
+            for (auto it = std::filesystem::recursive_directory_iterator(searchDirectory); it != std::filesystem::recursive_directory_iterator(); ++it) {
+                if (it.depth() > 1) continue; // Only top-level and first-level subfolders
+                if (it->is_regular_file()) {
+                    const std::string filename = it->path().filename().string();
                     if (filename.find("libBlockTypeSupports") == 0 && this->StringEndsWith(filename, ".so")) {
-                        sharedLibraries.push_back(entry.path().string());
+                        sharedLibraries.push_back(it->path().string());
                     }
                 }
             }

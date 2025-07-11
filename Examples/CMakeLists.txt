@@ -16,11 +16,11 @@ include_directories(${HDF5_INCLUDE_DIRS})
 
 
 # Link the main project (if necessary)
-target_link_libraries(PySysLinkExamples PRIVATE PySysLinkBase)
-target_link_libraries(Continuous PRIVATE PySysLinkBase)
-target_link_libraries(ContinuousImplicit PRIVATE PySysLinkBase)
-target_link_libraries(Multirate PRIVATE PySysLinkBase)
-target_link_libraries(Step PRIVATE PySysLinkBase)
+target_link_libraries(PySysLinkExamples PRIVATE PySysLinkBase spdlog::spdlog Eigen3::Eigen yaml-cpp HighFive HDF5::HDF5 ${HDF5_LIBRARIES})
+target_link_libraries(Continuous PRIVATE PySysLinkBase spdlog::spdlog Eigen3::Eigen yaml-cpp HighFive HDF5::HDF5 ${HDF5_LIBRARIES})
+target_link_libraries(ContinuousImplicit PRIVATE PySysLinkBase spdlog::spdlog Eigen3::Eigen yaml-cpp HighFive HDF5::HDF5 ${HDF5_LIBRARIES})
+target_link_libraries(Multirate PRIVATE PySysLinkBase spdlog::spdlog Eigen3::Eigen yaml-cpp HighFive HDF5::HDF5 ${HDF5_LIBRARIES})
+target_link_libraries(Step PRIVATE PySysLinkBase spdlog::spdlog Eigen3::Eigen yaml-cpp HighFive HDF5::HDF5 ${HDF5_LIBRARIES})
 
 
 set_target_properties(PySysLinkExamples PROPERTIES

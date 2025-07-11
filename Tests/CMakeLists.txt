@@ -21,7 +21,7 @@ add_executable(PySysLinkTests
 )
 
 # Link the main library and gtest
-target_link_libraries(PySysLinkTests PRIVATE PySysLinkBase gtest gtest_main)
+target_link_libraries(PySysLinkTests PRIVATE PySysLinkBase gtest gtest_main spdlog::spdlog Eigen3::Eigen yaml-cpp)
 
 # Enable CTest
 include(CTest)
