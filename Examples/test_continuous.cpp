@@ -15,18 +15,21 @@
 int main() {
 
     PySysLinkBase::SpdlogManager::ConfigureDefaultLogger();
-    PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::off);
+    PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::debug);
     
     std::shared_ptr<PySysLinkBase::IBlockEventsHandler> blockEventsHandler = std::make_shared<PySysLinkBase::BlockEventsHandler>();
 
     std::unique_ptr<PySysLinkBase::BlockTypeSupportPluginLoader> pluginLoader = std::make_unique<PySysLinkBase::BlockTypeSupportPluginLoader>();
     PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::off);
 
-    std::map<std::string, std::shared_ptr<PySysLinkBase::IBlockFactory>> blockFactories = pluginLoader->LoadPlugins("/usr/local/lib");
+    std::map<std::string, PySysLinkBase::ConfigurationValue> pluginConfiguration = {
+        {"BasicCppSupport/libraryPluginPath", PySysLinkBase::ConfigurationValue(std::string("/usr/local/lib/pysyslink_plugins"))}
+    };
+    std::map<std::string, std::shared_ptr<PySysLinkBase::IBlockFactory>> blockFactories = pluginLoader->LoadPlugins("/usr/local/lib", pluginConfiguration);
     
     PySysLinkBase::SpdlogManager::SetLogLevel(PySysLinkBase::LogLevel::off);
 
-    std::shared_ptr<PySysLinkBase::SimulationModel> simulationModel = PySysLinkBase::ModelParser::ParseFromYaml("../Tests/system1_continuous.yaml", blockFactories, blockEventsHandler);
+    std::shared_ptr<PySysLinkBase::SimulationModel> simulationModel = PySysLinkBase::ModelParser::ParseFromYaml("../Examples/system1_continuous.yaml", blockFactories, blockEventsHandler);
 
     std::vector<std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>>> blockChains = simulationModel->GetDirectBlockChains();
     

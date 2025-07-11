@@ -24,7 +24,8 @@ set_target_properties(PySysLinkBaseCore PROPERTIES
     POSITION_INDEPENDENT_CODE ON
 )
 
-add_executable(PySysLinkBase_exe main.cpp)
+# add_executable(PySysLinkBase_exe main.cpp)
+add_executable(PySysLinkBase_exe main_dummy.cpp)
 set_property(TARGET PySysLinkBase_exe PROPERTY OUTPUT_NAME PySysLinkBase)
 
 

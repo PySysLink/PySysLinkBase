@@ -68,9 +68,12 @@ int main(int argc, char* argv[]) {
     // 3) Load all block‐factory plugins
     auto blockEventsHandler = std::make_shared<PySysLinkBase::BlockEventsHandler>();
     std::map<std::string,std::shared_ptr<PySysLinkBase::IBlockFactory>> blockFactories;
+
+    std::map<std::string, PySysLinkBase::ConfigurationValue> pluginConfiguration = {};
+
     for (auto &dir: plugin_dirs) {
         PySysLinkBase::BlockTypeSupportPluginLoader loader;
-        auto factories = loader.LoadPlugins(dir);
+        auto factories = loader.LoadPlugins(dir, pluginConfiguration);
         blockFactories.insert(factories.begin(), factories.end());
     }
 

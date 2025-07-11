@@ -12,7 +12,7 @@ namespace PySysLinkBase {
 
 class BlockTypeSupportPluginLoader {
 public:
-    std::map<std::string, std::shared_ptr<IBlockFactory>> LoadPlugins(const std::string& pluginDirectory);
+    std::map<std::string, std::shared_ptr<IBlockFactory>> LoadPlugins(const std::string& pluginDirectory, std::map<std::string, PySysLinkBase::ConfigurationValue> pluginConfiguration);
 
 private:
     std::vector<std::string> FindSharedLibraries(const std::string& pluginDirectory);

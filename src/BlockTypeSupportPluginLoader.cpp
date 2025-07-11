@@ -4,7 +4,7 @@
 
 namespace PySysLinkBase
 {
-    std::map<std::string, std::shared_ptr<IBlockFactory>> BlockTypeSupportPluginLoader::LoadPlugins(const std::string& pluginDirectory) {
+    std::map<std::string, std::shared_ptr<IBlockFactory>> BlockTypeSupportPluginLoader::LoadPlugins(const std::string& pluginDirectory, std::map<std::string, PySysLinkBase::ConfigurationValue> pluginConfiguration) {
         std::map<std::string, std::shared_ptr<IBlockFactory>> factoryRegistry;
         
         for (const auto& pluginPath : this->FindSharedLibraries(pluginDirectory)) {
@@ -31,7 +31,7 @@ namespace PySysLinkBase
             
             spdlog::get("default_pysyslink")->debug("registerFuncLogger called on plugin: {}", pluginPath);
 
-            auto registerFuncFactory = reinterpret_cast<void(*)(std::map<std::string, std::shared_ptr<IBlockFactory>>&)>(dlsym(handle, "RegisterBlockFactories"));
+            auto registerFuncFactory = reinterpret_cast<void(*)(std::map<std::string, std::shared_ptr<IBlockFactory>>&, std::map<std::string, PySysLinkBase::ConfigurationValue>)>(dlsym(handle, "RegisterBlockFactories"));
 
             if (!registerFuncFactory) {
                 spdlog::get("default_pysyslink")->error("Failed to find RegisterBlockFactories entry point in: ", pluginPath);
@@ -41,7 +41,7 @@ namespace PySysLinkBase
 
             spdlog::get("default_pysyslink")->debug("registerFuncFactory opened on plugin: {}", pluginPath);
 
-            registerFuncFactory(factoryRegistry);
+            registerFuncFactory(factoryRegistry, pluginConfiguration);
 
             spdlog::get("default_pysyslink")->debug("registerFuncFactory called on plugin: {}", pluginPath);
 
