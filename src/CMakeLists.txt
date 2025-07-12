@@ -43,6 +43,11 @@ set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(yaml-cpp)
 
+target_include_directories(PySysLinkBaseCore PRIVATE
+    $<BUILD_INTERFACE:${yaml-cpp_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
 target_link_libraries(PySysLinkBaseCore PRIVATE yaml-cpp) # The library or executable that require yaml-cpp library
 
 
