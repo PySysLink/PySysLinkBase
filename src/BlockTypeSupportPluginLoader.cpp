@@ -1,6 +1,7 @@
 #include "BlockTypeSupportPluginLoader.h"
 #include <filesystem>
 #include "spdlog/spdlog.h"
+#include <dlfcn.h>
 
 namespace PySysLinkBase
 {

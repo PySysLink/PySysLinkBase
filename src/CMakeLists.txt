@@ -51,6 +51,10 @@ target_include_directories(PySysLinkBaseCore PRIVATE
 target_link_libraries(PySysLinkBaseCore PRIVATE yaml-cpp) # The library or executable that require yaml-cpp library
 
 
+
+target_link_libraries(PySysLinkBaseCore PRIVATE dl)
+
+
 FetchContent_Declare(
         spdlog
         GIT_REPOSITORY https://github.com/gabime/spdlog.git
@@ -114,6 +118,8 @@ FetchContent_MakeAvailable(argparse)
 target_link_libraries(PySysLinkBase_exe PRIVATE argparse)
 target_link_libraries(PySysLinkBase_exe PRIVATE PySysLinkBaseCore)
 
+target_link_libraries(PySysLinkBase_exe PRIVATE dl)
+
 
 include(GNUInstallDirs)
 
@@ -124,6 +130,8 @@ target_link_libraries(PySysLinkBaseCore PRIVATE spdlog::spdlog)
 add_library(PySysLinkBase STATIC
   $<TARGET_OBJECTS:PySysLinkBaseCore>
 )
+
+target_link_libraries(PySysLinkBase PRIVATE dl)
 
 set_target_properties(PySysLinkBase PROPERTIES 
     POSITION_INDEPENDENT_CODE ON
