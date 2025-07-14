@@ -19,10 +19,21 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install build-essential
-          sudo apt-get install libboost-all-dev
-          sudo apt-get install rpm
-          sudo apt-get install libhdf5-dev
+          sudo apt-get install -y \
+            gcc-9 g++-9 \
+            build-essential \
+            libboost-all-dev \
+            rpm \
+            libhdf5-dev \
+            cmake \
+            ninja-build
+          
+          # Set gcc-9 and g++-9 as the default compilers
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 100
+
+          gcc --version
+          g++ --version
 
 
       # Configure the project with tests enabled
@@ -30,7 +41,9 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake ..
+          export CC=gcc-9
+          export CXX=g++-9
+          cmake .. -DCMAKE_C_COMPILER=gcc-9 -DCMAKE_CXX_COMPILER=g++-9 -DCMAKE_BUILD_TYPE=Release
 
       # Build the project using make
       - name: Build
@@ -42,7 +55,7 @@ jobs:
       - name: Configure CMake with tests and build
         run: |
           cd build
-          cmake -DENABLE_TESTS=ON ..
+          cmake .. -DENABLE_TESTS=ON -DCMAKE_C_COMPILER=gcc-9 -DCMAKE_CXX_COMPILER=g++-9
           make
 
       # Run tests using ctest
