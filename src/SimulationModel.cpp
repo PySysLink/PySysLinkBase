@@ -512,10 +512,29 @@ namespace PySysLinkBase
         }
         spdlog::get("default_pysyslink")->debug("Validation start");
 
-        // Final validation
+        // Final validation (improved diagnostics)
+        auto sampleTimeDetails = [&](const std::shared_ptr<SampleTime>& st) -> std::string {
+            if (!st) return "nullptr";
+            std::ostringstream oss;
+            oss << "type=" << SampleTime::SampleTimeTypeString(st->GetSampleTimeType());
+            if (st->GetSampleTimeType() == SampleTimeType::discrete) {
+                oss << " discrete=" << st->GetDiscreteSampleTime();
+            } else if (st->GetSampleTimeType() == SampleTimeType::continuous) {
+                oss << " group=" << st->GetContinuousSampleTimeGroup();
+            } else if (st->GetSampleTimeType() == SampleTimeType::multirate) {
+                oss << " multirate_size=" << st->GetMultirateSampleTimes().size()
+                    << " inputIndex=" << st->GetInputMultirateSampleTimeIndex()
+                    << " outputIndex=" << st->GetOutputMultirateSampleTimeIndex()
+                    << " hasInherited=" << (st->HasMultirateInheritedSampleTime() ? "true" : "false");
+            }
+            return oss.str();
+        };
+
         for (const auto& block : simulationBlocks) {
             if (!hasKnownSampleTime(block->GetSampleTime())) {
-                throw std::runtime_error("Sample time propagation failed: Unresolved sample times remain.");
+                // Log detailed info before throwing
+                spdlog::get("default_pysyslink")->error("Sample time unresolved for block '{}' (id). Details: {}", block->GetId(), sampleTimeDetails(block->GetSampleTime()));
+                throw std::runtime_error(std::string("Sample time propagation failed: Unresolved sample times remain. Block: ") + block->GetId());
             }
         }
 
