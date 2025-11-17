@@ -1,3 +1,7 @@
+.vscode
+.VSCodeCounter
+.codechecker
+
 ##### Windows
 # Windows thumbnail cache files
 Thumbs.db

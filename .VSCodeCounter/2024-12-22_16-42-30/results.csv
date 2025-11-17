@@ -1,6 +1,0 @@
-"filename", "language", "CMake", "comment", "blank", "total"
-"/home/pello/PySysLink/CMakeLists.txt", "CMake", 62, 0, 25, 87
-"/home/pello/PySysLink/Tests/CMakeLists.txt", "CMake", 29, 0, 8, 37
-"/home/pello/PySysLink/build/_deps/spdlog-src/example/CMakeLists.txt", "CMake", 19, 0, 5, 24
-"/home/pello/PySysLink/src/CMakeLists.txt", "CMake", 49, 0, 11, 60
-"Total", "-", 159, 0, 49, 208
