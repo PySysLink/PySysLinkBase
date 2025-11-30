@@ -29,6 +29,7 @@ jobs:
             libfmt-dev \
             libspdlog-dev \
             libyaml-cpp-dev \
+            libeigen3-dev \
             rpm
 
 
