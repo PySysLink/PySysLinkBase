@@ -20,8 +20,12 @@ add_executable(PySysLinkTests
     # ... add additional test source files here
 )
 
+find_package(Eigen3 REQUIRED NO_MODULE)
+find_package(fmt REQUIRED)
+
+
 # Link the main library and gtest
-target_link_libraries(PySysLinkTests PRIVATE PySysLinkBase gtest gtest_main spdlog Eigen3::Eigen yaml-cpp)
+target_link_libraries(PySysLinkTests PRIVATE PySysLinkBase gtest gtest_main spdlog Eigen3::Eigen yaml-cpp fmt::fmt)
 
 # Enable CTest
 include(CTest)

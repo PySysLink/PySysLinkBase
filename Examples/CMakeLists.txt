@@ -1,9 +1,9 @@
 # Add test executable
 add_executable(PySysLinkExamples test_main.cpp)
-add_executable(Continuous test_continuous.cpp)
-add_executable(ContinuousImplicit test_continuous_implicit.cpp)
-add_executable(Multirate test_multirate.cpp)
-add_executable(Step test_step_continuous.cpp)
+add_executable(ExampleContinuous test_continuous.cpp)
+add_executable(ExampleContinuousImplicit test_continuous_implicit.cpp)
+add_executable(ExampleMultirate test_multirate.cpp)
+add_executable(ExampleStep test_step_continuous.cpp)
 
 # Include directories
 target_include_directories(PySysLinkExamples PRIVATE 
@@ -14,13 +14,16 @@ target_include_directories(PySysLinkExamples PRIVATE
 find_package(HDF5 REQUIRED)
 include_directories(${HDF5_INCLUDE_DIRS})
 
+find_package(Eigen3 REQUIRED NO_MODULE)
+find_package(fmt REQUIRED)
+
 
 # Link the main project (if necessary)
-target_link_libraries(PySysLinkExamples PRIVATE PySysLinkBase spdlog Eigen3::Eigen yaml-cpp HighFive HDF5::HDF5 ${HDF5_LIBRARIES})
-target_link_libraries(Continuous PRIVATE PySysLinkBase spdlog Eigen3::Eigen yaml-cpp HighFive HDF5::HDF5 ${HDF5_LIBRARIES})
-target_link_libraries(ContinuousImplicit PRIVATE PySysLinkBase spdlog Eigen3::Eigen yaml-cpp HighFive HDF5::HDF5 ${HDF5_LIBRARIES})
-target_link_libraries(Multirate PRIVATE PySysLinkBase spdlog Eigen3::Eigen yaml-cpp HighFive HDF5::HDF5 ${HDF5_LIBRARIES})
-target_link_libraries(Step PRIVATE PySysLinkBase spdlog Eigen3::Eigen yaml-cpp HighFive HDF5::HDF5 ${HDF5_LIBRARIES})
+target_link_libraries(PySysLinkExamples PRIVATE PySysLinkBase spdlog Eigen3::Eigen yaml-cpp HighFive HDF5::HDF5 ${HDF5_LIBRARIES} fmt::fmt)
+target_link_libraries(ExampleContinuous PRIVATE PySysLinkBase spdlog Eigen3::Eigen yaml-cpp HighFive HDF5::HDF5 ${HDF5_LIBRARIES} fmt::fmt)
+target_link_libraries(ExampleContinuousImplicit PRIVATE PySysLinkBase spdlog Eigen3::Eigen yaml-cpp HighFive HDF5::HDF5 ${HDF5_LIBRARIES} fmt::fmt)
+target_link_libraries(ExampleMultirate PRIVATE PySysLinkBase spdlog Eigen3::Eigen yaml-cpp HighFive HDF5::HDF5 ${HDF5_LIBRARIES} fmt::fmt)
+target_link_libraries(ExampleStep PRIVATE PySysLinkBase spdlog Eigen3::Eigen yaml-cpp HighFive HDF5::HDF5 ${HDF5_LIBRARIES} fmt::fmt)
 
 
 set_target_properties(PySysLinkExamples PROPERTIES
