@@ -43,7 +43,7 @@ jobs:
       # Build the project using make
       - name: Build
         run: |
-          cmake --build build --target install
+          sudo cmake --build build --target install
       
       - name: Configure (with tests)
         run: |
