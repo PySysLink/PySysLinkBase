@@ -21,48 +21,44 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            gcc-9 g++-9 \
             build-essential \
-            libboost-all-dev \
-            rpm \
-            libhdf5-dev \
             cmake \
-            ninja-build
-          
-          # Set gcc-9 and g++-9 as the default compilers
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 100
-
-          gcc --version
-          g++ --version
+            ninja-build \
+            libboost-all-dev \
+            libhdf5-dev \
+            libfmt-dev \
+            libspdlog-dev \
+            libyaml-cpp-dev \
+            rpm
 
 
       # Configure the project with tests enabled
       - name: Configure CMake no tests
         run: |
-          mkdir build
-          cd build
-          export CC=gcc-9
-          export CXX=g++-9
-          cmake .. -DCMAKE_C_COMPILER=gcc-9 -DCMAKE_CXX_COMPILER=g++-9 -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release
 
       # Build the project using make
       - name: Build
         run: |
-          cd build
-          make
-          sudo make install
+          cmake --build build --target install
       
-      - name: Configure CMake with tests and build
+      - name: Configure (with tests)
         run: |
-          cd build
-          cmake .. -DENABLE_TESTS=ON -DCMAKE_C_COMPILER=gcc-9 -DCMAKE_CXX_COMPILER=g++-9
-          make
+          cmake -S . -B build_tests \
+            -G Ninja \
+            -DENABLE_TESTS=ON \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build tests
+        run: |
+          cmake --build build_tests
 
       # Run tests using ctest
       - name: Run tests
         run: |
-          cd build/Tests
+          cd build_tests
           ctest --output-on-failure
 
       - name: Package with CPack
