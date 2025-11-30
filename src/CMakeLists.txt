@@ -32,6 +32,7 @@ set_property(TARGET PySysLinkBase_exe PROPERTY OUTPUT_NAME PySysLinkBase)
 # -------------------------------------------------------------------
 # YAML-CPP (system)
 # -------------------------------------------------------------------
+set(YAML_CPP_STATIC_LIBS TRUE)
 find_package(yaml-cpp REQUIRED)
 target_link_libraries(PySysLinkBaseCore PRIVATE yaml-cpp)
 
