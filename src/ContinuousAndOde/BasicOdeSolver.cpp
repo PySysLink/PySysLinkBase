@@ -273,12 +273,17 @@ namespace PySysLinkBase
                 spdlog::get("default_pysyslink")->debug("A step size was requested, but a known time hit had to be solved before. New proposed time step: {}", timeStep);
             }
         }
+        else {
+            spdlog::get("default_pysyslink")->debug("Looks like last iteration");
+        }
 
         std::vector<std::pair<double, double>> initialEvents = this->GetEvents(this->sampleTime, currentTime, this->GetStates());
         
         double appliedTimeStep = timeStep;
 
         std::tuple<bool, std::vector<double>, double> result = this->OdeStepSolverStep(systemLambda, systemJacobianLambda, this->GetStates(), currentTime, appliedTimeStep);
+
+        spdlog::get("default_pysyslink")->debug("Step solver result done");
 
         double newSuggestedTimeStep = std::get<2>(result);
         while (!std::get<0>(result))

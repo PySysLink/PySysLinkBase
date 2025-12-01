@@ -30,6 +30,7 @@ jobs:
             libspdlog-dev \
             libyaml-cpp-dev \
             libeigen3-dev \
+            libhdf5-dev \
             rpm
 
 

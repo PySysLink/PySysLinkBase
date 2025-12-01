@@ -16,6 +16,7 @@ include_directories(${HDF5_INCLUDE_DIRS})
 
 find_package(Eigen3 REQUIRED NO_MODULE)
 find_package(fmt REQUIRED)
+find_package(HighFive REQUIRED)
 
 
 # Link the main project (if necessary)

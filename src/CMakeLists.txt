@@ -73,14 +73,7 @@ message(STATUS "HDF5_LIBRARIES: ${HDF5_LIBRARIES}")
 # -------------------------------------------------------------------
 # HighFive (FetchContent)
 # -------------------------------------------------------------------
-include(FetchContent)
-FetchContent_Declare(
-  highfive
-  GIT_REPOSITORY https://github.com/highfive-devs/highfive.git
-  GIT_TAG        v2.10.1
-  GIT_SHALLOW    ON
-)
-FetchContent_MakeAvailable(highfive)
+find_package(HighFive REQUIRED)
 
 target_link_libraries(PySysLinkBaseCore PRIVATE HighFive)
 target_link_libraries(PySysLinkBase_exe PRIVATE HighFive)
@@ -88,6 +81,7 @@ target_link_libraries(PySysLinkBase_exe PRIVATE HighFive)
 # -------------------------------------------------------------------
 # argparse (FetchContent, header-only)
 # -------------------------------------------------------------------
+include(FetchContent)
 FetchContent_Declare(
     argparse
     GIT_REPOSITORY https://github.com/p-ranav/argparse.git
