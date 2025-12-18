@@ -37,6 +37,11 @@ namespace PySysLinkBase
             }
         }
 
+        if (simulationOptions->stopTime > simulationOptions->startTime)
+        {
+            this->knownTimeHits.push_back(simulationOptions->stopTime);
+        }
+
         std::sort(std::begin(this->knownTimeHits), std::end(this->knownTimeHits));
 
         this->nextTimeHitStates = {};
@@ -267,7 +272,7 @@ namespace PySysLinkBase
             {
                 throw std::runtime_error("Current time is " + std::to_string(currentTime) + " but a known time hit should have already been resolved: " + std::to_string(this->knownTimeHits[this->currentKnownTimeHit]));
             }
-            if ((currentTime + timeStep) > this->knownTimeHits[this->currentKnownTimeHit])
+            if (this->currentKnownTimeHit < this->knownTimeHits.size() && (currentTime + timeStep) > this->knownTimeHits[this->currentKnownTimeHit])
             {
                 timeStep = this->knownTimeHits[this->currentKnownTimeHit] - currentTime;
                 spdlog::get("default_pysyslink")->debug("A step size was requested, but a known time hit had to be solved before. New proposed time step: {}", timeStep);
