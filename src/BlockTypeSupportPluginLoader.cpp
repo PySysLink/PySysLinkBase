@@ -11,7 +11,7 @@ namespace PySysLinkBase
         for (const auto& pluginPath : this->FindSharedLibraries(pluginDirectory)) {
             spdlog::get("default_pysyslink")->debug("Trying to open plugin: {}", pluginPath);
 
-            void* handle = dlopen(pluginPath.c_str(), RTLD_LAZY);
+            void* handle = dlopen(pluginPath.c_str(), RTLD_GLOBAL | RTLD_NOW);
             if (!handle) {
                 spdlog::get("default_pysyslink")->error("Failed to load plugin: {}", pluginPath);
                 spdlog::get("default_pysyslink")->error(dlerror());
