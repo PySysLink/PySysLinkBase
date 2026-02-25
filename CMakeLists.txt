@@ -63,6 +63,10 @@ install(TARGETS PySysLinkBase
 )
 
 
+install(TARGETS PySysLinkBase_exe
+    RUNTIME DESTINATION bin
+)
+
 include(CMakePackageConfigHelpers)
 
 # Generate the package configuration file for PySysLinkBase

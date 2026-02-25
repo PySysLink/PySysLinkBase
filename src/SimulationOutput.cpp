@@ -157,54 +157,58 @@ namespace PySysLinkBase
                 // Values array
                 out << "\n      \"values\": [";
                 bool firstV = true;
-                
-                // Use static type information instead of expensive dynamic_cast
-                const std::string& typeId = unkPtr->GetTypeId();
-                
-                // Fix 3: Optimized type handling
-                if (typeId.find("double") != std::string::npos) {
-                    auto p = static_cast<const Signal<double>*>(unkPtr.get());
+
+                if (auto p = dynamic_cast<const Signal<double>*>(unkPtr.get())) {
                     for (double v : p->values) {
                         if (!firstV) out << ", ";
                         out << v;
                         firstV = false;
                     }
                 }
-                else if (typeId.find("int") != std::string::npos) {
-                    auto p = static_cast<const Signal<int>*>(unkPtr.get());
+                else if (auto p = dynamic_cast<const Signal<float>*>(unkPtr.get())) {
+                    for (float v : p->values) {
+                        if (!firstV) out << ", ";
+                        out << v;
+                        firstV = false;
+                    }
+                }
+                else if (auto p = dynamic_cast<const Signal<int>*>(unkPtr.get())) {
                     for (int v : p->values) {
                         if (!firstV) out << ", ";
                         out << v;
                         firstV = false;
                     }
                 }
-                else if (typeId.find("bool") != std::string::npos) {
-                    auto p = static_cast<const Signal<bool>*>(unkPtr.get());
+                else if (auto p = dynamic_cast<const Signal<bool>*>(unkPtr.get())) {
                     for (bool v : p->values) {
                         if (!firstV) out << ", ";
                         out << (v ? "true" : "false");
                         firstV = false;
                     }
                 }
-                else if (typeId.find("string") != std::string::npos) {
-                    auto p = static_cast<const Signal<std::string>*>(unkPtr.get());
+                else if (auto p = dynamic_cast<const Signal<std::string>*>(unkPtr.get())) {
                     for (const auto& v : p->values) {
                         if (!firstV) out << ", ";
                         out << "\"" << escapeJson(v) << "\"";
                         firstV = false;
                     }
                 }
-                else if (typeId.find("complex") != std::string::npos) {
-                    auto p = static_cast<const Signal<std::complex<double>>*>(unkPtr.get());
-                    for (const auto& cval : p->values) {
+                else if (auto p = dynamic_cast<const Signal<std::complex<double>>*>(unkPtr.get())) {
+                    for (const auto& c : p->values) {
                         if (!firstV) out << ", ";
                         out << "{"
-                            << "\"real\":" << cval.real() << ", "
-                            << "\"imag\":" << cval.imag()
+                            << "\"real\":" << c.real() << ", "
+                            << "\"imag\":" << c.imag()
                             << "}";
                         firstV = false;
                     }
                 }
+                else {
+                    throw std::runtime_error(
+                        "Unsupported signal type for signalId: " + signalId
+                    );
+                }
+
                 out << "]";
 
                 out << "\n    }";

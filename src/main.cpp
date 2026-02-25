@@ -18,6 +18,181 @@
 #include "PySysLinkBase/SimulationOptions.h"
 #include "PySysLinkBase/SimulationOutput.h"
 
+struct SimulationOptionsYaml {
+    double startTime;
+    double stopTime;
+    bool runInNaturalTime;
+    double naturalTimeSpeedMultiplier;
+
+    std::vector<std::string> pluginDirs;
+    std::vector<std::tuple<std::string,std::string,int>> logs;
+
+    // Optional / advanced
+    std::map<std::string,
+        std::map<std::string, PySysLinkBase::ConfigurationValue>> solversConfiguration;
+    
+    std::map<std::string, PySysLinkBase::ConfigurationValue> pluginConfiguration;
+
+    std::string hdf5FileName = "";
+    bool saveToFileContinuously = false;
+    bool saveToVectors = true;
+
+    bool saveToJson = false;
+    std::string outputJsonFile;
+};
+
+struct YamlError : std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
+
+inline std::string loc(const YAML::Node& n) {
+    if (!n.Mark().is_null()) {
+        return " (line " + std::to_string(n.Mark().line + 1) +
+               ", column " + std::to_string(n.Mark().column + 1) + ")";
+    }
+    return "";
+}
+
+template<typename T>
+T get_required(
+    const YAML::Node& parent,
+    const std::string& key,
+    const std::string& path
+) {
+    if (!parent[key]) {
+        throw YamlError(
+            "Missing required key: " + path + "." + key + loc(parent)
+        );
+    }
+
+    try {
+        return parent[key].as<T>();
+    } catch (const YAML::Exception& e) {
+        throw YamlError(
+            "Invalid value for key: " + path + "." + key +
+            loc(parent[key]) + "\n  Reason: " + e.what()
+        );
+    }
+}
+
+// Optional keys helper
+template<typename T>
+T get_optional(
+    const YAML::Node& parent,
+    const std::string& key,
+    const T& defaultValue
+) {
+    if (!parent[key]) return defaultValue;
+    try {
+        return parent[key].as<T>();
+    } catch (const YAML::Exception& e) {
+        throw YamlError("Invalid value for optional key: " + key);
+    }
+}
+
+namespace YAML {
+
+template<>
+struct convert<SimulationOptionsYaml> {
+    static bool decode(const Node& node, SimulationOptionsYaml& rhs) {
+        if (!node.IsMap()) {
+            throw YamlError("Root of options YAML must be a map");
+        }
+
+        const std::string path = "options";
+
+        rhs.startTime = get_required<double>(node, "StartTime", path);
+        rhs.stopTime  = get_required<double>(node, "StopTime", path);
+        rhs.runInNaturalTime =
+            get_required<bool>(node, "RunInNaturalTime", path);
+        rhs.naturalTimeSpeedMultiplier =
+            get_required<double>(node, "NaturalTimeSpeedMultiplier", path);
+        rhs.pluginDirs = get_required<std::vector<std::string>>(node, "PluginDirs", path);
+        
+        rhs.hdf5FileName =
+            get_optional<std::string>(node, "HDF5FileName", "");
+
+        rhs.saveToFileContinuously =
+            get_optional<bool>(node, "SaveToFileContinuously", false);
+
+        rhs.saveToVectors =
+            get_optional<bool>(node, "SaveToVectors", true);
+
+        rhs.saveToJson =
+            get_optional<bool>(node, "SaveToJson", false);
+
+        rhs.outputJsonFile =
+            get_optional<std::string>(node, "OutputJsonFile", "");
+            
+        const auto logsNode =
+            get_required<YAML::Node>(node, "BlockIdsInputOrOutputAndIndexesToLog", path);
+
+        if (!logsNode.IsSequence()) {
+            throw YamlError(
+                path + ".BlockIdsInputOrOutputAndIndexesToLog must be a sequence" +
+                loc(logsNode)
+            );
+        }
+
+        for (std::size_t i = 0; i < logsNode.size(); ++i) {
+            const auto& entry = logsNode[i];
+            const std::string entryPath =
+                path + ".BlockIdsInputOrOutputAndIndexesToLog[" + std::to_string(i) + "]";
+
+            if (!entry.IsSequence() || entry.size() != 3) {
+                throw YamlError(
+                    entryPath + " must be [string, string, int]" +
+                    loc(entry)
+                );
+            }
+
+            rhs.logs.emplace_back(
+                entry[0].as<std::string>(),
+                entry[1].as<std::string>(),
+                entry[2].as<int>()
+            );
+        }
+
+        if (node["SolversConfiguration"]) {
+            for (const auto& outer : node["SolversConfiguration"]) {
+                std::map<std::string, PySysLinkBase::ConfigurationValue> inner;
+                for (const auto& inner_pair : outer.second) {
+                    inner[inner_pair.first.as<std::string>()] =
+                        PySysLinkBase::ModelParser::YamlToConfigurationValue(inner_pair.second);
+                }
+                rhs.solversConfiguration[outer.first.as<std::string>()] = inner;
+            }
+        }
+
+        if (node["PluginConfiguration"]) {
+            const auto& pcNode = node["PluginConfiguration"];
+
+            if (!pcNode.IsMap()) {
+                throw YamlError(
+                    "options.PluginConfiguration must be a map" + loc(pcNode)
+                );
+            }
+
+            for (const auto& it : pcNode) {
+                const std::string key = it.first.as<std::string>();
+                try {
+                    rhs.pluginConfiguration[key] =
+                        PySysLinkBase::ModelParser::YamlToConfigurationValue(it.second);
+                } catch (const std::exception& e) {
+                    throw YamlError(
+                        "Invalid value in options.PluginConfiguration." + key +
+                        loc(it.second) + "\n  Reason: " + e.what()
+                    );
+                }
+            }
+        }
+
+        return true;
+    }
+};
+
+}
+
 int main(int argc, char* argv[]) {
     argparse::ArgumentParser program("PySysLinkBase");
 
@@ -52,6 +227,7 @@ int main(int argc, char* argv[]) {
     }
 
     YAML::Node opts;
+
     try
     {
         opts = YAML::LoadFile(program.get<std::string>("options_yaml"));
@@ -62,16 +238,28 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    SimulationOptionsYaml cfg;
+    try {
+        cfg = opts.as<SimulationOptionsYaml>();
+    }
+    catch (const YamlError& e) {
+        std::cerr << "Options YAML error:\n" << e.what() << std::endl;
+        return 1;
+    }
+    catch (const YAML::Exception& e) {
+        std::cerr << "YAML parsing error:\n" << e.what() << std::endl;
+        return 1;
+    }
 
-    std::vector<std::string> plugin_dirs = opts["PluginDirs"].as<std::vector<std::string>>();
+
 
     // 3) Load all block‐factory plugins
     auto blockEventsHandler = std::make_shared<PySysLinkBase::BlockEventsHandler>();
     std::map<std::string,std::shared_ptr<PySysLinkBase::IBlockFactory>> blockFactories;
 
-    std::map<std::string, PySysLinkBase::ConfigurationValue> pluginConfiguration = {};
+    const auto& pluginConfiguration = cfg.pluginConfiguration;
 
-    for (auto &dir: plugin_dirs) {
+    for (auto &dir: cfg.pluginDirs) {
         PySysLinkBase::BlockTypeSupportPluginLoader loader;
         auto factories = loader.LoadPlugins(dir, pluginConfiguration);
         blockFactories.insert(factories.begin(), factories.end());
@@ -90,64 +278,27 @@ int main(int argc, char* argv[]) {
     
     
     auto simOpts = std::make_shared<PySysLinkBase::SimulationOptions>();
-    try
-    {
-        simOpts->startTime = opts["StartTime"].as<double>();
-        simOpts->stopTime  = opts["StopTime"].as<double>();
-        simOpts->runInNaturalTime = opts["RunInNaturalTime"].as<bool>();
-        simOpts->naturalTimeSpeedMultiplier = opts["NaturalTimeSpeedMultiplier"].as<double>();
 
-        for (const auto &entry : opts["BlockIdsInputOrOutputAndIndexesToLog"]) {
-            simOpts->blockIdsInputOrOutputAndIndexesToLog.push_back({
-                entry[0].as<std::string>(),
-                entry[1].as<std::string>(),
-                entry[2].as<int>()
-            });
-        }
-        // Solvers configuration as a nested map
-        for (const auto &outer : opts["SolversConfiguration"]) {
-            std::map<std::string, PySysLinkBase::ConfigurationValue> inner;
-            for (const auto &inner_pair : outer.second) {
-                const std::string &k = inner_pair.first.as<std::string>();
-                inner[k] = PySysLinkBase::ModelParser::YamlToConfigurationValue(inner_pair.second);
-            }
-            simOpts->solversConfiguration[outer.first.as<std::string>()] = inner;
-        }
+    simOpts->startTime = cfg.startTime;
+    simOpts->stopTime  = cfg.stopTime;
+    simOpts->runInNaturalTime = cfg.runInNaturalTime;
+    simOpts->naturalTimeSpeedMultiplier = cfg.naturalTimeSpeedMultiplier;
 
-        if (opts["HDF5FileName"]) {
-            simOpts->hdf5FileName = opts["HDF5FileName"].as<std::string>();
-        }
-        else {
-            simOpts->hdf5FileName = "";
-        }
-        if (opts["SaveToFileContinuously"]) {
-            simOpts->saveToFileContinuously = opts["SaveToFileContinuously"].as<bool>();
-        }
-        else {
-            simOpts->saveToFileContinuously = false;
-        }
-        if (opts["SaveToVectors"]) {
-            simOpts->saveToVectors = opts["SaveToVectors"].as<bool>();
-        }
-        else {
-            simOpts->saveToVectors = true;
-        }
-    }
-    catch (const YAML::Exception &e)
-    {
-        std::cerr << "Error while parsing config YAML file" << std::endl;
-        throw;
-    }
+    simOpts->blockIdsInputOrOutputAndIndexesToLog = cfg.logs;
+    simOpts->solversConfiguration = cfg.solversConfiguration;
+
+    simOpts->hdf5FileName = cfg.hdf5FileName;
+    simOpts->saveToFileContinuously = cfg.saveToFileContinuously;
+    simOpts->saveToVectors = cfg.saveToVectors;
     
 
     PySysLinkBase::SimulationManager mgr(model, simOpts);
     auto output = mgr.RunSimulation();
 
-    if (opts["SaveToJson"].as<bool>()) {
-        output->WriteJson(opts["OutputJsonFile"].as<std::string>());
-
+    if (cfg.saveToJson) {
+        output->WriteJson(cfg.outputJsonFile);
         std::cout << "Simulation complete, output written to "
-              << opts["OutputJsonFile"].as<std::string>() << "\n";
+                << cfg.outputJsonFile << "\n";
     }
 
     return 0;
