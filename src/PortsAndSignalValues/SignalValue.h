@@ -4,6 +4,7 @@
 #include <string>
 #include "UnknownTypeSignalValue.h"
 #include <memory>
+#include <optional>
 
 namespace PySysLinkBase
 {
@@ -11,8 +12,10 @@ namespace PySysLinkBase
     class SignalValue : public UnknownTypeSignalValue
     {
         private:
-            T payload;
+            std::optional<T> payload;
         public:
+            SignalValue() = default;
+            
             SignalValue(T initialPayload) : payload(initialPayload) {}
 
             SignalValue(const SignalValue& other) = default;
@@ -26,9 +29,16 @@ namespace PySysLinkBase
                 return std::to_string(typeid(T).hash_code()) + typeid(T).name();
             }
 
+            bool IsInitialized() const {
+                return payload.has_value();
+            }
+
             const T GetPayload() const
             {
-                return this->payload;
+                if (!payload) {
+                    throw std::runtime_error("SignalValue accessed before initialization");
+                }
+                return *payload;
             }
 
             void SetPayload(T newPayload)
