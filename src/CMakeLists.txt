@@ -114,4 +114,5 @@ target_include_directories(PySysLinkBase
 )
 
 # Link core library also into executable
+target_sources(PySysLinkBase_exe PRIVATE $<TARGET_OBJECTS:PySysLinkBaseCore>)
 target_link_libraries(PySysLinkBase_exe PRIVATE PySysLinkBaseCore)

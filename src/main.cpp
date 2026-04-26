@@ -8,15 +8,15 @@
 #include <memory>
 #include <vector>
 
-#include "PySysLinkBase/SimulationModel.h"
-#include "PySysLinkBase/ModelParser.h"
-#include "PySysLinkBase/IBlockFactory.h"
-#include "PySysLinkBase/BlockTypeSupportPluginLoader.h"
-#include "PySysLinkBase/SimulationManager.h"
-#include "PySysLinkBase/SpdlogManager.h"
-#include "PySysLinkBase/BlockEventsHandler.h"
-#include "PySysLinkBase/SimulationOptions.h"
-#include "PySysLinkBase/SimulationOutput.h"
+#include "SimulationModel.h"
+#include "ModelParser.h"
+#include "IBlockFactory.h"
+#include "BlockTypeSupportPluginLoader.h"
+#include "SimulationManager.h"
+#include "SpdlogManager.h"
+#include "BlockEventsHandler.h"
+#include "SimulationOptions.h"
+#include "SimulationOutput.h"
 
 struct SimulationOptionsYaml {
     double startTime;

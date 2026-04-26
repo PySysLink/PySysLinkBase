@@ -8,6 +8,7 @@
 #include <map>
 #include <stdexcept>
 #include <complex>
+#include "PortsAndSignalValues/PortTypeMetadata.h"
 
 namespace PySysLinkBase
 {
@@ -21,7 +22,9 @@ namespace PySysLinkBase
         std::vector<double>,
         std::vector<bool>,
         std::vector<std::complex<double>>,
-        std::vector<std::string>>;
+        std::vector<std::string>,
+        PortTypeMetadata,
+        std::vector<PortTypeMetadata>>;
     
     using ConfigurationValue = std::variant<
         int,
@@ -34,6 +37,8 @@ namespace PySysLinkBase
         std::vector<bool>,
         std::vector<std::complex<double>>,
         std::vector<std::string>,
+        PortTypeMetadata,
+        std::vector<PortTypeMetadata>,
         ConfigurationValuePrimitive,
         std::vector<ConfigurationValuePrimitive>>;
 

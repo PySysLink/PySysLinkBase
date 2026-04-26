@@ -8,6 +8,12 @@ namespace PySysLinkBase
         this->name = ConfigurationValueManager::TryGetConfigurationValue<std::string>("Name", blockConfiguration);
         this->id = ConfigurationValueManager::TryGetConfigurationValue<std::string>("Id", blockConfiguration);
 
+        this->inputPortNumber = ConfigurationValueManager::TryGetConfigurationValue<int>("InputPortNumber", blockConfiguration);
+        this->outputPortNumber = ConfigurationValueManager::TryGetConfigurationValue<int>("OutputPortNumber", blockConfiguration);
+
+        this->inputPortTypes = ConfigurationValueManager::TryGetConfigurationValue<std::vector<PortTypeMetadata>>("InputPortTypes", blockConfiguration);
+        this->outputPortTypes = ConfigurationValueManager::TryGetConfigurationValue<std::vector<PortTypeMetadata>>("OutputPortTypes", blockConfiguration);
+
         this->blockEventsHandler = blockEventsHandler;
 
         this->calculateOutputCallbacks = {};
@@ -71,6 +77,26 @@ namespace PySysLinkBase
             return false;
         }
     } 
+
+    int ISimulationBlock::GetInputPortNumber() const
+    {
+        return this->inputPortNumber;
+    }
+
+    int ISimulationBlock::GetOutputPortNumber() const
+    {
+        return this->outputPortNumber;
+    }
+
+    const std::vector<PortTypeMetadata>& ISimulationBlock::GetInputPortTypes() const
+    {
+        return this->inputPortTypes;
+    }
+
+    const std::vector<PortTypeMetadata>& ISimulationBlock::GetOutputPortTypes() const
+    {
+        return this->outputPortTypes;
+    }
 
     void ISimulationBlock::NotifyEvent(std::shared_ptr<PySysLinkBase::BlockEvent> blockEvent) const
     {

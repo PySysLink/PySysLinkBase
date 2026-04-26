@@ -6,6 +6,7 @@
 #include <memory>
 #include "PortsAndSignalValues/InputPort.h"
 #include "PortsAndSignalValues/OutputPort.h"
+#include "PortsAndSignalValues/PortTypeMetadata.h"
 #include "SampleTime.h"
 #include <stdexcept>
 #include <map>
@@ -22,6 +23,12 @@ namespace PySysLinkBase
         std::string name;
         std::string id;
 
+        int inputPortNumber;
+        int outputPortNumber;
+
+        std::vector<PortTypeMetadata> inputPortTypes;
+        std::vector<PortTypeMetadata> outputPortTypes;
+
         std::vector<std::function<void (const std::string, const std::vector<std::shared_ptr<PySysLinkBase::InputPort>>, std::shared_ptr<PySysLinkBase::SampleTime>, double)>> readInputCallbacks;
         std::vector<std::function<void (const std::string, const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>>, std::shared_ptr<PySysLinkBase::SampleTime>, double)>> calculateOutputCallbacks;
         std::vector<std::function<void (const std::string, const std::string, const ConfigurationValue)>> updateConfigurationValueCallbacks;
@@ -37,6 +44,12 @@ namespace PySysLinkBase
 
         virtual std::vector<std::shared_ptr<PySysLinkBase::InputPort>> GetInputPorts() const = 0;
         virtual const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>> GetOutputPorts() const = 0;
+
+        int GetInputPortNumber() const;
+        int GetOutputPortNumber() const;
+
+        const std::vector<PortTypeMetadata>& GetInputPortTypes() const;
+        const std::vector<PortTypeMetadata>& GetOutputPortTypes() const;
 
         const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>> ComputeOutputsOfBlock(const std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double currentTime, bool isMinorStep=false);
         virtual const std::vector<std::shared_ptr<PySysLinkBase::OutputPort>> _ComputeOutputsOfBlock(const std::shared_ptr<PySysLinkBase::SampleTime> sampleTime, double currentTime, bool isMinorStep=false) = 0;
