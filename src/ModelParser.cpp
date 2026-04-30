@@ -166,33 +166,33 @@ namespace PySysLinkBase
                 }
             }
 
-            if (areString) {
+            // if (areString) {
                 return stringElements;
-            }
+            // }
 
-            std::vector<ConfigurationValuePrimitive> elements;
-            for (const auto& subNode : node) {
-                if (subNode.IsScalar()) {
-                    try {
-                        elements.push_back(subNode.as<int>());
-                    } catch (...) {
-                        try {
-                            elements.push_back(subNode.as<double>());
-                        } catch (...) {
-                            try {
-                                elements.push_back(subNode.as<bool>());
-                            } catch (...) {
-                                try {
-                                    elements.push_back(ModelParser::ParseComplex(subNode.as<std::string>()));
-                                } catch (...) {
-                                    elements.push_back(subNode.as<std::string>());
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            return elements;
+            // std::vector<ConfigurationValuePrimitive> elements;
+            // for (const auto& subNode : node) {
+            //     if (subNode.IsScalar()) {
+            //         try {
+            //             elements.push_back(subNode.as<int>());
+            //         } catch (...) {
+            //             try {
+            //                 elements.push_back(subNode.as<double>());
+            //             } catch (...) {
+            //                 try {
+            //                     elements.push_back(subNode.as<bool>());
+            //                 } catch (...) {
+            //                     try {
+            //                         elements.push_back(ModelParser::ParseComplex(subNode.as<std::string>()));
+            //                     } catch (...) {
+            //                         elements.push_back(subNode.as<std::string>());
+            //                     }
+            //                 }
+            //             }
+            //         }
+            //     }
+            // }
+            // return elements;
         } else {
             throw std::runtime_error("Unsupported YAML node type.");
         }
