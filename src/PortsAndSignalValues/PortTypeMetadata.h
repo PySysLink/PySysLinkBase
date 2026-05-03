@@ -3,6 +3,7 @@
 
 #include <string>
 #include <optional>
+#include <vector>
 
 namespace PySysLinkBase
 {
@@ -29,6 +30,8 @@ namespace PySysLinkBase
 
         int inheritanceGroup = 0;
     };
+
+    std::vector<PortTypeMetadata> ParsePortTypeMetadatas(const std::vector<std::string>& portTypeStrs);
 }
 
 #endif

@@ -11,8 +11,8 @@ namespace PySysLinkBase
         this->inputPortNumber = ConfigurationValueManager::TryGetConfigurationValue<int>("InputPortNumber", blockConfiguration);
         this->outputPortNumber = ConfigurationValueManager::TryGetConfigurationValue<int>("OutputPortNumber", blockConfiguration);
 
-        this->inputPortTypes = ConfigurationValueManager::TryGetConfigurationValue<std::vector<PortTypeMetadata>>("InputPortTypes", blockConfiguration);
-        this->outputPortTypes = ConfigurationValueManager::TryGetConfigurationValue<std::vector<PortTypeMetadata>>("OutputPortTypes", blockConfiguration);
+        this->inputPortTypes = ParsePortTypeMetadatas(ConfigurationValueManager::TryGetConfigurationValue<std::vector<std::string>>("InputPortTypes", blockConfiguration));
+        this->outputPortTypes = ParsePortTypeMetadatas(ConfigurationValueManager::TryGetConfigurationValue<std::vector<std::string>>("OutputPortTypes", blockConfiguration));
 
         this->blockEventsHandler = blockEventsHandler;
 

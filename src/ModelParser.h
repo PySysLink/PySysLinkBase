@@ -7,6 +7,7 @@
 #include <yaml-cpp/yaml.h>
 #include <map>
 #include "IBlockFactory.h"
+#include "IBlockEventsHandler.h"
 
 namespace PySysLinkBase
 {

@@ -31,6 +31,7 @@ namespace PySysLinkBase
                 YAML::Node blockConfigurationYaml = config["Blocks"][i];
                 std::map<std::string, ConfigurationValue> blockConfiguration = {};
                 for(YAML::const_iterator it=blockConfigurationYaml.begin();it!=blockConfigurationYaml.end();++it) {
+                    spdlog::get("default_pysyslink")->debug("Parsing block configuration key: {}", it->first.as<std::string>());
                     blockConfiguration.insert({it->first.as<std::string>(), ModelParser::YamlToConfigurationValue(it->second)});
                 }
                 blocksConfigurations.push_back(blockConfiguration);
@@ -41,6 +42,7 @@ namespace PySysLinkBase
                 YAML::Node linkConfigurationYaml = config["Links"][i];
                 std::map<std::string, ConfigurationValue> linkConfiguration = {};
                 for(YAML::const_iterator it=linkConfigurationYaml.begin();it!=linkConfigurationYaml.end();++it) {
+                    spdlog::get("default_pysyslink")->debug("Parsing link configuration key: {}", it->first.as<std::string>());
                     linkConfiguration.insert({it->first.as<std::string>(), ModelParser::YamlToConfigurationValue(it->second)});
                 }
                 linksConfigurations.push_back(linkConfiguration);
@@ -83,6 +85,10 @@ namespace PySysLinkBase
                 }
             }
         } else if (node.IsSequence()) {
+            if (node.size() == 0) {
+                return std::vector<std::string>{}; // default to vector of strings for empty sequences, as we cannot infer type information from elements
+            }
+
             std::vector<int> intElements;
             bool areInts = true;
             for (const auto& subNode : node) {
@@ -94,9 +100,14 @@ namespace PySysLinkBase
                         break;  
                     }
                 }
+                else {
+                    areInts = false;
+                    break;
+                }
             }
             if (areInts)
             {
+                spdlog::get("default_pysyslink")->debug("Parsed a sequence of ints from YAML node.");
                 return intElements;
             }
 
@@ -111,9 +122,14 @@ namespace PySysLinkBase
                         break;
                     }
                 }
+                else {
+                    areDoubles = false;
+                    break;
+                }
             }
 
             if (areDoubles) {
+                spdlog::get("default_pysyslink")->debug("Parsed a sequence of doubles from YAML node.");
                 return doubleElements;
             }
 
@@ -129,9 +145,14 @@ namespace PySysLinkBase
                         break;
                     }
                 }
+                else {
+                    areBool = false;
+                    break;
+                }
             }
 
             if (areBool) {
+                spdlog::get("default_pysyslink")->debug("Parsed a sequence of bools from YAML node.");
                 return boolElements;
             }
             
@@ -147,56 +168,44 @@ namespace PySysLinkBase
                         break;
                     }
                 }
+                else {
+                    areComplex = false;
+                    break;
+                }
             }
 
             if (areComplex) {
+                spdlog::get("default_pysyslink")->debug("Parsed a sequence of complex numbers from YAML node.");
                 return complexElements;
             }
 
             std::vector<std::string> stringElements;
             bool areString = true;
             for (const auto& subNode : node) {
-                if (subNode.IsScalar()) {
-                    try {
-                        stringElements.push_back(subNode.as<std::string>());
-                    } catch (...) {
-                        areString = false;
-                        break;
-                    }
+                try {
+                    stringElements.push_back(subNode.as<std::string>());
+                } catch (...) {
+                    areString = false;
+                    break;
                 }
             }
 
-            // if (areString) {
+            if (areString) {
+                spdlog::get("default_pysyslink")->debug("Parsed a sequence of strings from YAML node.");
                 return stringElements;
-            // }
+            }
+            else {
+                throw std::runtime_error("Unsupported YAML node type in sequence.");
+            }
 
-            // std::vector<ConfigurationValuePrimitive> elements;
-            // for (const auto& subNode : node) {
-            //     if (subNode.IsScalar()) {
-            //         try {
-            //             elements.push_back(subNode.as<int>());
-            //         } catch (...) {
-            //             try {
-            //                 elements.push_back(subNode.as<double>());
-            //             } catch (...) {
-            //                 try {
-            //                     elements.push_back(subNode.as<bool>());
-            //                 } catch (...) {
-            //                     try {
-            //                         elements.push_back(ModelParser::ParseComplex(subNode.as<std::string>()));
-            //                     } catch (...) {
-            //                         elements.push_back(subNode.as<std::string>());
-            //                     }
-            //                 }
-            //             }
-            //         }
-            //     }
-            // }
-            // return elements;
+            
         } else {
             throw std::runtime_error("Unsupported YAML node type.");
         }
+
+        throw std::runtime_error("Unsupported YAML structure in ConfigurationValue");
     }
+
 
     
     std::vector<std::shared_ptr<PortLink>> ModelParser::ParseLinks(std::vector<std::map<std::string, ConfigurationValue>> linksConfigurations, const std::vector<std::shared_ptr<ISimulationBlock>>& blocks)

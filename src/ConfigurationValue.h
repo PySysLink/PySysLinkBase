@@ -36,9 +36,8 @@ namespace PySysLinkBase
         std::vector<double>,
         std::vector<bool>,
         std::vector<std::complex<double>>,
-        std::vector<std::string>,
-        PortTypeMetadata,
-        std::vector<PortTypeMetadata>>;
+        std::vector<std::string>
+    >;
 
     class ConfigurationValueManager
     {

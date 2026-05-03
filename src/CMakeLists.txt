@@ -20,6 +20,7 @@ add_library(PySysLinkBaseCore OBJECT
     PortsAndSignalValues/InputPort.cpp 
     PortsAndSignalValues/OutputPort.cpp 
     PortsAndSignalValues/Port.cpp 
+    PortsAndSignalValues/PortTypeMetadata.cpp
 )
 
 set_target_properties(PySysLinkBaseCore PROPERTIES 

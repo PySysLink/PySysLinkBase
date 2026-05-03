@@ -271,6 +271,7 @@ int main(int argc, char* argv[]) {
         blockFactories,
         blockEventsHandler
     );
+    
     std::vector<std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>>> blockChains = model->GetDirectBlockChains();
     std::vector<std::shared_ptr<PySysLinkBase::ISimulationBlock>> orderedBlocks = model->OrderBlockChainsOntoFreeOrder(blockChains);
     model->PropagateSampleTimes();
