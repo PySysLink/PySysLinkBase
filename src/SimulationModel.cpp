@@ -44,10 +44,14 @@ namespace PySysLinkBase
     const std::vector<std::vector<std::shared_ptr<ISimulationBlock>>> SimulationModel::GetDirectBlockChains() 
     {
         std::vector<std::shared_ptr<ISimulationBlock>> freeSourceBlocks = this->GetFreeSourceBlocks();
+
+        spdlog::get("default_pysyslink")->debug("Free source blocks found:");
+
         std::vector<std::vector<std::shared_ptr<ISimulationBlock>>> directBlockChains = {};
 
         for (int i = 0; i < freeSourceBlocks.size(); i++)
         {
+            spdlog::get("default_pysyslink")->debug("Processing free source block: {}", freeSourceBlocks[i]->GetId());
             std::vector<std::vector<std::shared_ptr<ISimulationBlock>>> directBlockChains_i = this->GetDirectBlockChainsOfSourceBlock(freeSourceBlocks[i]);
             directBlockChains.insert(directBlockChains.end(), directBlockChains_i.begin(), directBlockChains_i.end());
         }
@@ -71,6 +75,8 @@ namespace PySysLinkBase
 
         // Initialize the result chains and start the recursion
         std::vector<std::vector<std::shared_ptr<ISimulationBlock>>> resultChains = {};
+
+        spdlog::get("default_pysyslink")->debug("Starting to find chains for free source block: {}", freeSourceBlock->GetId());
         this->FindChains(freeSourceBlock, {}, resultChains);
 
         spdlog::get("default_pysyslink")->debug("Working with block: {}", freeSourceBlock->GetId());
@@ -88,6 +94,7 @@ namespace PySysLinkBase
 
     void SimulationModel::FindChains(std::shared_ptr<ISimulationBlock> currentBlock, std::vector<std::shared_ptr<ISimulationBlock>> currentChain, std::vector<std::vector<std::shared_ptr<ISimulationBlock>>>& resultChains)
     {
+        spdlog::get("default_pysyslink")->debug("Finding chains, current block: {}", currentBlock->GetId());
         // Add the current block to the chain
         currentChain.push_back(currentBlock);
 
@@ -115,6 +122,8 @@ namespace PySysLinkBase
                 resultChains.push_back(currentChain);
                 continue;
             }
+
+            spdlog::get("default_pysyslink")->debug("{} connected blocks found for output port index {} of block {}", connectedBlocks.size(), i, currentBlock->GetId());
 
             // For each connected input port
             for (int j = 0; j < connectedBlocks.size(); j++) 
