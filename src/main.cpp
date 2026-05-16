@@ -157,31 +157,52 @@ struct convert<SimulationOptionsYaml> {
             for (const auto& outer : node["SolversConfiguration"]) {
                 std::map<std::string, PySysLinkBase::ConfigurationValue> inner;
                 for (const auto& inner_pair : outer.second) {
-                    inner[inner_pair.first.as<std::string>()] =
-                        PySysLinkBase::ModelParser::YamlToConfigurationValue(inner_pair.second);
+                    const std::string rawKey =
+                        inner_pair.first.as<std::string>();
+
+                    auto parsedKey =
+                        PySysLinkBase::ModelParser::ParseConfigurationKey(rawKey);
+
+                    inner[parsedKey.keyName] =
+                        PySysLinkBase::ModelParser::YamlToConfigurationValue(
+                            inner_pair.second,
+                            parsedKey.typeName
+                        );
                 }
-                rhs.solversConfiguration[outer.first.as<std::string>()] = inner;
+                rhs.solversConfiguration[
+                    outer.first.as<std::string>()
+                ] = inner;
             }
         }
 
         if (node["PluginConfiguration"]) {
             const auto& pcNode = node["PluginConfiguration"];
-
             if (!pcNode.IsMap()) {
                 throw YamlError(
-                    "options.PluginConfiguration must be a map" + loc(pcNode)
+                    "options.PluginConfiguration must be a map" +
+                    loc(pcNode)
                 );
             }
 
             for (const auto& it : pcNode) {
-                const std::string key = it.first.as<std::string>();
+                const std::string rawKey =
+                    it.first.as<std::string>();
                 try {
-                    rhs.pluginConfiguration[key] =
-                        PySysLinkBase::ModelParser::YamlToConfigurationValue(it.second);
+                    auto parsedKey =
+                        PySysLinkBase::ModelParser::ParseConfigurationKey(rawKey);
+
+                    rhs.pluginConfiguration[parsedKey.keyName] =
+                        PySysLinkBase::ModelParser::YamlToConfigurationValue(
+                            it.second,
+                            parsedKey.typeName
+                        );
                 } catch (const std::exception& e) {
                     throw YamlError(
-                        "Invalid value in options.PluginConfiguration." + key +
-                        loc(it.second) + "\n  Reason: " + e.what()
+                        "Invalid value in options.PluginConfiguration." +
+                        rawKey +
+                        loc(it.second) +
+                        "\n  Reason: " +
+                        e.what()
                     );
                 }
             }

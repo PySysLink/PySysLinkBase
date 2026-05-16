@@ -11,21 +11,7 @@
 #include "PortsAndSignalValues/PortTypeMetadata.h"
 
 namespace PySysLinkBase
-{
-    // using ConfigurationValuePrimitive  = std::variant<
-    //     int,
-    //     double,
-    //     bool,
-    //     std::complex<double>,
-    //     std::string,
-    //     std::vector<int>,
-    //     std::vector<double>,
-    //     std::vector<bool>,
-    //     std::vector<std::complex<double>>,
-    //     std::vector<std::string>,
-    //     PortTypeMetadata,
-    //     std::vector<PortTypeMetadata>>;
-    
+{    
     using ConfigurationValue = std::variant<
         int,
         double,

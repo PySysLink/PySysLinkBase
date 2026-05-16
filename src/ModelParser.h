@@ -11,6 +11,12 @@
 
 namespace PySysLinkBase
 {
+    struct ParsedConfigurationKey
+    {
+        std::string keyName;
+        std::string typeName;
+    };
+    
     class ModelParser
     {
         private:
@@ -19,7 +25,8 @@ namespace PySysLinkBase
             static std::complex<double> ParseComplex(const std::string& str);
 
         public:
-            static ConfigurationValue YamlToConfigurationValue(const YAML::Node& node);
+            static ParsedConfigurationKey ParseConfigurationKey(const std::string& rawKey);
+            static ConfigurationValue YamlToConfigurationValue(const YAML::Node& node, const std::string& typeName);
             static std::shared_ptr<SimulationModel> ParseFromYaml(std::string filename, const std::map<std::string, std::shared_ptr<IBlockFactory>>& blockFactories, std::shared_ptr<IBlockEventsHandler> blockEventsHandler);
     };
 } // namespace PySysLinkBase
