@@ -13,21 +13,32 @@
 
 namespace PySysLinkBase
 {
-    ParsedConfigurationKey ModelParser::ParseConfigurationKey(const std::string& rawKey)
+    ParsedConfigurationKey ModelParser::ParseConfigurationKey(
+        const std::string& rawKey)
     {
-        std::regex typedKeyRegex(R"((.+)\[(.+)\])");
-        std::smatch matches;
+        auto openBracket = rawKey.find('[');
+        auto closeBracket = rawKey.find(']');
 
-        if (!std::regex_match(rawKey, matches, typedKeyRegex))
+        if (openBracket == std::string::npos ||
+            closeBracket == std::string::npos ||
+            closeBracket <= openBracket)
         {
             throw std::runtime_error(
-                "Configuration key does not contain explicit type information: " + rawKey
+                "Configuration key does not contain explicit type information: "
+                + rawKey
             );
         }
 
         ParsedConfigurationKey parsedKey;
-        parsedKey.keyName = matches[1].str();
-        parsedKey.typeName = matches[2].str();
+
+        parsedKey.keyName =
+            rawKey.substr(0, openBracket);
+
+        parsedKey.typeName =
+            rawKey.substr(
+                openBracket + 1,
+                closeBracket - openBracket - 1
+            );
 
         return parsedKey;
     }
@@ -63,7 +74,7 @@ namespace PySysLinkBase
                 ParsedConfigurationKey parsedKey = ParseConfigurationKey(rawKey);
 
                 spdlog::get("default_pysyslink")->debug("Parsing block configuration key: {} of type {}", parsedKey.keyName, parsedKey.typeName);
-                blockConfiguration.insert({it->first.as<std::string>(), ModelParser::YamlToConfigurationValue(it->second, parsedKey.typeName)});
+                blockConfiguration.insert({parsedKey.keyName, ModelParser::YamlToConfigurationValue(it->second, parsedKey.typeName)});
             }
             blocksConfigurations.push_back(blockConfiguration);
         }
@@ -79,7 +90,7 @@ namespace PySysLinkBase
                 ParsedConfigurationKey parsedKey = ParseConfigurationKey(rawKey);
 
                 spdlog::get("default_pysyslink")->debug("Parsing link configuration key: {} of type {}", parsedKey.keyName, parsedKey.typeName);
-                linkConfiguration.insert({it->first.as<std::string>(), ModelParser::YamlToConfigurationValue(it->second, parsedKey.typeName)});
+                linkConfiguration.insert({parsedKey.keyName, ModelParser::YamlToConfigurationValue(it->second, parsedKey.typeName)});
             }
             linksConfigurations.push_back(linkConfiguration);
         }

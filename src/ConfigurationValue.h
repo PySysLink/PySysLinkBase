@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <complex>
 #include "PortsAndSignalValues/PortTypeMetadata.h"
+#include <numeric>
 
 namespace PySysLinkBase
 {    
@@ -34,7 +35,9 @@ namespace PySysLinkBase
             ConfigurationValue foundValue;
             auto it = configurationValues.find(keyName);
             if (it == configurationValues.end()) {
-                throw std::out_of_range("Key name: " + keyName + " not found in configuration.");
+                throw std::out_of_range("Key name: " + keyName + " not found in configuration, available keys are: " + std::accumulate(configurationValues.begin(), configurationValues.end(), std::string(""), [](std::string acc, std::pair<std::string, ConfigurationValue> pair) {
+                    return acc + pair.first + ", ";
+                }));
             } else {
                 foundValue = it->second;
             }
