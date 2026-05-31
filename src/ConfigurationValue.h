@@ -47,8 +47,43 @@ namespace PySysLinkBase
             }
             catch (std::bad_variant_access const& ex)
             {
-                throw std::invalid_argument("Configuration option of key: " + keyName + " was not of expected type: " + ex.what());
+                throw std::invalid_argument("Configuration option with key: " + keyName + " was not of expected type: " + ex.what() + ". Actual type was: " + ConfigurationValueTypeName(foundValue));
             }
+        }
+
+        static std::string ConfigurationValueTypeName(
+            const ConfigurationValue& value)
+        {
+            return std::visit(
+                [](const auto& v) -> std::string
+                {
+                    using T = std::decay_t<decltype(v)>;
+
+                    if constexpr (std::is_same_v<T, int>)
+                        return "int";
+                    else if constexpr (std::is_same_v<T, double>)
+                        return "double";
+                    else if constexpr (std::is_same_v<T, bool>)
+                        return "bool";
+                    else if constexpr (std::is_same_v<T, std::complex<double>>)
+                        return "complex";
+                    else if constexpr (std::is_same_v<T, std::string>)
+                        return "string";
+                    else if constexpr (std::is_same_v<T, std::vector<int>>)
+                        return "vector<int>";
+                    else if constexpr (std::is_same_v<T, std::vector<double>>)
+                        return "vector<double>";
+                    else if constexpr (std::is_same_v<T, std::vector<bool>>)
+                        return "vector<bool>";
+                    else if constexpr (std::is_same_v<T, std::vector<std::complex<double>>>)
+                        return "vector<complex>";
+                    else if constexpr (std::is_same_v<T, std::vector<std::string>>)
+                        return "vector<string>";
+                    else
+                        return "unknown";
+                },
+                value
+            );
         }
     };
 } // namespace PySysLinkBase

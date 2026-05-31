@@ -127,7 +127,7 @@ namespace PySysLinkBase
             return node.as<bool>();
         }
 
-        if (typeName == "complex")
+        if (typeName == "complex_double")
         {
             return ModelParser::ParseComplex(node.as<std::string>());
         }
@@ -177,7 +177,7 @@ namespace PySysLinkBase
             return values;
         }
 
-        if (typeName == "vector<complex>")
+        if (typeName == "vector<complex_double>")
         {
             std::vector<std::complex<double>> values;
 
