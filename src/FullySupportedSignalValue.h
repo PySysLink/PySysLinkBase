@@ -22,18 +22,21 @@ namespace PySysLinkBase
     using ComplexMatrix = Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic>;
 
     using FullySupportedSignalValue = std::variant<
-    int,
-    double,
-    bool,
-    std::complex<double>,
-    std::string,
-    IntMatrix,
-    DoubleMatrix,
-    BoolMatrix,
-    ComplexMatrix
->;
+        int,
+        double,
+        bool,
+        std::complex<double>,
+        std::string,
+        IntMatrix,
+        DoubleMatrix,
+        BoolMatrix,
+        ComplexMatrix
+    >;
 
-FullySupportedSignalValue ConvertToFullySupportedSignalValue(const std::shared_ptr<UnknownTypeSignalValue>& unknownValue);
+    FullySupportedSignalValue ConvertToFullySupportedSignalValue(const std::shared_ptr<UnknownTypeSignalValue>& unknownValue);
+
+
+    std::string FullySupportedSignalValueToString(const FullySupportedSignalValue& value);
 
 } // namespace PySysLinkBase
 

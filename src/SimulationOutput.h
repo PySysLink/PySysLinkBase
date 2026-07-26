@@ -47,6 +47,90 @@ namespace PySysLinkBase
         return o.str();
     }
 
+    template<typename T>
+    inline void WriteJsonValue(std::ostream& out, const T& value)
+    {
+        out << value;
+    }
+
+    template<>
+    inline void WriteJsonValue<bool>(std::ostream& out, const bool& value)
+    {
+        out << (value ? "true" : "false");
+    }
+
+    template<>
+    inline void WriteJsonValue<std::string>(std::ostream& out,
+                                        const std::string& value)
+    {
+        out << "\"" << escapeJson(value) << "\"";
+    }
+
+    template<>
+    inline void WriteJsonValue<std::complex<double>>(std::ostream& out,
+                                                    const std::complex<double>& value)
+    {
+        out << "{";
+        out << "\"real\":" << value.real() << ",";
+        out << "\"imag\":" << value.imag();
+        out << "}";
+    }
+
+    template<typename Derived>
+    inline void WriteMatrixJson(std::ostream& out,
+                                const Eigen::MatrixBase<Derived>& matrix)
+    {
+        out << "[";
+
+        for (Eigen::Index r = 0; r < matrix.rows(); ++r)
+        {
+            if (r)
+                out << ",";
+
+            out << "[";
+
+            for (Eigen::Index c = 0; c < matrix.cols(); ++c)
+            {
+                if (c)
+                    out << ",";
+
+                WriteJsonValue(out, matrix(r, c));
+            }
+
+            out << "]";
+        }
+
+        out << "]";
+    }
+
+    template<>
+    inline void WriteJsonValue<IntMatrix>(std::ostream& out,
+                                        const IntMatrix& matrix)
+    {
+        WriteMatrixJson(out, matrix);
+    }
+
+    template<>
+    inline void WriteJsonValue<DoubleMatrix>(std::ostream& out,
+                                            const DoubleMatrix& matrix)
+    {
+        WriteMatrixJson(out, matrix);
+    }
+
+    template<>
+    inline void WriteJsonValue<BoolMatrix>(std::ostream& out,
+                                        const BoolMatrix& matrix)
+    {
+        WriteMatrixJson(out, matrix);
+    }
+
+    template<>
+    inline void WriteJsonValue<ComplexMatrix>(std::ostream& out,
+                                            const ComplexMatrix& matrix)
+    {
+        WriteMatrixJson(out, matrix);
+    }
+
     template <typename T> 
     class Signal; // Forward declaration
 
@@ -66,6 +150,7 @@ namespace PySysLinkBase
         }
 
         virtual const std::string GetTypeId() const = 0;
+        virtual void WriteValuesJson(std::ostream& out) const = 0;
 
         template <typename T>
         std::unique_ptr<Signal<T>> TryCastToTyped()
@@ -101,6 +186,25 @@ namespace PySysLinkBase
             const std::string typeId = 
                 std::to_string(typeid(T).hash_code()) + typeid(T).name();
             return typeId;
+        }
+
+        void WriteValuesJson(std::ostream& out) const override
+        {
+            out << "[";
+
+            bool first = true;
+
+            for (const auto& value : values)
+            {
+                if (!first)
+                    out << ",";
+
+                first = false;
+
+                WriteJsonValue(out, value);
+            }
+
+            out << "]";
         }
     };
 

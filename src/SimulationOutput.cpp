@@ -212,89 +212,57 @@ namespace PySysLinkBase
             value);
     }
 
-    void SimulationOutput::WriteJson(const std::string& filename) const {
+    void SimulationOutput::WriteJson(const std::string& filename) const
+    {
         std::ofstream out(filename);
+
         out << "{";
 
         bool firstType = true;
-        for (const auto& [signalType, innerMap] : signals) {
-            if (!firstType) out << ",";
+
+        for (const auto& [signalType, innerMap] : signals)
+        {
+            if (!firstType)
+                out << ",";
+
             firstType = false;
 
             out << "\n  \"" << escapeJson(signalType) << "\": {";
 
-            bool firstSig = true;
-            for (const auto& [signalId, unkPtr] : innerMap) {
-                if (!firstSig) out << ",";
-                firstSig = false;
+            bool firstSignal = true;
+
+            for (const auto& [signalId, signal] : innerMap)
+            {
+                if (!firstSignal)
+                    out << ",";
+
+                firstSignal = false;
 
                 out << "\n    \"" << escapeJson(signalId) << "\": {";
 
-                // Times array
+                //------------------------------------------------------
+                // Times
+                //------------------------------------------------------
+
                 out << "\n      \"times\": [";
-                const auto& times = unkPtr->times;
-                for (size_t i = 0; i < times.size(); ++i) {
-                    if (i) out << ", ";
-                    out << times[i];
+
+                for (size_t i = 0; i < signal->times.size(); ++i)
+                {
+                    if (i)
+                        out << ",";
+
+                    out << signal->times[i];
                 }
+
                 out << "],";
 
-                // Values array
-                out << "\n      \"values\": [";
-                bool firstV = true;
+                //------------------------------------------------------
+                // Values
+                //------------------------------------------------------
 
-                if (auto p = dynamic_cast<const Signal<double>*>(unkPtr.get())) {
-                    for (double v : p->values) {
-                        if (!firstV) out << ", ";
-                        out << v;
-                        firstV = false;
-                    }
-                }
-                else if (auto p = dynamic_cast<const Signal<float>*>(unkPtr.get())) {
-                    for (float v : p->values) {
-                        if (!firstV) out << ", ";
-                        out << v;
-                        firstV = false;
-                    }
-                }
-                else if (auto p = dynamic_cast<const Signal<int>*>(unkPtr.get())) {
-                    for (int v : p->values) {
-                        if (!firstV) out << ", ";
-                        out << v;
-                        firstV = false;
-                    }
-                }
-                else if (auto p = dynamic_cast<const Signal<bool>*>(unkPtr.get())) {
-                    for (bool v : p->values) {
-                        if (!firstV) out << ", ";
-                        out << (v ? "true" : "false");
-                        firstV = false;
-                    }
-                }
-                else if (auto p = dynamic_cast<const Signal<std::string>*>(unkPtr.get())) {
-                    for (const auto& v : p->values) {
-                        if (!firstV) out << ", ";
-                        out << "\"" << escapeJson(v) << "\"";
-                        firstV = false;
-                    }
-                }
-                else if (auto p = dynamic_cast<const Signal<std::complex<double>>*>(unkPtr.get())) {
-                    for (const auto& c : p->values) {
-                        if (!firstV) out << ", ";
-                        out << "{"
-                            << "\"real\":" << c.real() << ", "
-                            << "\"imag\":" << c.imag()
-                            << "}";
-                        firstV = false;
-                    }
-                }
-                else {
-                    throw std::runtime_error(
-                        "Unsupported signal type for signalId: " + signalId
-                    );
-                }
+                out << "\n      \"values\": ";
 
-                out << "]";
+                signal->WriteValuesJson(out);
 
                 out << "\n    }";
             }
