@@ -6,6 +6,9 @@
 #include <variant>
 #include <regex>
 #include <sstream>
+#include <algorithm>
+#include <cctype>
+#include <type_traits>
 
 #include "ConfigurationValue.h"
 #include "spdlog/spdlog.h"
@@ -13,6 +16,18 @@
 
 namespace PySysLinkBase
 {
+    template<typename T>
+    std::vector<T> ParseVector(const YAML::Node& node);
+
+    template<typename T>
+    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> ParseMatrix(const YAML::Node& node);
+
+    template<typename T>
+    std::vector<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> ParseMatrixVector(const YAML::Node& node);
+
+    ComplexMatrix ParseComplexMatrix(const YAML::Node& node);
+    std::vector<ComplexMatrix> ParseComplexMatrixVector(const YAML::Node& node);
+
     ParsedConfigurationKey ModelParser::ParseConfigurationKey(
         const std::string& rawKey)
     {
@@ -142,68 +157,43 @@ namespace PySysLinkBase
         //
 
         if (typeName == "vector<int>")
-        {
-            std::vector<int> values;
-
-            for (const auto& subNode : node)
-            {
-                values.push_back(subNode.as<int>());
-            }
-
-            return values;
-        }
+            return ParseVector<int>(node);
 
         if (typeName == "vector<double>")
-        {
-            std::vector<double> values;
-
-            for (const auto& subNode : node)
-            {
-                values.push_back(subNode.as<double>());
-            }
-
-            return values;
-        }
+            return ParseVector<double>(node);
 
         if (typeName == "vector<bool>")
-        {
-            std::vector<bool> values;
-
-            for (const auto& subNode : node)
-            {
-                values.push_back(subNode.as<bool>());
-            }
-
-            return values;
-        }
-
-        if (typeName == "vector<complex_double>")
-        {
-            std::vector<std::complex<double>> values;
-
-            for (const auto& subNode : node)
-            {
-                values.push_back(
-                    ModelParser::ParseComplex(
-                        subNode.as<std::string>()
-                    )
-                );
-            }
-
-            return values;
-        }
+            return ParseVector<bool>(node);
 
         if (typeName == "vector<string>")
-        {
-            std::vector<std::string> values;
+            return ParseVector<std::string>(node);
 
-            for (const auto& subNode : node)
-            {
-                values.push_back(subNode.as<std::string>());
-            }
+        if (typeName == "vector<complex_double>")
+            return ParseVector<std::complex<double>>(node);
 
-            return values;
-        }
+        if (typeName == "matrix<int>")
+            return ParseMatrix<int>(node);
+
+        if (typeName == "matrix<double>")
+            return ParseMatrix<double>(node);
+
+        if (typeName == "matrix<bool>")
+            return ParseMatrix<bool>(node);
+
+        if (typeName == "matrix<complex_double>")
+            return ParseComplexMatrix(node);
+
+        if (typeName == "vector<matrix<int>>")
+            return ParseMatrixVector<int>(node);
+
+        if (typeName == "vector<matrix<double>>")
+            return ParseMatrixVector<double>(node);
+
+        if (typeName == "vector<matrix<bool>>")
+            return ParseMatrixVector<bool>(node);
+
+        if (typeName == "vector<matrix<complex_double>>")
+            return ParseComplexMatrixVector(node);
 
         throw std::runtime_error(
             "Unsupported explicit configuration type: " + typeName
@@ -239,35 +229,254 @@ namespace PySysLinkBase
         return blocks;
     }
 
-    std::complex<double> ModelParser::ParseComplex(const std::string& str) {
-         std::regex complex_pattern(R"(\s*([-+]?\d*\.?\d+)?\s*([+-]\s*\d*\.?\d+)?\s*(i|j)?\s*)");
+    template<typename T>
+    std::vector<T> ParseVector(const YAML::Node& node)
+    {
+        std::vector<T> values;
+        values.reserve(node.size());
 
-        std::smatch matches;
-        if (std::regex_match(str, matches, complex_pattern)) {
-            double real_part = 0.0;
-            double imag_part = 0.0;
-
-            // Parse the real part if it exists
-            if (matches[1].matched) {
-                real_part = std::stod(matches[1].str());
-            }
-
-            // Parse the imaginary part if it exists
-            if (matches[2].matched) {
-                // Remove any extra spaces in the imaginary part
-                std::string imag_str = matches[2].str();
-                imag_str.erase(remove(imag_str.begin(), imag_str.end(), ' '), imag_str.end());
-                imag_part = std::stod(imag_str);
-            }
-
-            // If no imaginary part is provided but 'i' or 'j' exists, treat it as 1 or -1
-            if (matches[2].str().empty() && (matches[3].str() == "i" || matches[3].str() == "j")) {
-                imag_part = matches[1].matched ? 1.0 : -1.0;
-            }
-
-            return std::complex<double>(real_part, imag_part);
-        } else {
-            throw std::invalid_argument("Invalid complex number format: " + str);
+        for (const auto& subNode : node)
+        {
+            if constexpr (std::is_same_v<T, std::complex<double>>)
+                values.push_back(ModelParser::ParseComplex(subNode.as<std::string>()));
+            else
+                values.push_back(subNode.as<T>());
         }
+
+        return values;
+    }
+
+    std::complex<double> ModelParser::ParseComplex(const std::string& str) {
+        std::string text = str;
+        text.erase(text.begin(), std::find_if(text.begin(), text.end(), [](unsigned char ch){ return !std::isspace(ch); }));
+        text.erase(std::find_if(text.rbegin(), text.rend(), [](unsigned char ch){ return !std::isspace(ch); }).base(), text.end());
+
+        if (text.empty())
+            throw std::invalid_argument("Invalid complex number format: " + str);
+
+        bool imagUnit = false;
+        if (!text.empty() && (text.back() == 'i' || text.back() == 'j'))
+        {
+            imagUnit = true;
+            text.pop_back();
+        }
+
+        std::string trimmed = text;
+        trimmed.erase(trimmed.begin(), std::find_if(trimmed.begin(), trimmed.end(), [](unsigned char ch){ return !std::isspace(ch); }));
+        trimmed.erase(std::find_if(trimmed.rbegin(), trimmed.rend(), [](unsigned char ch){ return !std::isspace(ch); }).base(), trimmed.end());
+
+        if (trimmed.empty())
+            throw std::invalid_argument("Invalid complex number format: " + str);
+
+        if (trimmed == "+" || trimmed == "-")
+            return std::complex<double>(0.0, trimmed == "-" ? -1.0 : 1.0);
+
+        std::size_t splitPos = std::string::npos;
+        for (std::size_t i = 1; i < trimmed.size(); ++i)
+        {
+            const char c = trimmed[i];
+            if ((c == '+' || c == '-') && trimmed[i - 1] != 'e' && trimmed[i - 1] != 'E')
+            {
+                splitPos = i;
+                break;
+            }
+        }
+
+        if (splitPos != std::string::npos)
+        {
+            const std::string realPart = trimmed.substr(0, splitPos);
+            const std::string imagPart = trimmed.substr(splitPos, trimmed.size() - splitPos);
+            if (imagUnit)
+            {
+                const double real = realPart.empty() ? 0.0 : std::stod(realPart);
+                const double imag = std::stod(imagPart);
+                return std::complex<double>(real, imag);
+            }
+
+            return std::complex<double>(std::stod(realPart), std::stod(imagPart));
+        }
+
+        if (imagUnit)
+        {
+            const std::string magnitude = trimmed;
+            const double value = magnitude.empty() ? 1.0 : std::stod(magnitude);
+            return std::complex<double>(0.0, value);
+        }
+
+        return std::complex<double>(std::stod(trimmed), 0.0);
+    }
+
+    namespace
+    {
+        std::string Trim(const std::string& input)
+        {
+            const auto begin = std::find_if(input.begin(), input.end(), [](unsigned char ch){ return !std::isspace(ch); });
+            if (begin == input.end())
+                return {};
+
+            const auto end = std::find_if(input.rbegin(), input.rend(), [](unsigned char ch){ return !std::isspace(ch); }).base();
+            return std::string(begin, end);
+        }
+
+        template<typename T>
+        T ParseScalarToken(const std::string& token)
+        {
+            if constexpr (std::is_same_v<T, bool>)
+            {
+                std::string normalized = token;
+                std::transform(normalized.begin(), normalized.end(), normalized.begin(), [](unsigned char ch){ return static_cast<char>(std::tolower(ch)); });
+                if (normalized == "true" || normalized == "1")
+                    return true;
+                if (normalized == "false" || normalized == "0")
+                    return false;
+                throw std::invalid_argument("Invalid boolean token: " + token);
+            }
+            else if constexpr (std::is_same_v<T, std::complex<double>>)
+            {
+                return ModelParser::ParseComplex(token);
+            }
+            else
+            {
+                return static_cast<T>(std::stod(token));
+            }
+        }
+
+        template<typename T>
+        T ParseYamlScalar(const YAML::Node& node)
+        {
+            if constexpr (std::is_same_v<T, std::complex<double>>)
+            {
+                return ModelParser::ParseComplex(node.as<std::string>());
+            }
+            else
+            {
+                return node.as<T>();
+            }
+        }
+
+        template<typename T>
+        Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> ParseMatlabMatrixString(const std::string& text)
+        {
+            const std::string trimmed = Trim(text);
+            if (trimmed.size() < 2 || trimmed.front() != '[' || trimmed.back() != ']')
+                throw std::runtime_error("Matrix string must be enclosed in square brackets.");
+
+            const std::string inner = trimmed.substr(1, trimmed.size() - 2);
+            std::vector<std::string> rowStrings;
+            std::stringstream rowStream(inner);
+            std::string row;
+            while (std::getline(rowStream, row, ';'))
+                rowStrings.push_back(Trim(row));
+
+            if (rowStrings.empty())
+                throw std::runtime_error("Matrix string must contain at least one row.");
+
+            std::vector<std::vector<T>> parsedRows;
+            std::size_t cols = 0;
+            for (const auto& rowText : rowStrings)
+            {
+                std::string normalized = rowText;
+                std::replace(normalized.begin(), normalized.end(), ',', ' ');
+
+                std::stringstream tokenStream(normalized);
+                std::string token;
+                std::vector<T> values;
+                while (tokenStream >> token)
+                {
+                    if (!token.empty())
+                        values.push_back(ParseScalarToken<T>(token));
+                }
+
+                if (values.empty())
+                    throw std::runtime_error("Matrix row cannot be empty.");
+
+                if (cols == 0)
+                    cols = values.size();
+                else if (values.size() != cols)
+                    throw std::runtime_error("Matrix rows have different lengths.");
+
+                parsedRows.push_back(std::move(values));
+            }
+
+            Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> mat(parsedRows.size(), cols);
+            for (std::size_t r = 0; r < parsedRows.size(); ++r)
+                for (std::size_t c = 0; c < cols; ++c)
+                    mat(r, c) = parsedRows[r][c];
+
+            return mat;
+        }
+    }
+
+    template<typename T>
+    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> ParseMatrix(const YAML::Node& node)
+    {
+        if (node.IsScalar())
+            return ParseMatlabMatrixString<T>(node.as<std::string>());
+
+        if (!node.IsSequence() || node.size() == 0)
+            throw std::runtime_error("Matrix must be a non-empty sequence.");
+
+        if (!node[0].IsSequence())
+        {
+            Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> mat(1, node.size());
+            for (std::size_t c = 0; c < node.size(); ++c)
+                mat(0, c) = ParseYamlScalar<T>(node[c]);
+            return mat;
+        }
+
+        const auto rows = node.size();
+        const auto cols = node[0].size();
+
+        Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> mat(rows, cols);
+
+        for (std::size_t r = 0; r < rows; ++r)
+        {
+            if (!node[r].IsSequence() || node[r].size() != cols)
+                throw std::runtime_error("Matrix rows have different lengths.");
+
+            for (std::size_t c = 0; c < cols; ++c)
+                mat(r, c) = ParseYamlScalar<T>(node[r][c]);
+        }
+
+        return mat;
+    }
+
+    ComplexMatrix ParseComplexMatrix(const YAML::Node& node)
+    {
+        return ParseMatrix<std::complex<double>>(node);
+    }
+
+    template<typename T>
+    std::vector<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>>
+    ParseMatrixVector(const YAML::Node& node)
+    {
+        std::vector<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> values;
+        values.reserve(node.size());
+
+        for (const auto& subNode : node)
+        {
+            if (subNode.IsScalar())
+                values.push_back(ParseMatlabMatrixString<T>(subNode.as<std::string>()));
+            else
+                values.push_back(ParseMatrix<T>(subNode));
+        }
+
+        return values;
+    }
+
+    std::vector<ComplexMatrix> ParseComplexMatrixVector(const YAML::Node& node)
+    {
+        std::vector<ComplexMatrix> values;
+        values.reserve(node.size());
+
+        for (const auto& subNode : node)
+        {
+            if (subNode.IsScalar())
+                values.push_back(ParseMatlabMatrixString<std::complex<double>>(subNode.as<std::string>()));
+            else
+                values.push_back(ParseComplexMatrix(subNode));
+        }
+
+        return values;
     }
 } // namespace PySysLinkBase

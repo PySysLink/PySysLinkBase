@@ -34,6 +34,30 @@ namespace PySysLinkBase
             }
         } catch (const std::bad_cast&) {}
 
+        try {
+            if (auto stringValue = unknownValue->TryCastToTyped<IntMatrix>()) {
+                return FullySupportedSignalValue(stringValue->GetPayload());
+            }
+        } catch (const std::bad_cast&) {}
+
+        try {
+            if (auto stringValue = unknownValue->TryCastToTyped<DoubleMatrix>()) {
+                return FullySupportedSignalValue(stringValue->GetPayload());
+            }
+        } catch (const std::bad_cast&) {}
+
+        try {
+            if (auto stringValue = unknownValue->TryCastToTyped<BoolMatrix>()) {
+                return FullySupportedSignalValue(stringValue->GetPayload());
+            }
+        } catch (const std::bad_cast&) {}
+
+        try {
+            if (auto stringValue = unknownValue->TryCastToTyped<ComplexMatrix>()) {
+                return FullySupportedSignalValue(stringValue->GetPayload());
+            }
+        } catch (const std::bad_cast&) {}
+
         throw std::runtime_error("UnknownTypeSignalValue cannot be converted to FullySupportedSignalValue");
     }
 } // namespace PySysLinkBase

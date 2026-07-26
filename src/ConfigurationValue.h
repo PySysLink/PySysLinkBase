@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <complex>
 #include "PortsAndSignalValues/PortTypeMetadata.h"
+#include "FullySupportedSignalValue.h"
 #include <numeric>
 
 namespace PySysLinkBase
@@ -23,7 +24,15 @@ namespace PySysLinkBase
         std::vector<double>,
         std::vector<bool>,
         std::vector<std::complex<double>>,
-        std::vector<std::string>
+        std::vector<std::string>,
+        IntMatrix,
+        DoubleMatrix,
+        BoolMatrix,
+        ComplexMatrix,
+        std::vector<IntMatrix>,
+        std::vector<DoubleMatrix>,
+        std::vector<BoolMatrix>,
+        std::vector<ComplexMatrix>
     >;
 
     class ConfigurationValueManager
@@ -66,7 +75,7 @@ namespace PySysLinkBase
                     else if constexpr (std::is_same_v<T, bool>)
                         return "bool";
                     else if constexpr (std::is_same_v<T, std::complex<double>>)
-                        return "complex";
+                        return "complex_double";
                     else if constexpr (std::is_same_v<T, std::string>)
                         return "string";
                     else if constexpr (std::is_same_v<T, std::vector<int>>)
@@ -76,9 +85,28 @@ namespace PySysLinkBase
                     else if constexpr (std::is_same_v<T, std::vector<bool>>)
                         return "vector<bool>";
                     else if constexpr (std::is_same_v<T, std::vector<std::complex<double>>>)
-                        return "vector<complex>";
+                        return "vector<complex_double>";
                     else if constexpr (std::is_same_v<T, std::vector<std::string>>)
                         return "vector<string>";
+
+                    else if constexpr (std::is_same_v<T, IntMatrix>)
+                        return "matrix<int>";
+                    else if constexpr (std::is_same_v<T, DoubleMatrix>)
+                        return "matrix<double>";
+                    else if constexpr (std::is_same_v<T, BoolMatrix>)
+                        return "matrix<bool>";
+                    else if constexpr (std::is_same_v<T, ComplexMatrix>)
+                        return "matrix<complex_double>";
+
+                    else if constexpr (std::is_same_v<T, std::vector<IntMatrix>>)
+                        return "vector<matrix<int>>";
+                    else if constexpr (std::is_same_v<T, std::vector<DoubleMatrix>>)
+                        return "vector<matrix<double>>";
+                    else if constexpr (std::is_same_v<T, std::vector<BoolMatrix>>)
+                        return "vector<matrix<bool>>";
+                    else if constexpr (std::is_same_v<T, std::vector<ComplexMatrix>>)
+                        return "vector<matrix<complex_double>>";
+                        
                     else
                         return "unknown";
                 },
