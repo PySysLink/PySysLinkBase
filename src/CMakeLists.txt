@@ -58,6 +58,7 @@ target_link_libraries(PySysLinkBaseCore
 # -------------------------------------------------------------------
 find_package(Eigen3 REQUIRED NO_MODULE)
 target_link_libraries(PySysLinkBaseCore PRIVATE Eigen3::Eigen)
+target_link_libraries(PySysLinkBase_exe PRIVATE Eigen3::Eigen)
 
 # -------------------------------------------------------------------
 # HDF5 (system)

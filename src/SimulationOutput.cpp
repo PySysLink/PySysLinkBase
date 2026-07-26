@@ -1,5 +1,7 @@
 #include "SimulationOutput.h"
 #include <highfive/H5Easy.hpp>
+#include <highfive/eigen.hpp>
+#include <highfive/H5File.hpp>
 #include <fstream>
 #include <variant>
 #include <complex>
@@ -37,6 +39,89 @@ namespace PySysLinkBase
                                     {lastFlushedIndex[task.datasetPath]},
                                     *static_cast<H5Easy::DumpOptions*>(this->dumpOptions));
                                 lastFlushedIndex[task.datasetPath] += 1;
+                            }
+                        }
+                        else if constexpr (std::is_same_v<T, IntMatrix> || std::is_same_v<T, DoubleMatrix> || std::is_same_v<T, BoolMatrix> || std::is_same_v<T, ComplexMatrix>) {
+                            auto& file = *static_cast<H5Easy::File*>(this->hdf5File.get());
+
+                            const std::string path = task.datasetPath + "/values";
+
+                            for (const auto& value : task.values)
+                            {
+                                const auto& mat = std::get<T>(*value);
+
+                                //----------------------------------------------------------
+                                // First sample: create dataset
+                                //----------------------------------------------------------
+
+                                if (matrixDatasets.find(path) == matrixDatasets.end())
+                                {
+                                    matrixSizes[path] = {
+                                        static_cast<size_t>(mat.rows()),
+                                        static_cast<size_t>(mat.cols())
+                                    };
+
+                                    HighFive::DataSpace dataspace(
+                                        {
+                                            0,
+                                            static_cast<size_t>(mat.rows()),
+                                            static_cast<size_t>(mat.cols())
+                                        },
+                                        {
+                                            HighFive::DataSpace::UNLIMITED,
+                                            static_cast<size_t>(mat.rows()),
+                                            static_cast<size_t>(mat.cols())
+                                        }
+                                    );
+
+                                    HighFive::DataSetCreateProps props;
+
+                                    props.add(HighFive::Chunking({
+                                        1,
+                                        static_cast<size_t>(mat.rows()),
+                                        static_cast<size_t>(mat.cols())
+                                    }));
+
+                                    matrixDatasets[path] =
+                                        file.createDataSet<typename T::Scalar>(
+                                            path,
+                                            dataspace,
+                                            props);
+                                }
+
+                                //----------------------------------------------------------
+                                // Check dimensions
+                                //----------------------------------------------------------
+
+                                auto [rows, cols] = matrixSizes[path];
+
+                                if (rows != static_cast<size_t>(mat.rows()) ||
+                                    cols != static_cast<size_t>(mat.cols()))
+                                {
+                                    throw std::runtime_error(
+                                        "Matrix dimensions changed for signal '" + path + "'");
+                                }
+
+                                //----------------------------------------------------------
+                                // Append sample
+                                //----------------------------------------------------------
+
+                                auto& dataset = matrixDatasets[path];
+
+                                std::size_t sample = lastFlushedIndex[path];
+
+                                dataset.resize({
+                                    sample + 1,
+                                    rows,
+                                    cols
+                                });
+
+                                dataset.select(
+                                    {sample,0,0},
+                                    {1,rows,cols}
+                                ).write(mat);
+
+                                lastFlushedIndex[path]++;
                             }
                         }
                         else

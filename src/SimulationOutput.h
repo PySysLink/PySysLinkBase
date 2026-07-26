@@ -15,6 +15,7 @@
 #include <fstream>
 #include <typeinfo>  
 #include <typeindex> 
+#include <highfive/H5DataSet.hpp>
 
 #include "PortsAndSignalValues/UnknownTypeSignalValue.h"
 #include "FullySupportedSignalValue.h"
@@ -158,6 +159,8 @@ namespace PySysLinkBase
         std::unordered_map<std::string, std::size_t> lastFlushedIndex;
         std::unordered_map<std::string, WriteTask> writeTasks;
 
+        std::unordered_map<std::string, HighFive::DataSet> matrixDatasets;
+        std::unordered_map<std::string, std::pair<size_t,size_t>> matrixSizes;
     public:
         SimulationOutput(bool saveToVectors=true, bool saveToFileContinuously=false, std::string hdf5FileName="");
         ~SimulationOutput();
