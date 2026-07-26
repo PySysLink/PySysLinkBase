@@ -246,78 +246,76 @@ namespace PySysLinkBase
         return values;
     }
 
-    std::complex<double> ModelParser::ParseComplex(const std::string& str) {
-        std::string text = str;
-        text.erase(text.begin(), std::find_if(text.begin(), text.end(), [](unsigned char ch){ return !std::isspace(ch); }));
-        text.erase(std::find_if(text.rbegin(), text.rend(), [](unsigned char ch){ return !std::isspace(ch); }).base(), text.end());
+    std::string Trim(const std::string& input)
+    {
+        const auto begin = std::find_if(input.begin(), input.end(), [](unsigned char ch){ return !std::isspace(ch); });
+        if (begin == input.end())
+            return {};
+
+        const auto end = std::find_if(input.rbegin(), input.rend(), [](unsigned char ch){ return !std::isspace(ch); }).base();
+        return std::string(begin, end);
+    }
+
+    std::complex<double> ModelParser::ParseComplex(const std::string& str)
+    {
+        std::string text = Trim(str);
+        spdlog::get("default_pysyslink")->debug("ParseComplex input='{}'", text);
 
         if (text.empty())
             throw std::invalid_argument("Invalid complex number format: " + str);
+
+        while (!text.empty() && (text.front() == '(' || text.front() == '['))
+            text.erase(text.begin());
+        while (!text.empty() && (text.back() == ')' || text.back() == ']'))
+            text.pop_back();
+        text = Trim(text);
 
         bool imagUnit = false;
         if (!text.empty() && (text.back() == 'i' || text.back() == 'j'))
         {
             imagUnit = true;
             text.pop_back();
+            text = Trim(text);
         }
 
-        std::string trimmed = text;
-        trimmed.erase(trimmed.begin(), std::find_if(trimmed.begin(), trimmed.end(), [](unsigned char ch){ return !std::isspace(ch); }));
-        trimmed.erase(std::find_if(trimmed.rbegin(), trimmed.rend(), [](unsigned char ch){ return !std::isspace(ch); }).base(), trimmed.end());
-
-        if (trimmed.empty())
-            throw std::invalid_argument("Invalid complex number format: " + str);
-
-        if (trimmed == "+" || trimmed == "-")
-            return std::complex<double>(0.0, trimmed == "-" ? -1.0 : 1.0);
+        if (text.empty() || text == "+" || text == "-")
+            return std::complex<double>(0.0, text == "-" ? -1.0 : 1.0);
 
         std::size_t splitPos = std::string::npos;
-        for (std::size_t i = 1; i < trimmed.size(); ++i)
+        for (std::size_t i = 1; i < text.size(); ++i)
         {
-            const char c = trimmed[i];
-            if ((c == '+' || c == '-') && trimmed[i - 1] != 'e' && trimmed[i - 1] != 'E')
+            const char c = text[i];
+            if ((c == '+' || c == '-') && text[i - 1] != 'e' && text[i - 1] != 'E')
             {
                 splitPos = i;
                 break;
             }
         }
 
-        if (splitPos != std::string::npos)
+        try
         {
-            const std::string realPart = trimmed.substr(0, splitPos);
-            const std::string imagPart = trimmed.substr(splitPos, trimmed.size() - splitPos);
-            if (imagUnit)
+            if (splitPos != std::string::npos)
             {
+                const std::string realPart = Trim(text.substr(0, splitPos));
+                const std::string imagPart = Trim(text.substr(splitPos));
+                spdlog::get("default_pysyslink")->debug("ParseComplex split real='{}' imag='{}'", realPart, imagPart);
                 const double real = realPart.empty() ? 0.0 : std::stod(realPart);
-                const double imag = std::stod(imagPart);
+                const double imag = imagPart.empty() ? 1.0 : std::stod(imagPart);
                 return std::complex<double>(real, imag);
             }
 
-            return std::complex<double>(std::stod(realPart), std::stod(imagPart));
+            const double value = std::stod(text);
+            return imagUnit ? std::complex<double>(0.0, value) : std::complex<double>(value, 0.0);
         }
-
-        if (imagUnit)
+        catch (const std::exception& ex)
         {
-            const std::string magnitude = trimmed;
-            const double value = magnitude.empty() ? 1.0 : std::stod(magnitude);
-            return std::complex<double>(0.0, value);
+            spdlog::get("default_pysyslink")->error("ParseComplex failed for token '{}' : {}", text, ex.what());
+            throw;
         }
-
-        return std::complex<double>(std::stod(trimmed), 0.0);
     }
 
     namespace
     {
-        std::string Trim(const std::string& input)
-        {
-            const auto begin = std::find_if(input.begin(), input.end(), [](unsigned char ch){ return !std::isspace(ch); });
-            if (begin == input.end())
-                return {};
-
-            const auto end = std::find_if(input.rbegin(), input.rend(), [](unsigned char ch){ return !std::isspace(ch); }).base();
-            return std::string(begin, end);
-        }
-
         template<typename T>
         T ParseScalarToken(const std::string& token)
         {
@@ -355,53 +353,126 @@ namespace PySysLinkBase
         }
 
         template<typename T>
-        Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> ParseMatlabMatrixString(const std::string& text)
+        Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>
+        ParsePythonMatrixString(const std::string& text)
         {
             const std::string trimmed = Trim(text);
             if (trimmed.size() < 2 || trimmed.front() != '[' || trimmed.back() != ']')
                 throw std::runtime_error("Matrix string must be enclosed in square brackets.");
 
-            const std::string inner = trimmed.substr(1, trimmed.size() - 2);
-            std::vector<std::string> rowStrings;
-            std::stringstream rowStream(inner);
-            std::string row;
-            while (std::getline(rowStream, row, ';'))
-                rowStrings.push_back(Trim(row));
+            std::vector<std::vector<T>> rows;
+            std::size_t i = 0;
+            const std::size_t n = trimmed.size();
 
-            if (rowStrings.empty())
-                throw std::runtime_error("Matrix string must contain at least one row.");
+            auto skipWhitespace = [&]() {
+                while (i < n && std::isspace(static_cast<unsigned char>(trimmed[i])))
+                    ++i;
+            };
 
-            std::vector<std::vector<T>> parsedRows;
-            std::size_t cols = 0;
-            for (const auto& rowText : rowStrings)
+            skipWhitespace();
+            if (i >= n || trimmed[i] != '[')
+                throw std::runtime_error("Expected '['.");
+            ++i;
+            skipWhitespace();
+
+            while (i < n)
             {
-                std::string normalized = rowText;
-                std::replace(normalized.begin(), normalized.end(), ',', ' ');
-
-                std::stringstream tokenStream(normalized);
-                std::string token;
-                std::vector<T> values;
-                while (tokenStream >> token)
+                if (trimmed[i] == ']')
                 {
-                    if (!token.empty())
-                        values.push_back(ParseScalarToken<T>(token));
+                    ++i;
+                    break;
                 }
 
-                if (values.empty())
-                    throw std::runtime_error("Matrix row cannot be empty.");
+                if (trimmed[i] != '[')
+                    throw std::runtime_error("Expected row '['.");
+                ++i;
 
-                if (cols == 0)
-                    cols = values.size();
-                else if (values.size() != cols)
-                    throw std::runtime_error("Matrix rows have different lengths.");
+                std::vector<T> row;
+                while (true)
+                {
+                    skipWhitespace();
+                    if (i >= n)
+                        throw std::runtime_error("Unexpected end of matrix.");
 
-                parsedRows.push_back(std::move(values));
+                    std::string token;
+                    int parenDepth = 0;
+                    while (i < n)
+                    {
+                        char c = trimmed[i];
+                        if (c == '(')
+                            ++parenDepth;
+                        else if (c == ')')
+                            --parenDepth;
+
+                        if (parenDepth == 0 && (c == ',' || c == ']'))
+                            break;
+
+                        token += c;
+                        ++i;
+                    }
+
+                    token = Trim(token);
+                    if (token.empty())
+                        throw std::runtime_error("Empty matrix element.");
+
+                    spdlog::get("default_pysyslink")->debug("ParsePythonMatrixString token='{}'", token);
+                    row.push_back(ParseScalarToken<T>(token));
+
+                    skipWhitespace();
+                    if (i >= n)
+                        throw std::runtime_error("Unexpected end of matrix.");
+
+                    if (trimmed[i] == ',')
+                    {
+                        ++i;
+                        continue;
+                    }
+
+                    if (trimmed[i] == ']')
+                    {
+                        ++i;
+                        break;
+                    }
+
+                    throw std::runtime_error("Expected ',' or ']'.");
+                }
+
+                rows.push_back(std::move(row));
+                skipWhitespace();
+
+                if (i >= n)
+                    break;
+
+                if (trimmed[i] == ',')
+                {
+                    ++i;
+                    skipWhitespace();
+                    continue;
+                }
+
+                if (trimmed[i] == ']')
+                {
+                    ++i;
+                    break;
+                }
+
+                throw std::runtime_error("Expected ',' or ']'.");
             }
 
-            Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> mat(parsedRows.size(), cols);
-            for (std::size_t r = 0; r < parsedRows.size(); ++r)
+            if (rows.empty())
+                throw std::runtime_error("Matrix cannot be empty.");
+
+            const std::size_t cols = rows.front().size();
+            for (const auto& row : rows)
+            {
+                if (row.size() != cols)
+                    throw std::runtime_error("Matrix rows have different lengths.");
+            }
+
+            Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> mat(rows.size(), cols);
+            for (std::size_t r = 0; r < rows.size(); ++r)
                 for (std::size_t c = 0; c < cols; ++c)
-                    mat(r, c) = parsedRows[r][c];
+                    mat(r, c) = rows[r][c];
 
             return mat;
         }
@@ -411,7 +482,7 @@ namespace PySysLinkBase
     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> ParseMatrix(const YAML::Node& node)
     {
         if (node.IsScalar())
-            return ParseMatlabMatrixString<T>(node.as<std::string>());
+            return ParsePythonMatrixString<T>(node.as<std::string>());
 
         if (!node.IsSequence() || node.size() == 0)
             throw std::runtime_error("Matrix must be a non-empty sequence.");
@@ -456,7 +527,7 @@ namespace PySysLinkBase
         for (const auto& subNode : node)
         {
             if (subNode.IsScalar())
-                values.push_back(ParseMatlabMatrixString<T>(subNode.as<std::string>()));
+                values.push_back(ParsePythonMatrixString<T>(subNode.as<std::string>()));
             else
                 values.push_back(ParseMatrix<T>(subNode));
         }
@@ -472,7 +543,7 @@ namespace PySysLinkBase
         for (const auto& subNode : node)
         {
             if (subNode.IsScalar())
-                values.push_back(ParseMatlabMatrixString<std::complex<double>>(subNode.as<std::string>()));
+                values.push_back(ParsePythonMatrixString<std::complex<double>>(subNode.as<std::string>()));
             else
                 values.push_back(ParseComplexMatrix(subNode));
         }
