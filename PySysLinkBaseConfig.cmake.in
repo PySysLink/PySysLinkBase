@@ -1,5 +1,14 @@
 @PACKAGE_INIT@
 
+include(CMakeFindDependencyMacro)
+
+find_dependency(Eigen3 REQUIRED NO_MODULE)
+find_dependency(yaml-cpp REQUIRED)
+find_dependency(spdlog REQUIRED)
+find_dependency(fmt REQUIRED)
+find_dependency(HDF5 REQUIRED COMPONENTS C CXX)
+find_dependency(HighFive REQUIRED)
+
 # Specify the include directories and libraries
 set_and_check(PY_SYS_LINK_BASE_INCLUDE_DIRS "@PACKAGE_INCLUDE_DIRS@")
 set_and_check(PY_SYS_LINK_BASE_LIBRARIES "@PACKAGE_LIBRARIES@")

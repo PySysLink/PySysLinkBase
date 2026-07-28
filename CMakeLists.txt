@@ -5,6 +5,7 @@ set(PROJECT_VERSION "0.1.0")
 # Project name and version
 project(PySysLinkBase VERSION ${PROJECT_VERSION})
 
+
 set(INSTALLED_STATIC_LIB_NAME "PySysLinkBase-${PROJECT_VERSION}")
 
 

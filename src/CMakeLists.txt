@@ -100,6 +100,16 @@ add_library(PySysLinkBase STATIC
   $<TARGET_OBJECTS:PySysLinkBaseCore>
 )
 
+target_link_libraries(PySysLinkBase
+    PUBLIC
+        Eigen3::Eigen
+        yaml-cpp
+        HighFive
+        HDF5::HDF5
+    PRIVATE
+        dl
+)
+
 target_link_libraries(PySysLinkBase PRIVATE dl)
 
 set_target_properties(PySysLinkBase PROPERTIES 
