@@ -33,9 +33,16 @@ set_property(TARGET PySysLinkBase_exe PROPERTY OUTPUT_NAME PySysLinkBase)
 # -------------------------------------------------------------------
 # YAML-CPP (system)
 # -------------------------------------------------------------------
-set(YAML_CPP_STATIC_LIBS TRUE)
 find_package(yaml-cpp REQUIRED)
-target_link_libraries(PySysLinkBaseCore PRIVATE yaml-cpp)
+
+add_library(yaml-cpp-static STATIC IMPORTED)
+
+set_target_properties(yaml-cpp-static PROPERTIES
+    IMPORTED_LOCATION "/usr/lib64/libyaml-cpp.a"
+    INTERFACE_INCLUDE_DIRECTORIES "/usr/include"
+)
+
+target_link_libraries(PySysLinkBaseCore PRIVATE yaml-cpp-static)
 
 # -------------------------------------------------------------------
 # dl
@@ -46,8 +53,23 @@ target_link_libraries(PySysLinkBase_exe PRIVATE dl)
 # -------------------------------------------------------------------
 # spdlog (system)
 # -------------------------------------------------------------------
+
+include(FetchContent)
+
+FetchContent_Declare(
+    fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+    GIT_TAG 11.2.0
+)
+
+set(FMT_TEST OFF CACHE BOOL "" FORCE)
+set(FMT_DOC OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+
+FetchContent_MakeAvailable(fmt)
+
 find_package(spdlog REQUIRED)
-find_package(fmt REQUIRED)
+
 target_link_libraries(PySysLinkBaseCore
     PRIVATE
         spdlog::spdlog
@@ -63,17 +85,35 @@ target_link_libraries(PySysLinkBase_exe PUBLIC Eigen3::Eigen)
 # -------------------------------------------------------------------
 # HDF5 (system)
 # -------------------------------------------------------------------
+find_package(ZLIB REQUIRED)
+
+find_library(SZ_LIBRARY
+    NAMES sz
+)
+
+message(STATUS "SZ_LIBRARY = ${SZ_LIBRARY}")
+
+set(HDF5_USE_STATIC_LIBRARIES TRUE)
 find_package(HDF5 REQUIRED COMPONENTS C CXX)
 
 target_include_directories(PySysLinkBaseCore PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(PySysLinkBaseCore PRIVATE HDF5::HDF5)
-target_link_libraries(PySysLinkBase_exe PRIVATE HDF5::HDF5)
+target_link_libraries(PySysLinkBaseCore PRIVATE
+    HDF5::HDF5
+    ZLIB::ZLIB
+    ${SZ_LIBRARY}
+)
+
+target_link_libraries(PySysLinkBase_exe PRIVATE
+    HDF5::HDF5
+    ZLIB::ZLIB
+    ${SZ_LIBRARY}
+)
 
 message(STATUS "HDF5_INCLUDE_DIRS: ${HDF5_INCLUDE_DIRS}")
 message(STATUS "HDF5_LIBRARIES: ${HDF5_LIBRARIES}")
 
 # -------------------------------------------------------------------
-# HighFive (FetchContent)
+# HighFive
 # -------------------------------------------------------------------
 find_package(HighFive REQUIRED)
 
