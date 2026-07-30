@@ -26,6 +26,7 @@ add_library(PySysLinkBaseCore OBJECT
 set_target_properties(PySysLinkBaseCore PROPERTIES 
     POSITION_INDEPENDENT_CODE ON
 )
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_executable(PySysLinkBase_exe main.cpp)
 set_property(TARGET PySysLinkBase_exe PROPERTY OUTPUT_NAME PySysLinkBase)
@@ -54,25 +55,13 @@ target_link_libraries(PySysLinkBase_exe PRIVATE dl)
 # spdlog (system)
 # -------------------------------------------------------------------
 
-include(FetchContent)
 
-FetchContent_Declare(
-    fmt
-    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-    GIT_TAG 11.2.0
-)
-
-set(FMT_TEST OFF CACHE BOOL "" FORCE)
-set(FMT_DOC OFF CACHE BOOL "" FORCE)
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-
-FetchContent_MakeAvailable(fmt)
-
+find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
 
 target_link_libraries(PySysLinkBaseCore
     PRIVATE
-        spdlog::spdlog
+        spdlog::spdlog_header_only
         fmt::fmt
 )
 # -------------------------------------------------------------------
@@ -87,8 +76,21 @@ target_link_libraries(PySysLinkBase_exe PUBLIC Eigen3::Eigen)
 # -------------------------------------------------------------------
 find_package(ZLIB REQUIRED)
 
+add_library(zlib-static STATIC IMPORTED)
+
+set_target_properties(zlib-static PROPERTIES
+    IMPORTED_LOCATION "/usr/lib64/libz.a"
+    INTERFACE_INCLUDE_DIRECTORIES "/usr/include"
+)
+
 find_library(SZ_LIBRARY
     NAMES sz
+)
+
+add_library(sz-static STATIC IMPORTED)
+
+set_target_properties(sz-static PROPERTIES
+    IMPORTED_LOCATION "/usr/lib64/libsz.a"
 )
 
 message(STATUS "SZ_LIBRARY = ${SZ_LIBRARY}")
@@ -96,17 +98,31 @@ message(STATUS "SZ_LIBRARY = ${SZ_LIBRARY}")
 set(HDF5_USE_STATIC_LIBRARIES TRUE)
 find_package(HDF5 REQUIRED COMPONENTS C CXX)
 
+add_library(hdf5-static STATIC IMPORTED)
+
+set_target_properties(hdf5-static PROPERTIES
+    IMPORTED_LOCATION "/usr/lib64/libhdf5.a"
+)
+
+add_library(hdf5-cpp-static STATIC IMPORTED)
+
+set_target_properties(hdf5-cpp-static PROPERTIES
+    IMPORTED_LOCATION "/usr/lib64/libhdf5_cpp.a"
+)
+
 target_include_directories(PySysLinkBaseCore PRIVATE ${HDF5_INCLUDE_DIRS})
 target_link_libraries(PySysLinkBaseCore PRIVATE
-    HDF5::HDF5
-    ZLIB::ZLIB
-    ${SZ_LIBRARY}
+    hdf5-cpp-static
+    hdf5-static
+    zlib-static
+    sz-static
 )
 
 target_link_libraries(PySysLinkBase_exe PRIVATE
-    HDF5::HDF5
-    ZLIB::ZLIB
-    ${SZ_LIBRARY}
+    hdf5-cpp-static
+    hdf5-static
+    zlib-static
+    sz-static
 )
 
 message(STATUS "HDF5_INCLUDE_DIRS: ${HDF5_INCLUDE_DIRS}")
@@ -141,13 +157,17 @@ add_library(PySysLinkBase STATIC
 )
 
 target_link_libraries(PySysLinkBase
+    PRIVATE
+        yaml-cpp-static
+        hdf5-static
+        hdf5-cpp-static
+        zlib-static
+        sz-static
+        HighFive
+        dl
+
     PUBLIC
         Eigen3::Eigen
-        yaml-cpp
-        HighFive
-        HDF5::HDF5
-    PRIVATE
-        dl
 )
 
 target_link_libraries(PySysLinkBase PRIVATE dl)
@@ -168,3 +188,8 @@ target_include_directories(PySysLinkBase
 # Link core library also into executable
 target_sources(PySysLinkBase_exe PRIVATE $<TARGET_OBJECTS:PySysLinkBaseCore>)
 target_link_libraries(PySysLinkBase_exe PRIVATE PySysLinkBaseCore)
+
+target_link_options(PySysLinkBase_exe PRIVATE
+    -static-libstdc++
+    -static-libgcc
+)
