@@ -133,9 +133,6 @@ message(STATUS "HDF5_LIBRARIES: ${HDF5_LIBRARIES}")
 # -------------------------------------------------------------------
 find_package(HighFive REQUIRED)
 
-target_link_libraries(PySysLinkBaseCore PRIVATE HighFive)
-target_link_libraries(PySysLinkBase_exe PRIVATE HighFive)
-
 # -------------------------------------------------------------------
 # argparse (FetchContent, header-only)
 # -------------------------------------------------------------------
@@ -157,15 +154,6 @@ add_library(PySysLinkBase STATIC
 )
 
 target_link_libraries(PySysLinkBase
-    PRIVATE
-        yaml-cpp-static
-        hdf5-static
-        hdf5-cpp-static
-        zlib-static
-        sz-static
-        HighFive
-        dl
-
     PUBLIC
         Eigen3::Eigen
 )
