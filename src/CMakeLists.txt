@@ -133,6 +133,24 @@ message(STATUS "HDF5_LIBRARIES: ${HDF5_LIBRARIES}")
 # -------------------------------------------------------------------
 find_package(HighFive REQUIRED)
 
+
+# -------------------------------------------------------------------
+# Filesystem
+# -------------------------------------------------------------------
+
+# only if GCC version is 8 or lower, we need to link with stdc++fs for filesystem support
+
+IF (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    EXECUTE_PROCESS(
+        COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
+        OUTPUT_VARIABLE GCC_VERSION
+    )
+    if (GCC_VERSION VERSION_LESS 9)
+        target_link_libraries(PySysLinkBaseCore PRIVATE stdc++fs)
+        target_link_libraries(PySysLinkBase_exe PRIVATE stdc++fs)
+    endif()
+endif()
+
 # -------------------------------------------------------------------
 # argparse (FetchContent, header-only)
 # -------------------------------------------------------------------
@@ -178,6 +196,7 @@ target_sources(PySysLinkBase_exe PRIVATE $<TARGET_OBJECTS:PySysLinkBaseCore>)
 target_link_libraries(PySysLinkBase_exe PRIVATE PySysLinkBaseCore)
 
 target_link_options(PySysLinkBase_exe PRIVATE
+    -Wl,--export-dynamic
     -static-libstdc++
     -static-libgcc
 )
