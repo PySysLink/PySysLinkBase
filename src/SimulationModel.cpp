@@ -357,6 +357,7 @@ namespace PySysLinkBase
         bool performForwardPropagation = true;
         while (performForwardPropagation) {
             performForwardPropagation = false;
+            bool sampleTimeProgressMade = false;
             spdlog::get("default_pysyslink")->debug("Forward sample time propagation start");
             // Forward propagation
             bool progressMade = true;
@@ -411,6 +412,7 @@ namespace PySysLinkBase
                                 spdlog::get("default_pysyslink")->debug("Block {} gets sample time {}", block->GetId(), SampleTime::SampleTimeTypeString(resolvedSampleTime->GetSampleTimeType()));
                                 block->SetSampleTime(resolvedSampleTime);
                                 progressMade = true;
+                                sampleTimeProgressMade = true;
                             }
                             else
                             {
@@ -431,6 +433,7 @@ namespace PySysLinkBase
                                         spdlog::get("default_pysyslink")->debug("Block {} gets sample time at input {}", block->GetId(), SampleTime::SampleTimeTypeString(resolvedSampleTime->GetSampleTimeType()));
                                         block->GetSampleTime()->SetMultirateSampleTimeInIndex(resolvedSampleTime, blockSampleTime->GetInputMultirateSampleTimeIndex());
                                         progressMade = true;
+                                        sampleTimeProgressMade = true;
                                     }
                                     else
                                     {
@@ -462,7 +465,7 @@ namespace PySysLinkBase
                             if (!connectedBlocks[j] || !hasKnownInputSampleTime(connectedBlocks[j]->GetSampleTime())) {
                                 allOutputsResolved = false;
                                 spdlog::get("default_pysyslink")->debug("Output not resolved for block: {}, connected block {} has unknown sample time", block->GetId(), connectedBlocks[j] ? connectedBlocks[j]->GetId() : "nullptr");
-                                break;
+                                continue;
                             }
                             if (connectedBlocks[j]->GetSampleTime()->GetSampleTimeType() == SampleTimeType::multirate) {
                                 outputSampleTimes.push_back(connectedBlocks[j]->GetSampleTime()->GetMultirateSampleTimes()[connectedBlocks[j]->GetSampleTime()->GetInputMultirateSampleTimeIndex()]);
@@ -497,6 +500,7 @@ namespace PySysLinkBase
                                 spdlog::get("default_pysyslink")->debug("Block {} gets sample time {}", block->GetId(), SampleTime::SampleTimeTypeString(resolvedSampleTime->GetSampleTimeType()));
                                 block->SetSampleTime(resolvedSampleTime);
                                 progressMade = true;
+                                sampleTimeProgressMade = true;
                             }
                             else
                             {
@@ -517,6 +521,7 @@ namespace PySysLinkBase
                                         spdlog::get("default_pysyslink")->debug("Block {} gets sample time at output {}", block->GetId(), SampleTime::SampleTimeTypeString(resolvedSampleTime->GetSampleTimeType()));
                                         block->GetSampleTime()->SetMultirateSampleTimeInIndex(resolvedSampleTime, blockSampleTime->GetOutputMultirateSampleTimeIndex());
                                         progressMade = true;
+                                        sampleTimeProgressMade = true;
                                     }
                                     else
                                     {
@@ -527,6 +532,10 @@ namespace PySysLinkBase
                         }
                     }
                 }
+            }
+
+            if (performForwardPropagation && !sampleTimeProgressMade) {
+                throw std::runtime_error("Sample time propagation failed: unresolved sample times remain and no progress can be made.");
             }
         }
         spdlog::get("default_pysyslink")->debug("Validation start");
