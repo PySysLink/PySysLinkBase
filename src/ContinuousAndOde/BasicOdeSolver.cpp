@@ -1,4 +1,5 @@
 #include "BasicOdeSolver.h"
+#include <algorithm>
 #include <limits>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
@@ -43,6 +44,9 @@ namespace PySysLinkBase
         }
 
         std::sort(std::begin(this->knownTimeHits), std::end(this->knownTimeHits));
+        this->knownTimeHits.erase(
+            std::unique(std::begin(this->knownTimeHits), std::end(this->knownTimeHits)),
+            std::end(this->knownTimeHits));
 
         this->nextTimeHitStates = {};
     }
