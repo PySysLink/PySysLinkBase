@@ -3,6 +3,7 @@
 
 
 #include "Port.h"
+#include "PortTypeMetadata.h"
 
 namespace PySysLinkBase
 {
@@ -10,6 +11,8 @@ namespace PySysLinkBase
         public:
             OutputPort(std::shared_ptr<UnknownTypeSignalValue> value);
     };
+
+    std::shared_ptr<OutputPort> CreateOutputPortOfType(PortTypeMetadata portType);
 }
 
 #endif /* SRC_PORTS_AND_SIGNAL_VALUES_OUTPUT_PORT */

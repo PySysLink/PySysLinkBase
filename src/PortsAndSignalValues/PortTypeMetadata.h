@@ -4,6 +4,10 @@
 #include <string>
 #include <optional>
 #include <vector>
+#include <complex>
+#include <map>
+#include <string>
+#include "../FullySupportedSignalValue.h"
 
 namespace PySysLinkBase
 {
@@ -31,6 +35,37 @@ namespace PySysLinkBase
         int inheritanceGroup = 0;
     };
 
+    template<typename F>
+    auto DispatchType(const std::string& type, F&& f)
+    {
+        if (type == "int")
+            return f.template operator()<int>();
+
+        if (type == "double")
+            return f.template operator()<double>();
+
+        if (type == "complex_double")
+            return f.template operator()<std::complex<double>>();
+
+        if (type == "bool")
+            return f.template operator()<bool>();
+
+        if (type == "matrix<int>")
+            return f.template operator()<IntMatrix>();
+
+        if (type == "matrix<double>")
+            return f.template operator()<DoubleMatrix>();
+
+        if (type == "matrix<bool>")
+            return f.template operator()<BoolMatrix>();
+
+        if (type == "matrix<complex_double>")
+            return f.template operator()<ComplexMatrix>();
+
+        throw std::invalid_argument("Unsupported type: " + type);
+    }
+
+    std::string PortCategoryToString(PortCategory cat);
     std::vector<PortTypeMetadata> ParsePortTypeMetadatas(const std::vector<std::string>& portTypeStrs);
 }
 

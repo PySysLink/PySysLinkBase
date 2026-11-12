@@ -5,6 +5,21 @@
 namespace PySysLinkBase
 {
 
+std::string PortCategoryToString(PortCategory cat)
+{
+    switch (cat)
+    {
+        case PortCategory::FullySupportedSignalValue: return "FullySupportedSignalValue";
+        case PortCategory::Enumeration: return "Enumeration";
+        case PortCategory::Structure: return "Structure";
+        case PortCategory::PointerToObject: return "PointerToObject";
+        case PortCategory::OtherType: return "OtherType";
+        case PortCategory::Inherited: return "Inherited";
+        case PortCategory::Unknown: return "Unknown";
+        default: return "Invalid";
+    }
+}
+
 static bool starts_with(const std::string& s, const std::string& prefix)
 {
     return s.rfind(prefix, 0) == 0;
